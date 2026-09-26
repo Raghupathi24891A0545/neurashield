@@ -1,0 +1,124 @@
+{
+  "model_name": "LogisticRegression",
+  "cv_results": {
+    "LogisticRegression": {
+      "accuracy": 0.96,
+      "precision": 0.9714,
+      "recall": 0.96,
+      "f1": 0.9624,
+      "roc_auc": 0.9677
+    },
+    "RandomForest": {
+      "accuracy": 0.8778,
+      "precision": 0.92,
+      "recall": 0.8533,
+      "f1": 0.8832,
+      "roc_auc": 0.959
+    },
+    "HistGradientBoosting": {
+      "accuracy": 0.4822,
+      "precision": 0.2222,
+      "recall": 0.4,
+      "f1": 0.2857,
+      "roc_auc": 0.5
+    }
+  },
+  "test_metrics": {
+    "accuracy": 1.0,
+    "precision": 1.0,
+    "recall": 1.0,
+    "f1": 1.0,
+    "roc_auc": 1.0,
+    "pr_auc": 1.0,
+    "confusion_matrix": [
+      [
+        6,
+        0
+      ],
+      [
+        0,
+        6
+      ]
+    ],
+    "true_negatives": 6,
+    "false_positives": 0,
+    "false_negatives": 0,
+    "true_positives": 6
+  },
+  "feature_importance": {
+    "txt_record_count": -0.93891,
+    "nameserver_count": -0.927995,
+    "domain_age_days": -0.689729,
+    "certificate_age_days": -0.608697,
+    "mx_record_count": -0.579565,
+    "ns_record_count": -0.571498,
+    "expiration_available": -0.44333,
+    "has_mx": -0.369557,
+    "domain_name_length": 0.339954,
+    "ssl_valid": -0.310525,
+    "tld_length": 0.307766,
+    "certificate_is_wildcard": 0.271421,
+    "dns_resolution": -0.250789,
+    "domain_hyphen_count": -0.250789,
+    "domain_has_digits": 0.247655,
+    "has_multiple_ips": -0.209222,
+    "domain_digit_ratio": 0.19615,
+    "certificate_remaining_days": -0.180068,
+    "domain_name_entropy": 0.176615,
+    "aaaa_record_count": -0.129823,
+    "ssl_available": 0.127233,
+    "certificate_san_count": 0.127233,
+    "whois_collection_success": 0.127233,
+    "certificate_hostname_match": -0.121996,
+    "ip_count": -0.084312,
+    "ssl_collection_success": -0.061147,
+    "nameserver_diversity": -0.037377,
+    "a_record_count": -0.035067,
+    "dns_collection_success": -0.026438,
+    "domain_remaining_days": 0.001094,
+    "registrar_present": 0.0
+  },
+  "schema": {
+    "features": [
+      "dns_resolution",
+      "a_record_count",
+      "aaaa_record_count",
+      "mx_record_count",
+      "ns_record_count",
+      "txt_record_count",
+      "ip_count",
+      "has_mx",
+      "has_multiple_ips",
+      "domain_age_days",
+      "domain_remaining_days",
+      "registrar_present",
+      "expiration_available",
+      "nameserver_count",
+      "nameserver_diversity",
+      "ssl_available",
+      "ssl_valid",
+      "certificate_age_days",
+      "certificate_remaining_days",
+      "certificate_san_count",
+      "certificate_hostname_match",
+      "certificate_is_wildcard",
+      "tld_length",
+      "domain_name_length",
+      "domain_name_entropy",
+      "domain_has_digits",
+      "domain_digit_ratio",
+      "domain_hyphen_count",
+      "dns_collection_success",
+      "whois_collection_success",
+      "ssl_collection_success",
+      "evidence_coverage"
+    ],
+    "feature_count": 32,
+    "model_name": "LogisticRegression",
+    "model_version": "2.0.0",
+    "training_timestamp": "2026-09-20T08:18:50.251387",
+    "training_samples": 48,
+    "test_samples": 12
+  },
+  "training_timestamp": "2026-09-20T08:18:50.252459"
+}

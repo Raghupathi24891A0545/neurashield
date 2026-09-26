@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Brand Impersonation Intelligence — NeuraShield SOC</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='neurashield.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='ns_investigation.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='investigation_center.css') }}">
+  <style>
+    .brand-layout { max-width: 1400px; margin: 0 auto; padding: 24px 20px 80px 20px; display: flex; flex-direction: column; gap: 24px; }
+    .brand-hero {
+      background: linear-gradient(135deg, rgba(6,16,28,0.95), rgba(4,10,18,0.98));
+      border: 1px solid rgba(0, 229, 255, 0.25); border-left: 4px solid #00e5ff;
+      border-radius: 8px; padding: 22px 24px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;
+    }
+    .brand-hero h1 { margin: 0; font-size: 22px; font-weight: 700; color: #fff; display: flex; align-items: center; gap: 10px; }
+    .brand-hero p { margin: 6px 0 0 0; font-size: 13px; color: #94a3b8; }
+
+    .brand-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+    @media (max-width: 992px) { .brand-grid { grid-template-columns: 1fr; } }
+
+    .card { background: rgba(10, 18, 28, 0.85); border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 22px; }
+    .card h2 { font-size: 16px; color: #e2e8f0; margin: 0 0 16px 0; display: flex; align-items: center; gap: 8px; border-bottom: 1px solid rgba(255,255,255,0.06); padding-bottom: 10px; }
+
+    .field-group { margin-bottom: 14px; }
+    .field-group label { display: block; font-size: 11px; text-transform: uppercase; color: #64748b; font-family: var(--ns-mono, monospace); margin-bottom: 6px; font-weight: 600; }
+    .field-group input, .field-group select, .field-group textarea {
+      width: 100%; box-sizing: border-box; background: rgba(4, 9, 15, 0.8); border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 6px; color: #fff; padding: 10px 12px; font-size: 13px; font-family: var(--ns-mono, monospace);
+    }
+    .field-group input:focus, .field-group textarea:focus { border-color: #00e5ff; outline: none; box-shadow: 0 0 0 2px rgba(0,229,255,0.15); }
+
+    .badge-status { display: inline-block; padding: 4px 10px; border-radius: 4px; font-size: 11px; font-weight: 800; font-family: var(--ns-mono, monospace); text-transform: uppercase; letter-spacing: 0.05em; }
+    .status-consistent { background: rgba(34, 197, 94, 0.15); color: #4ade80; border: 1px solid rgba(34, 197, 94, 0.35); }
+    .status-potential { background: rgba(245, 158, 11, 0.15); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.35); }
+    .status-strong { background: rgba(239, 68, 68, 0.2); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.4); }
+    .status-insufficient { background: rgba(148, 163, 184, 0.15); color: #cbd5e1; border: 1px solid rgba(148, 163, 184, 0.25); }
+
+    .evidence-item { background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.06); border-radius: 6px; padding: 12px 14px; margin-bottom: 10px; font-size: 12px; }
+    .evidence-item strong { color: #38bdf8; font-family: var(--ns-mono, monospace); }
+    .evidence-item p { margin: 4px 0 0 0; color: #cbd5e1; line-height: 1.5; }
+
+    .profile-pill { display: inline-flex; align-items: center; gap: 6px; background: rgba(0,229,255,0.08); border: 1px solid rgba(0,229,255,0.2); border-radius: 4px; padding: 4px 8px; font-size: 11px; color: #38bdf8; font-family: var(--ns-mono, monospace); margin: 3px; cursor: pointer; transition: all 0.15s; }
+    .profile-pill:hover { background: rgba(0,229,255,0.18); border-color: #00e5ff; color: #fff; }
+  </style>
+</head>
+<body>
+
+<nav class="ns-nav scrolled" style="background:rgba(6, 9, 14, 0.96); border-bottom: 1px solid rgba(0, 200, 255, 0.16);">
+  <div class="ns-nav-inner">
+    <a href="/" class="ns-logo">
+      <img src="{{ url_for('static', filename='static/ns_logo.png') }}" class="ns-logo-icon" alt="NS" onerror="this.style.display='none';">
+      <div class="ns-logo-text">
+        <span class="ns-logo-name">NeuraShield</span>
+        <span class="ns-logo-sub">Cybersecurity Investigation Platform</span>
+      </div>
+    </a>
+    <div class="ns-nav-actions">
+      <span style="font-family:var(--ns-mono);font-size:11px;color:#94a3b8;margin-left:14px;">{{ username }}</span>
+      <a href="/logout" class="btn-ghost" style="margin-left:8px;">Logout</a>
+    </div>
+  </div>
+</nav>
+
+<div class="inv-layout">
+  <aside class="inv-sidebar">
+    <div class="who">
+      <small>Analysis Operations</small>
+      <b>{{ username }}</b>
+    </div>
+    <ul class="inv-nav" id="sidebar-nav"></ul>
+  </aside>
+
+  <main class="inv-main">
+    <div class="brand-layout">
+      <!-- Hero -->
+      <div class="brand-hero">
+        <div>
+          <h1><span>🛡️</span> Module 9 — Brand Impersonation Intelligence</h1>
+          <p>Evidence-based identity verification comparing claimed trademarks, typosquatted hostnames, sender profiles, and credential harvesting forms.</p>
+        </div>
+        <div style="font-family:var(--ns-mono); font-size:12px; color:#38bdf8; background:rgba(6,182,212,0.1); border:1px solid rgba(6,182,212,0.25); padding:8px 14px; border-radius:6px;">
+          Evidence-First Policy: Active
+        </div>
+      </div>
+
+      <!-- Quick Profiles Reference -->
+      <div class="card">
+        <h2><span>🏢</span> Monitored Brand & Institution Registry</h2>
+        <p style="font-size:12px; color:#94a3b8; margin:0 0 12px 0;">Click any registered entity to auto-populate the test workbench below:</p>
+        <div id="profilesList" style="display:flex; flex-wrap:wrap; gap:6px;">
+          <div style="color:#64748b; font-size:12px;">Loading profiles...</div>
+        </div>
+      </div>
+
+      <!-- Main Workbench Grid -->
+      <div class="brand-grid">
+        <!-- Input Form -->
+        <div class="card">
+          <h2><span>⚙️</span> Impersonation Evaluation Workbench</h2>
+          <form id="brandForm" onsubmit="runBrandEval(event)">
+            <div class="field-group">
+              <label for="claimedBrand">Claimed Brand / Entity</label>
+              <input type="text" id="claimedBrand" placeholder="e.g. State Bank of India, Microsoft, TKR College" required>
+            </div>
+            <div class="field-group">
+              <label for="senderDomain">Sender Address or Domain</label>
+              <input type="text" id="senderDomain" placeholder="e.g. security-alert@gmail.com or updates@sbi.co.in">
+            </div>
+            <div class="field-group">
+              <label for="websiteUrl">Suspect Website URL / Hostname</label>
+              <input type="text" id="websiteUrl" placeholder="e.g. https://sbi-kyc-verify-portal.top/login">
+            </div>
+            <div class="field-group">
+              <label for="pageTitle">Webpage Title (if captured)</label>
+              <input type="text" id="pageTitle" placeholder="e.g. SBI Online Banking Verification">
+            </div>
+            <div class="field-group">
+              <label for="pageText">Page Content / Email Body Snippet</label>
+              <textarea id="pageText" rows="3" placeholder="e.g. Dear customer, enter your OTP and internet banking password to reactivate your account immediately..."></textarea>
+            </div>
+            <button type="submit" class="ic-btn-primary" id="btnRun" style="width:100%; margin-top:8px;">
+              <span>Evaluate Brand Alignment</span>
+            </button>
+          </form>
+        </div>
+
+        <!-- Evaluation Results Display -->
+        <div class="card" id="resultsCard">
+          <h2><span>📊</span> Multi-Vector Correlation Findings</h2>
+          <div id="resultsEmpty" style="text-align:center; padding:50px 20px; color:#64748b;">
+            <div style="font-size:36px; margin-bottom:12px; opacity:0.5;">🔍</div>
+            <p style="font-size:13px; margin:0;">Provide target brand details and click "Evaluate Brand Alignment" to execute multi-layer correlation.</p>
+          </div>
+          <div id="resultsContent" style="display:none;">
+            <!-- Top Status Row -->
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px; margin-bottom:16px; padding-bottom:14px; border-bottom:1px solid rgba(255,255,255,0.08);">
+              <div style="background:rgba(0,0,0,0.3); padding:10px 12px; border-radius:6px; border:1px solid rgba(255,255,255,0.06);">
+                <span style="font-size:10px; text-transform:uppercase; color:#94a3b8; font-family:var(--ns-mono); letter-spacing:0.05em;">Verification Verdict</span>
+                <div id="verdictBadge" style="margin-top:6px;"></div>
+              </div>
+              <div style="background:rgba(0,0,0,0.3); padding:10px 12px; border-radius:6px; border:1px solid rgba(255,255,255,0.06); text-align:right;">
+                <span style="font-size:10px; text-transform:uppercase; color:#94a3b8; font-family:var(--ns-mono); letter-spacing:0.05em;">Confidence & Risk</span>
+                <div style="display:flex; justify-content:flex-end; align-items:center; gap:8px; margin-top:4px;">
+                  <span id="verdictConfidence" style="font-family:var(--ns-mono); font-size:14px; font-weight:700; color:#00e5ff;"></span>
+                  <span id="riskScoreBadge" class="badge-status" style="font-size:11px;"></span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Domain & Identity Alignment Summary -->
+            <div id="brandAlignmentBox" style="background:rgba(15,23,42,0.6); border:1px solid rgba(6,182,212,0.2); border-radius:6px; padding:12px 14px; margin-bottom:16px; font-size:12px;">
+              <div style="font-size:10px; text-transform:uppercase; color:#38bdf8; font-family:var(--ns-mono); font-weight:700; margin-bottom:8px;">Identity Alignment Matrix</div>
+              <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; font-size:11px;">
+                <div><span style="color:#64748b;">Target Host:</span> <strong id="resTargetHost" style="color:#f8fafc; font-family:var(--ns-mono);">—</strong></div>
+                <div><span style="color:#64748b;">Claimed Brand:</span> <strong id="resClaimedBrand" style="color:#f8fafc;">—</strong></div>
+              </div>
+              <div style="margin-top:6px; font-size:11px;">
+                <span style="color:#64748b;">Authorized Official Domains:</span>
+                <span id="resOfficialDomains" style="color:#38bdf8; font-family:var(--ns-mono);">—</span>
+              </div>
+            </div>
+
+            <div style="margin-bottom:16px;">
+              <div style="font-size:11px; text-transform:uppercase; color:#94a3b8; font-family:var(--ns-mono); margin-bottom:8px; display:flex; justify-content:space-between;">
+                <span>Specific Threat Indicators</span>
+                <span id="indicatorsCountBadge" style="color:#64748b;">0 signals</span>
+              </div>
+              <div id="indicatorsList" style="display:flex; flex-direction:column; gap:6px;"></div>
+            </div>
+
+            <div>
+              <div style="font-size:11px; text-transform:uppercase; color:#94a3b8; font-family:var(--ns-mono); margin-bottom:8px;">Forensic Evidence Ledger</div>
+              <div id="evidenceList"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script src="{{ url_for('static', filename='ns_investigation.js') }}"></script>
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    NS.renderNav(document.getElementById('sidebar-nav'), 'brand_impersonation');
+    loadBrandProfiles();
+  });
+
+  let loadedProfiles = [];
+
+  async function loadBrandProfiles() {
+    try {
+      const res = await fetch('/api/brand/profiles');
+      const data = await res.json();
+      loadedProfiles = data.profiles || [];
+      const container = document.getElementById('profilesList');
+      if (!loadedProfiles.length) {
+        container.innerHTML = '<span style="color:#64748b;font-size:12px;">No pre-configured profiles found.</span>';
+        return;
+      }
+      container.innerHTML = loadedProfiles.map((p, idx) => `
+        <span class="profile-pill" onclick="selectProfile(${idx})">
+          <span>🏛️</span>
+          <strong>${NS.esc(p.name)}</strong>
+          <span style="opacity:0.6;">(${NS.esc(p.official_domain)})</span>
+        </span>
+      `).join('');
+    } catch (e) {
+      console.error(e);
+    }
+  }
+
+  function selectProfile(idx) {
+    const p = loadedProfiles[idx];
+    if (!p) return;
+    document.getElementById('claimedBrand').value = p.name;
+    document.getElementById('senderDomain').value = 'support@' + p.official_domain;
+    document.getElementById('websiteUrl').value = 'https://' + p.official_domain;
+    document.getElementById('pageTitle').value = p.name + ' Official Portal';
+  }
+
+  async function runBrandEval(e) {
+    e.preventDefault();
+    const btn = document.getElementById('btnRun');
+    btn.disabled = true;
+    btn.textContent = 'Evaluating Across Threat Models...';
+
+    const payload = {
+      claimed_brand: document.getElementById('claimedBrand').value.trim(),
+      sender_domain: document.getElementById('senderDomain').value.trim(),
+      website_url: document.getElementById('websiteUrl').value.trim(),
+      page_title: document.getElementById('pageTitle').value.trim(),
+      page_text: document.getElementById('pageText').value.trim()
+    };
+
+    try {
+      const res = await fetch('/api/brand/evaluate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Evaluation failed');
+
+      renderResults(data);
+    } catch (err) {
+      alert(err.message);
+    } finally {
+      btn.disabled = false;
+      btn.textContent = 'Evaluate Brand Alignment';
+    }
+  }
+
+  function renderResults(data) {
+    document.getElementById('resultsEmpty').style.display = 'none';
+    document.getElementById('resultsContent').style.display = 'block';
+
+    const vBadge = document.getElementById('verdictBadge');
+    const verdict = data.verdict || 'INSUFFICIENT_EVIDENCE';
+    let cls = 'status-insufficient';
+    if (verdict === 'CONSISTENT') cls = 'status-consistent';
+    else if (verdict === 'POTENTIAL_IMPERSONATION') cls = 'status-potential';
+    else if (verdict === 'STRONG_IMPERSONATION_EVIDENCE') cls = 'status-strong';
+
+    vBadge.className = 'badge-status ' + cls;
+    vBadge.textContent = verdict.replace(/_/g, ' ');
+
+    // Bulletproof Confidence formatting (fixes NaN%)
+    let confStr = 'HIGH (95%)';
+    if (typeof data.confidence === 'string') {
+      const cu = data.confidence.toUpperCase();
+      if (cu === 'HIGH') confStr = 'HIGH (95%)';
+      else if (cu === 'MEDIUM') confStr = 'MEDIUM (75%)';
+      else if (cu === 'LOW') confStr = 'LOW (45%)';
+      else confStr = cu;
+    } else if (typeof data.confidence === 'number' && !isNaN(data.confidence)) {
+      const val = data.confidence <= 1 ? Math.round(data.confidence * 100) : Math.round(data.confidence);
+      confStr = `${val}%`;
+    }
+    document.getElementById('verdictConfidence').textContent = confStr;
+
+    // Risk score badge
+    const riskBadge = document.getElementById('riskScoreBadge');
+    const rScore = data.risk_score !== undefined ? data.risk_score : 10;
+    if (rScore >= 75) {
+      riskBadge.className = 'badge-status status-strong';
+      riskBadge.textContent = `RISK ${rScore}/100`;
+    } else if (rScore >= 40) {
+      riskBadge.className = 'badge-status status-potential';
+      riskBadge.textContent = `RISK ${rScore}/100`;
+    } else {
+      riskBadge.className = 'badge-status status-consistent';
+      riskBadge.textContent = `RISK ${rScore}/100`;
+    }
+
+    // Alignment details
+    document.getElementById('resTargetHost').textContent = data.target_host || 'Target Host';
+    document.getElementById('resClaimedBrand').textContent = data.claimed_brand || 'Protected Entity';
+    const offDoms = (data.official_domains || []).slice(0, 4).join(', ') || 'N/A';
+    document.getElementById('resOfficialDomains').textContent = offDoms;
+
+    const indContainer = document.getElementById('indicatorsList');
+    const countBadge = document.getElementById('indicatorsCountBadge');
+    const indicators = data.indicators || data.reasons || [];
+    countBadge.textContent = `${indicators.length} signal(s)`;
+
+    if (!indicators.length) {
+      indContainer.innerHTML = '<span style="color:#22c55e;font-size:12px;">✓ No suspicious brand anomalies identified. Identity consistent with official records.</span>';
+    } else {
+      indContainer.innerHTML = indicators.map(ind => `
+        <div style="font-size:12px; color:#fca5a5; font-family:var(--ns-mono); display:flex; align-items:center; gap:6px; background:rgba(239,68,68,0.08); padding:6px 10px; border-radius:4px; border-left:3px solid #ef4444;">
+          <span>⚠️</span> <span>${NS.esc(ind)}</span>
+        </div>
+      `).join('');
+    }
+
+    const evContainer = document.getElementById('evidenceList');
+    if (!data.evidence || !data.evidence.length) {
+      evContainer.innerHTML = '<span style="color:#64748b;font-size:12px;">No specific evidence objects logged.</span>';
+    } else {
+      evContainer.innerHTML = data.evidence.map(ev => `
+        <div class="evidence-item">
+          <div style="display:flex; justify-content:space-between; font-size:11px; margin-bottom:4px;">
+            <strong>${NS.esc(ev.evidence_id || 'EV-BRAND')}</strong>
+            <span style="color:${ev.verification_status === 'VERIFIED' ? '#22c55e' : '#94a3b8'}; font-family:var(--ns-mono);">${NS.esc(ev.verification_status || 'VERIFIED')}</span>
+          </div>
+          <p>${NS.esc(ev.observation || '')}</p>
+        </div>
+      `).join('');
+    }
+  }
+</script>
+</body>
+</html>

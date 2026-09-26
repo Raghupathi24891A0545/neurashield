@@ -1,49 +1,734 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bulk Upload - Phishing Detection</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bulk Analysis — NeuraShield</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='neurashield.css') }}">
+  <style>
+    .ns-layout{display:flex;min-height:100vh;padding-top:68px;}
+    .ns-sidebar{width:220px;flex-shrink:0;background:var(--ns-surface);border-right:1px solid var(--ns-border);display:flex;flex-direction:column;padding:28px 0;position:fixed;top:68px;left:0;bottom:0;overflow-y:auto;}
+    .ns-sidebar-logo{padding:0 20px 24px;border-bottom:1px solid var(--ns-border);margin-bottom:16px;}
+    .sidebar-nav{list-style:none;padding:0 10px;}
+    .sidebar-nav li{margin-bottom:2px;}
+    .sidebar-nav a{display:flex;align-items:center;gap:10px;padding:10px 14px;font-size:12px;font-weight:500;letter-spacing:0.04em;text-transform:uppercase;color:var(--ns-text-muted);text-decoration:none;border-radius:var(--ns-radius);transition:var(--ns-transition);}
+    .sidebar-nav a:hover{color:var(--ns-text);background:rgba(0,200,255,0.05);}
+    .sidebar-nav a.active{color:var(--ns-cyan);background:var(--ns-cyan-dim);}
+    .sidebar-bottom{margin-top:auto;padding:16px;border-top:1px solid var(--ns-border);}
+    .ns-main{flex:1;margin-left:220px;padding:40px;max-width:calc(100vw - 220px);}
+    .ns-page-title{font-size:22px;font-weight:700;letter-spacing:-0.02em;margin-bottom:4px;}
+    .ns-page-sub{font-family:var(--ns-mono);font-size:11px;letter-spacing:0.08em;text-transform:uppercase;color:var(--ns-text-muted);}
+    @media(max-width:900px){.ns-sidebar{display:none;}.ns-main{margin-left:0;max-width:100%;padding:20px;}}
+
+    .upload-zone {
+      border: 2px dashed var(--ns-border);
+      border-radius: var(--ns-radius-xl);
+      padding: 48px;
+      text-align: center;
+      cursor: pointer;
+      transition: var(--ns-transition);
+      margin: 24px 0;
+    }
+    .upload-zone:hover, .upload-zone.dragover {
+      border-color: var(--ns-cyan);
+      background: var(--ns-cyan-dim);
+    }
+    .upload-icon { font-size: 36px; margin-bottom: 12px; }
+    .upload-title { font-size: 14px; font-weight: 600; color: var(--ns-text); margin-bottom: 6px; }
+    .upload-sub { font-family: var(--ns-mono); font-size: 11px; color: var(--ns-text-muted); }
+
+    .results-card { padding: 0; margin-top: 24px; }
+    .results-header { padding: 20px 24px; border-bottom: 1px solid var(--ns-border); display: flex; align-items: center; justify-content: space-between; }
+    .results-title { font-size: 12px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; }
+  </style>
 </head>
 <body>
-    <nav>
-        <a href="/admin">Home</a>
-        <a href="/upload">Bulk Analysis</a>
-        <a href="/logout">Logout</a>
-    </nav>
 
-    <div class="container" style="max-width: 800px; margin-top: 100px;">
-        <h2>BULK DATA INGESTION</h2>
-        <p>Upload CSV for Mass Analysis</p>
+<!-- Navbar -->
+<nav class="ns-nav scrolled" style="background:rgba(8,12,16,0.95);">
+  <div class="ns-nav-inner">
+    <a href="/" class="ns-logo">
+      <img src="{{ url_for('static', filename='static/ns_logo.png') }}" class="ns-logo-icon" alt="NS" onerror="this.style.display='none';">
+      <div class="ns-logo-text">
+        <span class="ns-logo-name">NeuraShield</span>
+        <span class="ns-logo-sub">Command Center</span>
+      </div>
+    </a>
+    <div class="ns-nav-actions">
+      <span class="ns-badge ns-badge-cyan"><span class="dot"></span> Commander</span>
+      <a href="/logout" class="btn-ghost">Logout</a>
+    </div>
+  </div>
+</nav>
 
-        <form method="POST" enctype="multipart/form-data">
-            <input type="file" name="file" accept=".csv" required style="padding: 10px; color: #fff; background: rgba(0,0,0,0.2); border-radius: 10px;">
-            <button type="submit">INITIATE BATCH PROCESS</button>
-        </form>
+<div class="ns-layout">
+  <aside class="ns-sidebar">
+    <div class="ns-sidebar-logo">
+      <div style="font-family:var(--ns-mono);font-size:9px;letter-spacing:0.15em;text-transform:uppercase;color:var(--ns-text-muted);">
+        {% if role == 'admin' %}Commander (Admin){% else %}Field Agent{% endif %}
+      </div>
+      <div style="font-size:13px;font-weight:600;color:var(--ns-text);margin-top:2px;">{{ username }}</div>
+    </div>
+    <ul class="sidebar-nav">
+      {% if role == 'admin' %}
+      <li><a href="/admin"><span class="icon">📊</span> Command Center</a></li>
+      <li><a href="/admin"><span class="icon">🛡</span> Threat Scanner</a></li>
+      <li><a href="/domain-intelligence"><span class="icon">🌐</span> Domain Intel</a></li>
+      <li><a href="/webpage-intelligence"><span class="icon">📄</span> Webpage Intel</a></li>
+      <li><a href="/email-intelligence"><span class="icon">✉️</span> Email Intel</a></li>
+      <li><a href="/investigations"><span class="icon">🗂</span> Investigation Center</a></li>
+      <li><a href="/upload" class="active"><span class="icon">📂</span> Bulk Analysis</a></li>
+      {% else %}
+      <li><a href="/dashboard"><span class="icon">🛡</span> Threat Scanner</a></li>
+      <li><a href="/domain-intelligence"><span class="icon">🌐</span> Domain Intel</a></li>
+      <li><a href="/webpage-intelligence"><span class="icon">📄</span> Webpage Intel</a></li>
+      <li><a href="/upload" class="active"><span class="icon">📂</span> Bulk Analysis</a></li>
+      <li><a href="/dashboard#recent-ops"><span class="icon">📋</span> Scan History</a></li>
+      {% endif %}
+    </ul>
+    <div class="sidebar-bottom">
+      <a href="/logout" class="btn-ghost btn-full" style="font-size:10px;">Logout</a>
+    </div>
+  </aside>
 
-        {% if results %}
-        <h3>BATCH RESULTS</h3>
-        <table>
+  <main class="ns-main">
+    <div style="margin-bottom:32px;">
+      <div class="ns-page-title">Bulk URL Analysis</div>
+      <div class="ns-page-sub">Mass CSV Threat Processing · All Detection Modules Online</div>
+    </div>
+
+    <!-- Info card -->
+    <div class="ns-card" style="margin-bottom:20px;padding:20px;">
+      <div class="scan-line"></div>
+      <div style="display:flex;align-items:flex-start;gap:14px;">
+        <div style="font-size:22px;flex-shrink:0;">📂</div>
+        <div>
+          <div style="font-size:13px;font-weight:600;color:var(--ns-text);margin-bottom:4px;">High-Throughput Batch Processing</div>
+          <p style="font-size:12px;color:var(--ns-text-dim);line-height:1.6;margin:0;">
+            Upload a CSV file containing URLs for mass inspection. The file must include a column named <code style="font-family:var(--ns-mono);background:var(--ns-surface-2);padding:1px 6px;border-radius:4px;color:var(--ns-cyan);">url</code> or <code style="font-family:var(--ns-mono);background:var(--ns-surface-2);padding:1px 6px;border-radius:4px;color:var(--ns-cyan);">URL</code>. Each URL will be routed through all four detection modules in parallel.
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Upload form -->
+    <div class="ns-card" id="uploadCard" style="padding:32px;margin-bottom:24px;">
+      <div class="scan-line"></div>
+      <form method="POST" enctype="multipart/form-data" id="uploadForm" onsubmit="startBulkScan(event)">
+        <div class="upload-zone" id="uploadZone" onclick="document.getElementById('fileInput').click();">
+          <div class="upload-icon">⬆️</div>
+          <div class="upload-title" id="uploadTitle">Drop CSV file here or click to browse</div>
+          <div class="upload-sub">Accepts .csv files · Column named 'url' required</div>
+          <input type="file" name="file" id="fileInput" accept=".csv" required
+                 style="display:none;" onchange="handleFileSelect(this)">
+        </div>
+
+        <button type="submit" class="btn-primary btn-full" id="bulkScanBtn" style="padding:14px;margin-top:16px;">
+          <span class="btn-light"></span>
+          Initiate Batch Analysis <span class="btn-arrow">→</span>
+        </button>
+      </form>
+
+      <!-- Batch Scan Threat Core (shown during analysis) -->
+      <div class="scan-core-stage" id="scanCoreStage" aria-hidden="true" style="margin-top:24px;">
+        <canvas class="scan-core-canvas" id="scanCoreCanvas" width="180" height="180"></canvas>
+        <div class="scan-core-target" id="scanCoreTarget">Batch File Analysis</div>
+        <div class="scan-bars" id="scanBars"></div>
+      </div>
+    </div>
+
+    <!-- Results Section (Populated dynamically via API or server-side) -->
+    <div id="bulkResultsSection" {% if not results %}style="display:none;"{% endif %}>
+      
+      <!-- ALL 4 PIPELINE MODULES DISPLAY -->
+      <div style="font-family:var(--ns-mono);font-size:10px;letter-spacing:0.15em;text-transform:uppercase;color:var(--ns-text-muted);margin-bottom:12px;">
+        Module 1 — URL Intelligence · 4 Analytical Processing Layers
+      </div>
+      <div class="bulk-modules-grid">
+        <div class="bulk-module-card active-module">
+          <div class="bmc-header">
+            <span class="bmc-icon">🧩</span>
+            <span class="ns-badge ns-badge-green"><span class="dot"></span> Online</span>
+          </div>
+          <div class="bmc-title">Layer 1: Structural Analysis</div>
+          <div class="bmc-desc">Decomposes URL components, URI depth, IP-as-host traps, and port anomalies.</div>
+          <div class="bmc-metric">
+            <span class="bmc-sub">Signals Flagged</span>
+            <span class="bmc-val" id="mod-heuristics">{{ modules.heuristics_flagged if modules else '0' }}</span>
+          </div>
+        </div>
+
+        <div class="bulk-module-card active-module">
+          <div class="bmc-header">
+            <span class="bmc-icon">🛡️</span>
+            <span class="ns-badge ns-badge-green"><span class="dot"></span> Online</span>
+          </div>
+          <div class="bmc-title">Layer 2: Lexical & Obfuscation</div>
+          <div class="bmc-desc">Computes Shannon entropy, brand impersonation signals, and percent encodings.</div>
+          <div class="bmc-metric">
+            <span class="bmc-sub">Rule Hits</span>
+            <span class="bmc-val" id="mod-rules" style="color:var(--ns-amber);">{{ modules.rules_flagged if modules else '0' }}</span>
+          </div>
+        </div>
+
+        <div class="bulk-module-card active-module">
+          <div class="bmc-header">
+            <span class="bmc-icon">🤖</span>
+            <span class="ns-badge ns-badge-green"><span class="dot"></span> Online</span>
+          </div>
+          <div class="bmc-title">Layer 3: Security Rule Engine</div>
+          <div class="bmc-desc">Deterministic traceable security rules mapping severity and confidence.</div>
+          <div class="bmc-metric">
+            <span class="bmc-sub">ML Inferences</span>
+            <span class="bmc-val" id="mod-ml">{{ modules.ml_inferred if modules else '0' }}</span>
+          </div>
+        </div>
+
+        <div class="bulk-module-card active-module">
+          <div class="bmc-header">
+            <span class="bmc-icon">⚡</span>
+            <span class="ns-badge ns-badge-cyan"><span class="dot"></span> Active</span>
+          </div>
+          <div class="bmc-title">Layer 4: ML & Risk Fusion</div>
+          <div class="bmc-desc">Random Forest model prediction synthesized with rule scores into composite risk.</div>
+          <div class="bmc-metric">
+            <span class="bmc-sub">Total Verdicts</span>
+            <span class="bmc-val" id="mod-fusion" style="color:var(--ns-cyan);">{{ modules.fusion_verdicts if modules else '0' }}</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Batch Metric Summary Cards -->
+      <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:14px;margin-bottom:24px;" id="batchMetricsRow">
+        <div class="ns-stat">
+          <div class="ns-stat-value" id="bm-total">{{ summary.total if summary else '0' }}</div>
+          <div class="ns-stat-label">Total Processed</div>
+        </div>
+        <div class="ns-stat">
+          <div class="ns-stat-value" style="color:var(--ns-red);" id="bm-threats">{{ summary.threats if summary else '0' }}</div>
+          <div class="ns-stat-label">Threats Detected</div>
+        </div>
+        <div class="ns-stat">
+          <div class="ns-stat-value" style="color:var(--ns-green);" id="bm-legit">{{ summary.legitimate if summary else '0' }}</div>
+          <div class="ns-stat-label">Legitimate</div>
+        </div>
+        <div class="ns-stat">
+          <div class="ns-stat-value" style="color:var(--ns-amber);" id="bm-rate">{{ summary.risk_rate if summary else '0' }}%</div>
+          <div class="ns-stat-label">Threat Ratio</div>
+        </div>
+        <div class="ns-stat">
+          <div class="ns-stat-value" style="color:var(--ns-cyan);" id="bm-conf">{{ summary.avg_confidence if summary else '0' }}%</div>
+          <div class="ns-stat-label">Avg ML Confidence</div>
+        </div>
+      </div>
+
+      <!-- Results Card with Search & Table -->
+      <div class="ns-card results-card" style="margin-bottom:24px;">
+        <div class="results-header" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:14px;">
+          <div>
+            <div class="results-title">Batch Threat Manifest</div>
+            <div style="font-family:var(--ns-mono);font-size:10px;color:var(--ns-text-muted);margin-top:2px;" id="batchFileLabel">
+              Processed records from batch analysis
+            </div>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+            <button type="button" class="btn-report-action" onclick="exportBatchCSV()">
+              📥 Export Results CSV
+            </button>
+            <button type="button" class="btn-report-action" onclick="copyBatchThreats(this)">
+              📋 Copy Threat URLs
+            </button>
+          </div>
+        </div>
+
+        <!-- Filter & Search Controls -->
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;padding:14px 20px;border-bottom:1px solid var(--ns-border);background:rgba(8,12,16,0.6);">
+          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+            <button type="button" class="ns-badge ns-badge-cyan filter-btn active" onclick="filterTable('all', this)">All</button>
+            <button type="button" class="ns-badge filter-btn" onclick="filterTable('threat', this)">Threats Only</button>
+            <button type="button" class="ns-badge filter-btn" onclick="filterTable('safe', this)">Legitimate Only</button>
+          </div>
+          <div style="flex:1;max-width:320px;">
+            <input type="text" id="tableSearch" class="ns-input" placeholder="Search URLs in batch..." oninput="searchTable(this.value)" style="padding:8px 12px;font-size:11px;">
+          </div>
+        </div>
+
+        <div class="ns-table-container">
+          <div class="mobile-scroll-hint">← Swipe to view all columns →</div>
+          <table class="ns-table" id="batchTable">
             <thead>
-                <tr>
-                    <th>URL</th>
-                    <th>STATUS</th>
-                </tr>
+              <tr>
+                <th style="width:40px;">#</th>
+                <th>Target URL</th>
+                <th>Final Verdict</th>
+                <th>Confidence / Engine</th>
+                <th>Signal Indicators</th>
+                <th style="text-align:right;">Actions</th>
+              </tr>
             </thead>
-            <tbody>
+            <tbody id="batchTableBody">
+              {% if results %}
                 {% for res in results %}
-                <tr>
-                    <td style="word-break: break-all;">{{ res.url }}</td>
-                    <td class="{{ 'text-danger' if res.prediction == 'Phishing' else 'text-success' }}" style="font-weight: bold;">{{ res.prediction }}</td>
+                <tr data-status="{% if 'phishing' in res.prediction.lower() %}threat{% else %}safe{% endif %}" data-url="{{ res.url }}">
+                  <td style="font-family:var(--ns-mono);font-size:10px;color:var(--ns-text-muted);">{{ loop.index }}</td>
+                  <td style="font-family:var(--ns-mono);font-size:11px;word-break:break-all;max-width:340px;">{{ res.url }}</td>
+                  <td>
+                    <span class="ns-badge {% if 'phishing' in res.prediction.lower() %}ns-badge-red{% else %}ns-badge-green{% endif %}">
+                      {{ res.prediction }}
+                    </span>
+                  </td>
+                  <td style="font-family:var(--ns-mono);font-size:11px;">
+                    {% if res.probability %}
+                      <strong style="color:{% if 'phishing' in res.prediction.lower() %}var(--ns-red){% else %}var(--ns-green){% endif %};">{{ res.probability }}%</strong>
+                      <span style="color:var(--ns-text-muted);font-size:10px;">(ML)</span>
+                    {% else %}
+                      <span class="ns-badge ns-badge-amber">Security Rule</span>
+                    {% endif %}
+                  </td>
+                  <td>
+                    <div style="display:flex;gap:6px;flex-wrap:wrap;">
+                      {% if res.features.url_length and res.features.url_length > 75 %}
+                        <span class="ns-badge" style="font-size:9px;background:rgba(255,170,0,0.1);color:var(--ns-amber);">Long URL</span>
+                      {% endif %}
+                      {% if res.features.suspicious_word and res.features.suspicious_word > 0 %}
+                        <span class="ns-badge ns-badge-red" style="font-size:9px;">Keyword</span>
+                      {% endif %}
+                      {% if res.features.has_ip and res.features.has_ip > 0 %}
+                        <span class="ns-badge ns-badge-red" style="font-size:9px;">IP Host</span>
+                      {% endif %}
+                      {% if res.features.homograph and res.features.homograph > 0 %}
+                        <span class="ns-badge ns-badge-red" style="font-size:9px;">Homograph</span>
+                      {% endif %}
+                      {% if not (res.features.suspicious_word or res.features.has_ip or res.features.homograph) %}
+                        <span style="font-family:var(--ns-mono);font-size:10px;color:var(--ns-text-muted);">Normal profile</span>
+                      {% endif %}
+                    </div>
+                  </td>
+                  <td style="text-align:right;">
+                    <button type="button" class="btn-report-action" style="padding:3px 8px;font-size:9px;" onclick="copySingleUrl(this, '{{ res.url }}')">Copy</button>
+                  </td>
                 </tr>
                 {% endfor %}
+              {% endif %}
             </tbody>
-        </table>
-        {% endif %}
-        
-        <a href="/admin">Return to Command Center</a>
+          </table>
+        </div>
+      </div>
     </div>
+
+    <div style="margin-top:20px;display:flex;gap:12px;">
+      {% if role == 'admin' %}
+        <a href="/admin" class="btn-ghost">← Back to Command Center</a>
+      {% else %}
+        <a href="/dashboard" class="btn-ghost">← Back to Threat Scanner</a>
+      {% endif %}
+    </div>
+  </main>
+</div>
+
+<script>
+  let currentBatchData = null;
+
+  function handleFileSelect(input) {
+    if (input.files && input.files[0]) {
+      document.getElementById('uploadTitle').textContent = '📄 ' + input.files[0].name;
+      document.getElementById('uploadZone').style.borderColor = 'var(--ns-cyan)';
+      document.getElementById('uploadZone').style.background = 'var(--ns-cyan-dim)';
+    }
+  }
+
+  // Drag and drop
+  const zone = document.getElementById('uploadZone');
+  zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('dragover'); });
+  zone.addEventListener('dragleave', () => zone.classList.remove('dragover'));
+  zone.addEventListener('drop', e => {
+    e.preventDefault();
+    zone.classList.remove('dragover');
+    const dt = e.dataTransfer;
+    const fileInput = document.getElementById('fileInput');
+    fileInput.files = dt.files;
+    handleFileSelect(fileInput);
+  });
+
+  // Batch Threat Core Canvas & Animation
+  const BATCH_STAGES = [
+    { label: 'CSV Ingestion & Normalization',       ms: 500 },
+    { label: 'Layer 1 & 2: Structural & Lexical Analysis', ms: 650 },
+    { label: 'Layer 3: Security Rule Engine Matching',     ms: 600 },
+    { label: 'Layer 4: ML Inference & Composite Risk Fusion', ms: 650 }
+  ];
+
+  function drawScanCore(canvas, progress) {
+    const ctx = canvas.getContext('2d');
+    const W = canvas.width, H = canvas.height, cx = W / 2, cy = H / 2;
+    ctx.clearRect(0, 0, W, H);
+    const a = progress.t;
+    // rings
+    for (let i = 0; i < 3; i++) {
+      ctx.beginPath();
+      ctx.arc(cx, cy, 40 + i * 18, a * (1 + i * 0.3), a * (1 + i * 0.3) + Math.PI * 1.3);
+      ctx.strokeStyle = `rgba(0,200,255,${0.5 - i * 0.13})`;
+      ctx.lineWidth = 2 - i * 0.4;
+      ctx.stroke();
+    }
+    // scanning sweep
+    ctx.save();
+    ctx.translate(cx, cy);
+    ctx.rotate(a * 2.4);
+    const g = ctx.createLinearGradient(0, 0, 75, 0);
+    g.addColorStop(0, 'rgba(0,200,255,0.7)');
+    g.addColorStop(1, 'rgba(0,200,255,0)');
+    ctx.strokeStyle = g;
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(0, 0);
+    ctx.lineTo(75, 0);
+    ctx.stroke();
+    ctx.restore();
+    // core pulse
+    const pr = 16 + Math.sin(a * 4) * 3;
+    const rg = ctx.createRadialGradient(cx, cy, 0, cx, cy, pr * 2);
+    rg.addColorStop(0, 'rgba(0,200,255,0.5)');
+    rg.addColorStop(1, 'rgba(0,200,255,0)');
+    ctx.fillStyle = rg;
+    ctx.beginPath();
+    ctx.arc(cx, cy, pr * 2, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.beginPath();
+    ctx.arc(cx, cy, pr, 0, Math.PI * 2);
+    ctx.fillStyle = 'rgba(0,200,255,0.22)';
+    ctx.strokeStyle = '#00c8ff';
+    ctx.lineWidth = 2;
+    ctx.fill();
+    ctx.stroke();
+    ctx.fillStyle = '#00c8ff';
+    ctx.font = '700 13px JetBrains Mono, monospace';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('⚡', cx, cy);
+    // orbiting nodes
+    for (let i = 0; i < 6; i++) {
+      const ang = a * 1.1 + i * (Math.PI / 3);
+      const nx = cx + Math.cos(ang) * 74, ny = cy + Math.sin(ang) * 74;
+      ctx.beginPath();
+      ctx.arc(nx, ny, 2.5, 0, Math.PI * 2);
+      ctx.fillStyle = i < progress.stage * 1.5 ? '#00d68f' : 'rgba(0,200,255,0.5)';
+      ctx.fill();
+    }
+  }
+
+  async function startBulkScan(e) {
+    e.preventDefault();
+    const fileInput = document.getElementById('fileInput');
+    if (!fileInput.files || !fileInput.files[0]) {
+      alert('Please select a CSV file first.');
+      return;
+    }
+
+    const file = fileInput.files[0];
+    const core = document.getElementById('scanCoreStage');
+    const canvas = document.getElementById('scanCoreCanvas');
+    const target = document.getElementById('scanCoreTarget');
+    const barsWrap = document.getElementById('scanBars');
+    const btn = document.getElementById('bulkScanBtn');
+    const resultsSec = document.getElementById('bulkResultsSection');
+
+    btn.disabled = true;
+    target.textContent = 'Processing File: ' + file.name;
+    core.classList.add('on');
+    resultsSec.style.display = 'none';
+
+    // Build bars
+    barsWrap.innerHTML = BATCH_STAGES.map((s, i) => `
+      <div class="scan-bar-row" id="bsbar-${i}">
+        <div class="scan-bar-label"><span>${s.label}</span><span class="sbar-pct">0%</span></div>
+        <div class="scan-bar-track"><div class="scan-bar-fill"></div></div>
+      </div>`).join('');
+
+    // Animate core canvas
+    let coreRAF, prog = { t: 0, stage: 0 }, animating = true;
+    canvas.width = 180; canvas.height = 180;
+    (function spin() {
+      if (!animating) return;
+      prog.t += 0.06;
+      drawScanCore(canvas, prog);
+      coreRAF = requestAnimationFrame(spin);
+    })();
+
+    // Upload & Process via API
+    const formData = new FormData();
+    formData.append('file', file);
+    const fetchPromise = fetch('/api/bulk-scan', {
+      method: 'POST',
+      body: formData
+    }).then(r => r.json());
+
+    // Step through the visual pipeline stages
+    for (let i = 0; i < BATCH_STAGES.length; i++) {
+      prog.stage = i + 1;
+      const row = document.getElementById('bsbar-' + i);
+      const fill = row.querySelector('.scan-bar-fill');
+      const pctEl = row.querySelector('.sbar-pct');
+      const start = performance.now(), dur = BATCH_STAGES[i].ms;
+      await new Promise(res => {
+        (function step(now) {
+          const p = Math.min((now - start) / dur, 1);
+          fill.style.width = (p * 100) + '%';
+          pctEl.textContent = Math.round(p * 100) + '%';
+          if (p < 1) requestAnimationFrame(step);
+          else { row.classList.add('done'); res(); }
+        })(start);
+      });
+    }
+
+    let data;
+    try {
+      data = await fetchPromise;
+      if (!data.success) {
+        throw new Error(data.error || 'Server processing failed');
+      }
+    } catch (err) {
+      animating = false;
+      cancelAnimationFrame(coreRAF);
+      core.classList.remove('on');
+      btn.disabled = false;
+      alert('Error during batch analysis: ' + err.message);
+      return;
+    }
+
+    await new Promise(r => setTimeout(r, 250));
+    animating = false;
+    cancelAnimationFrame(coreRAF);
+    core.classList.remove('on');
+    btn.disabled = false;
+
+    renderBulkResults(data);
+  }
+
+  function renderBulkResults(data) {
+    currentBatchData = data;
+    const resultsSec = document.getElementById('bulkResultsSection');
+    resultsSec.style.display = 'block';
+    resultsSec.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+    // Update Modules
+    const mods = data.modules || {};
+    document.getElementById('mod-heuristics').textContent = mods.heuristics_flagged || 0;
+    document.getElementById('mod-rules').textContent = mods.rules_flagged || 0;
+    document.getElementById('mod-ml').textContent = mods.ml_inferred || 0;
+    document.getElementById('mod-fusion').textContent = mods.fusion_verdicts || 0;
+
+    // Update Summary Metrics
+    const s = data.summary || {};
+    document.getElementById('bm-total').textContent = s.total || 0;
+    document.getElementById('bm-threats').textContent = s.threats || 0;
+    document.getElementById('bm-legit').textContent = s.legitimate || 0;
+    document.getElementById('bm-rate').textContent = (s.risk_rate || 0) + '%';
+    document.getElementById('bm-conf').textContent = (s.avg_confidence || 0) + '%';
+
+    document.getElementById('batchFileLabel').textContent =
+      `File: ${data.filename || 'batch.csv'} • ${s.total} URLs analyzed across all 4 modules`;
+
+    // Render Table Rows
+    const tbody = document.getElementById('batchTableBody');
+    tbody.innerHTML = '';
+    const results = data.results || [];
+
+    results.forEach((res, index) => {
+      const isPhish = res.status === 'threat' || (res.prediction && res.prediction.toLowerCase().includes('phishing'));
+      const badgeClass = isPhish ? 'ns-badge-red' : 'ns-badge-green';
+      const f = res.features || {};
+
+      let signalPills = '';
+      if (f.url_length && f.url_length > 75) {
+        signalPills += `<span class="ns-badge" style="font-size:9px;background:rgba(255,170,0,0.1);color:var(--ns-amber);">Long URL</span> `;
+      }
+      if (f.suspicious_word && f.suspicious_word > 0) {
+        signalPills += `<span class="ns-badge ns-badge-red" style="font-size:9px;">Keyword</span> `;
+      }
+      if (f.has_ip && f.has_ip > 0) {
+        signalPills += `<span class="ns-badge ns-badge-red" style="font-size:9px;">IP Host</span> `;
+      }
+      if (f.homograph && f.homograph > 0) {
+        signalPills += `<span class="ns-badge ns-badge-red" style="font-size:9px;">Homograph</span> `;
+      }
+      if (!signalPills) {
+        signalPills = `<span style="font-family:var(--ns-mono);font-size:10px;color:var(--ns-text-muted);">Normal profile</span>`;
+      }
+
+      let confContent = '';
+      if (res.probability !== null && res.probability !== undefined) {
+        confContent = `<strong style="color:${isPhish ? 'var(--ns-red)' : 'var(--ns-green)'};">${res.probability}%</strong> <span style="color:var(--ns-text-muted);font-size:10px;">(ML)</span>`;
+      } else {
+        confContent = `<span class="ns-badge ns-badge-amber">Security Rule</span>`;
+      }
+
+      const tr = document.createElement('tr');
+      tr.setAttribute('data-status', isPhish ? 'threat' : 'safe');
+      tr.setAttribute('data-url', (res.url || '').toLowerCase());
+      tr.innerHTML = `
+        <td style="font-family:var(--ns-mono);font-size:10px;color:var(--ns-text-muted);">${index + 1}</td>
+        <td style="font-family:var(--ns-mono);font-size:11px;word-break:break-all;max-width:340px;">${res.url}</td>
+        <td><span class="ns-badge ${badgeClass}">${res.prediction}</span></td>
+        <td style="font-family:var(--ns-mono);font-size:11px;">${confContent}</td>
+        <td><div style="display:flex;gap:6px;flex-wrap:wrap;">${signalPills}</div></td>
+        <td style="text-align:right;white-space:nowrap;">
+          <button type="button" class="btn-report-action" style="padding:3px 8px;font-size:9px;margin-right:4px;" onclick="toggleRowDetail(event, 'detail-row-${index}')">Inspect ▾</button>
+          <button type="button" class="btn-report-action" style="padding:3px 8px;font-size:9px;" onclick="copySingleUrl(this, '${(res.url || '').replace(/'/g, "\\'")}')">Copy</button>
+        </td>
+      `;
+      tbody.appendChild(tr);
+
+      // Detail drawer row for MODULE 1 Intelligence
+      const intel = res.intel || {};
+      const struct = intel.structural || {};
+      const lex = intel.lexical || {};
+      const secRules = intel.security_rules || {};
+      const rulesHit = secRules.rules_hit || [];
+      const compRisk = intel.composite_risk || 0;
+      const compLevel = (intel.composite_level || 'LOW').toLowerCase();
+
+      const detailTr = document.createElement('tr');
+      detailTr.id = `detail-row-${index}`;
+      detailTr.style.display = 'none';
+      detailTr.style.background = 'rgba(13,21,32,0.95)';
+      detailTr.innerHTML = `
+        <td colspan="6" style="padding:14px 20px;border-top:none;border-bottom:1px solid var(--ns-border);">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;flex-wrap:wrap;gap:10px;">
+            <div style="display:flex;align-items:center;gap:10px;">
+              <span class="m1-layer-badge ${compLevel}" style="font-size:10px;padding:3px 8px;">Risk: ${compLevel.toUpperCase()} (${compRisk}/100)</span>
+              <span style="font-family:var(--ns-mono);font-size:10.5px;color:var(--ns-text-muted);">
+                Protocol: <strong style="color:var(--ns-text);">${struct.protocol || 'HTTP'}</strong> · Host: <strong style="color:var(--ns-cyan);">${struct.domain || 'N/A'}</strong> · Path Depth: <strong style="color:var(--ns-text);">${struct.url_depth || 0}</strong>
+              </span>
+            </div>
+            <div style="font-family:var(--ns-mono);font-size:9.5px;color:var(--ns-text-muted);">
+              Domain Entropy: <strong style="color:var(--ns-text);">${lex.domain_entropy || 0}</strong> · Path Entropy: <strong style="color:var(--ns-text);">${lex.path_entropy || 0}</strong>
+            </div>
+          </div>
+          ${rulesHit.length ? `
+          <div style="margin-top:6px;">
+            <span style="font-family:var(--ns-mono);font-size:9.5px;color:var(--ns-text-muted);letter-spacing:0.05em;text-transform:uppercase;">Security Rules Triggered:</span>
+            <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:4px;">
+              ${rulesHit.map(r => `<span class="m1-rule-item" style="display:inline-flex;padding:3px 8px;margin:0;"><span class="m1-rule-code ${r.sev ? r.sev.toLowerCase() : 'medium'}">${r.rule || r.rule_id}</span> <span style="font-size:10px;color:var(--ns-text);margin-left:4px;">${r.label || r.title}</span></span>`).join('')}
+            </div>
+          </div>` : '<div style="font-family:var(--ns-mono);font-size:10px;color:var(--ns-green);">✓ No deterministic rule violations</div>'}
+        </td>
+      `;
+      tbody.appendChild(detailTr);
+    });
+  }
+
+  // Filter Table
+  function filterTable(type, btn) {
+    document.querySelectorAll('.filter-btn').forEach(b => {
+      b.classList.remove('active');
+      b.classList.remove('ns-badge-cyan');
+    });
+    btn.classList.add('active');
+    btn.classList.add('ns-badge-cyan');
+
+    const rows = document.querySelectorAll('#batchTableBody tr');
+    rows.forEach(r => {
+      const status = r.getAttribute('data-status');
+      if (type === 'all' || status === type) {
+        r.style.display = '';
+      } else {
+        r.style.display = 'none';
+      }
+    });
+  }
+
+  // Search Table
+  function searchTable(val) {
+    const q = val.trim().toLowerCase();
+    const rows = document.querySelectorAll('#batchTableBody tr');
+    rows.forEach(r => {
+      const url = r.getAttribute('data-url') || '';
+      if (!q || url.includes(q)) {
+        r.style.display = '';
+      } else {
+        r.style.display = 'none';
+      }
+    });
+  }
+
+  // Copy Single URL
+  function copySingleUrl(btn, url) {
+    const orig = btn.innerHTML;
+    navigator.clipboard.writeText(url).then(() => {
+      btn.innerHTML = '✓ Copied';
+      btn.classList.add('copied');
+      setTimeout(() => {
+        btn.innerHTML = orig;
+        btn.classList.remove('copied');
+      }, 1800);
+    });
+  }
+
+  // Copy Threat URLs
+  function copyBatchThreats(btn) {
+    const threatRows = document.querySelectorAll('#batchTableBody tr[data-status="threat"]');
+    if (!threatRows.length) {
+      alert('No phishing threat URLs found in this batch.');
+      return;
+    }
+    const urls = Array.from(threatRows).map(r => r.getAttribute('data-url')).join('\n');
+    const orig = btn.innerHTML;
+    navigator.clipboard.writeText(urls).then(() => {
+      btn.innerHTML = `✓ ${threatRows.length} Threats Copied!`;
+      btn.classList.add('copied');
+      setTimeout(() => {
+        btn.innerHTML = orig;
+        btn.classList.remove('copied');
+      }, 2200);
+    });
+  }
+
+  // Export Results CSV
+  function exportBatchCSV() {
+    const rows = document.querySelectorAll('#batchTableBody tr');
+    if (!rows.length) return;
+
+    let csvContent = "data:text/csv;charset=utf-8,Index,URL,Verdict,Confidence,Status\n";
+    rows.forEach((r, idx) => {
+      const url = (r.getAttribute('data-url') || '').replace(/"/g, '""');
+      const cells = r.querySelectorAll('td');
+      const verdict = (cells[2] ? cells[2].innerText.trim() : '').replace(/"/g, '""');
+      const conf = (cells[3] ? cells[3].innerText.trim() : '').replace(/"/g, '""');
+      const status = r.getAttribute('data-status') || '';
+      csvContent += `${idx + 1},"${url}","${verdict}","${conf}","${status}"\n`;
+    });
+
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", `NeuraShield_Batch_Results_${Date.now()}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  }
+
+  // 3D tilt on cards
+  document.querySelectorAll('.ns-card').forEach(card => {
+    card.addEventListener('mousemove', e => {
+      const r = card.getBoundingClientRect();
+      const x = (e.clientX - r.left) / r.width - 0.5;
+      const y = (e.clientY - r.top) / r.height - 0.5;
+      card.style.transform = `perspective(600px) rotateY(${x * 3}deg) rotateX(${-y * 3}deg) translateY(-2px)`;
+    });
+    card.addEventListener('mouseleave', () => { card.style.transform = ''; });
+  });
+</script>
 </body>
 </html>
+
+
+<script>
+function toggleRowDetail(e, rowId) {
+  if (e) e.stopPropagation();
+  const row = document.getElementById(rowId);
+  if (row) {
+    row.style.display = row.style.display === 'none' ? 'table-row' : 'none';
+  }
+}
+</script>

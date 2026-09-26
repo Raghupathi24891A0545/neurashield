@@ -1,0 +1,2652 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="NeuraShield — Multi-Layer Threat Intelligence. Analyze suspicious URLs using security rules and machine learning.">
+  <title>NeuraShield — Multi-Layer Threat Intelligence</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='neurashield.css') }}">
+  <style>
+    /* ── Landing-page specific styles ── */
+
+    /* HERO */
+    .hero {
+      min-height: 100vh;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      align-items: center;
+      gap: 60px;
+      padding: 120px 40px 80px;
+      max-width: 1280px;
+      margin: 0 auto;
+    }
+
+    @media(max-width:900px){
+      .hero { grid-template-columns: 1fr; padding: 110px 20px 60px; }
+      .hero-visual { display: none; }
+    }
+
+    .hero-eyebrow {
+      display: flex; align-items: center; gap: 10px;
+      font-family: var(--ns-mono); font-size: 10px;
+      letter-spacing: 0.2em; text-transform: uppercase;
+      color: var(--ns-cyan); margin-bottom: 20px;
+    }
+    .hero-eyebrow-line {
+      width: 40px; height: 1px;
+      background: var(--ns-cyan); opacity: 0.5;
+    }
+
+    .hero-title {
+      font-size: clamp(36px, 5vw, 64px);
+      font-weight: 700;
+      letter-spacing: -0.04em;
+      line-height: 1.05;
+      margin-bottom: 22px;
+    }
+
+    .hero-title .accent { color: var(--ns-cyan); }
+
+    .hero-desc {
+      font-size: 15px;
+      color: var(--ns-text-dim);
+      line-height: 1.75;
+      max-width: 500px;
+      margin-bottom: 36px;
+    }
+
+    .hero-ctas {
+      display: flex; align-items: center; gap: 16px; flex-wrap: wrap;
+      margin-bottom: 50px;
+    }
+
+    .hero-stats {
+      display: flex; align-items: center; gap: 32px;
+      padding-top: 28px;
+      border-top: 1px solid var(--ns-border);
+    }
+
+    .hero-stat-value {
+      font-family: var(--ns-mono); font-size: 20px; font-weight: 700;
+      color: var(--ns-text); line-height: 1;
+    }
+    .hero-stat-label {
+      font-family: var(--ns-mono); font-size: 9px;
+      letter-spacing: 0.12em; text-transform: uppercase;
+      color: var(--ns-text-muted); margin-top: 3px;
+    }
+
+    /* ── Rotating ring CTA wrapper ── */
+    .ring-cta-wrap {
+      position: relative;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 180px; height: 180px;
+    }
+
+    .ring-cta-wrap .btn-primary-lg {
+      position: relative; z-index: 2;
+    }
+
+    .ring-svg-outer {
+      position: absolute; top: 0; left: 0;
+      animation: rotateSlow 18s linear infinite;
+      pointer-events: none;
+    }
+
+    @keyframes rotateSlow {
+      from { transform: rotate(0deg); }
+      to   { transform: rotate(360deg); }
+    }
+
+    /* ── Hero visualization ── */
+    .hero-visual {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+    }
+
+    .threat-core-wrap {
+      position: relative;
+      width: 380px; height: 380px;
+    }
+
+    .threat-core-canvas {
+      width: 100%; height: 100%;
+    }
+
+    /* ── SECTION: About ── */
+    .about-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 60px;
+      align-items: start;
+    }
+
+    @media(max-width:768px){ .about-grid { grid-template-columns: 1fr; gap: 36px; } }
+
+    .about-text p {
+      font-size: 14px;
+      color: var(--ns-text-dim);
+      line-height: 1.8;
+      margin-bottom: 16px;
+    }
+
+    .about-pillars {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .pillar-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 14px;
+      padding: 16px;
+      background: var(--ns-surface);
+      border: 1px solid var(--ns-border);
+      border-radius: var(--ns-radius);
+      transition: var(--ns-transition);
+    }
+
+    .pillar-item:hover {
+      border-color: var(--ns-border-h);
+      background: var(--ns-surface-2);
+    }
+
+    .pillar-icon {
+      width: 36px; height: 36px; flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
+      background: var(--ns-cyan-dim);
+      border: 1px solid var(--ns-border);
+      border-radius: var(--ns-radius);
+      font-size: 15px;
+    }
+
+    .pillar-title {
+      font-size: 12px; font-weight: 600;
+      letter-spacing: 0.06em; text-transform: uppercase;
+      color: var(--ns-text); margin-bottom: 3px;
+    }
+
+    .pillar-text {
+      font-size: 12px; color: var(--ns-text-muted); line-height: 1.5;
+    }
+
+    /* ── Intelligence Layers ── */
+    .layers-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 20px;
+    }
+
+    @media(max-width:600px){ .layers-grid { grid-template-columns: 1fr; } }
+
+    .layer-card {
+      padding: 28px;
+    }
+
+    .layer-features {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      margin-top: 16px;
+    }
+
+    .layer-feature {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-family: var(--ns-mono);
+      font-size: 11px;
+      color: var(--ns-text-dim);
+    }
+
+    .layer-feature::before {
+      content: '→';
+      color: var(--ns-cyan);
+      font-size: 10px;
+    }
+
+    /* ── How It Works ── */
+    .process-wrap {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0;
+      max-width: 560px;
+      margin: 0 auto;
+    }
+
+    .process-step {
+      display: flex;
+      align-items: flex-start;
+      gap: 20px;
+      width: 100%;
+      padding: 20px 0;
+      position: relative;
+    }
+
+    .process-number {
+      font-family: var(--ns-mono);
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      color: var(--ns-cyan);
+      background: var(--ns-cyan-dim);
+      border: 1px solid rgba(0,200,255,0.25);
+      border-radius: var(--ns-radius);
+      padding: 8px 12px;
+      min-width: 48px;
+      text-align: center;
+      flex-shrink: 0;
+      margin-top: 2px;
+    }
+
+    .process-content {}
+
+    .process-title {
+      font-size: 13px; font-weight: 700;
+      letter-spacing: 0.08em; text-transform: uppercase;
+      color: var(--ns-text); margin-bottom: 4px;
+    }
+
+    .process-desc {
+      font-size: 12px; color: var(--ns-text-muted); line-height: 1.6;
+    }
+
+    .process-connector-line {
+      width: 1px; height: 30px;
+      margin-left: 36px;
+      background: linear-gradient(180deg, var(--ns-border-h), transparent);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .process-connector-line::after {
+      content: '';
+      position: absolute;
+      width: 3px; height: 8px;
+      background: var(--ns-cyan);
+      border-radius: 99px;
+      left: -1px;
+      box-shadow: 0 0 6px var(--ns-cyan);
+      animation: flowDown 2s ease-in-out infinite;
+    }
+
+    @keyframes flowDown {
+      0%   { top: -8px; opacity: 0; }
+      20%  { opacity: 1; }
+      80%  { opacity: 1; }
+      100% { top: 100%; opacity: 0; }
+    }
+
+    /* ── Analyze Types ── */
+    .analyze-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+    }
+
+    @media(max-width:900px){ .analyze-grid { grid-template-columns: repeat(2, 1fr); } }
+    @media(max-width:480px){ .analyze-grid { grid-template-columns: 1fr; } }
+
+    .analyze-card {
+      text-align: center;
+      padding: 32px 20px;
+    }
+
+    .analyze-icon {
+      font-size: 28px; margin-bottom: 14px;
+      display: block;
+    }
+
+    .analyze-title {
+      font-size: 12px; font-weight: 700;
+      letter-spacing: 0.1em; text-transform: uppercase;
+      color: var(--ns-text); margin-bottom: 8px;
+    }
+
+    .analyze-desc {
+      font-size: 12px; color: var(--ns-text-muted); line-height: 1.5;
+    }
+
+    /* ── Live Demo Section ── */
+    .demo-section {
+      background: var(--ns-surface);
+      border: 1px solid var(--ns-border);
+      border-radius: var(--ns-radius-xl);
+      padding: 48px;
+      max-width: 720px;
+      margin: 0 auto;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .demo-section::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0; height: 1px;
+      background: linear-gradient(90deg, transparent, var(--ns-cyan), transparent);
+    }
+
+    .demo-input-row {
+      display: flex;
+      gap: 12px;
+      margin: 24px 0;
+    }
+
+    @media(max-width:560px){ .demo-input-row { flex-direction: column; } }
+
+    .demo-result-area {
+      margin-top: 20px;
+    }
+
+    .scan-steps-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin: 16px 0;
+    }
+
+    .scan-step-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-family: var(--ns-mono);
+      font-size: 11px;
+      color: var(--ns-text-muted);
+      opacity: 0;
+      transform: translateX(-8px);
+      transition: opacity 0.3s ease, transform 0.3s ease, color 0.3s ease;
+    }
+
+    .scan-step-item.show { opacity: 1; transform: translateX(0); }
+    .scan-step-item.done { color: var(--ns-green); }
+
+    .scan-step-item .s-dot {
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: currentColor;
+      flex-shrink: 0;
+    }
+
+    .scan-step-item.active .s-dot { animation: pulse-dot 0.8s infinite; }
+
+    /* Signal bars container */
+    .ns-signals { margin-top: 24px; }
+
+    .ns-signals-title {
+      font-family: var(--ns-mono); font-size: 10px;
+      letter-spacing: 0.15em; text-transform: uppercase;
+      color: var(--ns-text-muted); margin-bottom: 14px;
+    }
+
+    /* ── Final CTA section ── */
+    .cta-final {
+      text-align: center;
+      position: relative;
+      padding: 96px 40px;
+    }
+
+    .cta-bg {
+      position: absolute;
+      inset: 0;
+      background:
+        radial-gradient(ellipse 60% 50% at 50% 50%, rgba(0,200,255,0.05) 0%, transparent 70%);
+      pointer-events: none;
+    }
+
+    .cta-final-content { position: relative; z-index: 1; }
+
+    /* ── Animated network bg for CTA ── */
+    #cta-canvas {
+      position: absolute; inset: 0;
+      pointer-events: none;
+      opacity: 0.4;
+    }
+
+    /* ══════════════════════════════════════════════
+       NEURASHIELD ELEVATION LAYER  (additive)
+    ══════════════════════════════════════════════ */
+
+    /* Layered background: pull the grid back, add depth field */
+    body.ns-grid-bg { background-attachment: fixed; }
+    .ns-depth-field {
+      position: fixed; inset: 0; z-index: 0; pointer-events: none;
+      background:
+        radial-gradient(1100px 700px at 78% 8%,  rgba(0,200,255,0.06), transparent 60%),
+        radial-gradient(900px 600px at 12% 82%, rgba(26,111,255,0.05), transparent 60%);
+    }
+    .ns-depth-field::after {
+      content:''; position:absolute; inset:0;
+      background-image:
+        linear-gradient(rgba(0,200,255,0.020) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0,200,255,0.020) 1px, transparent 1px);
+      background-size: 46px 46px;
+      -webkit-mask-image: radial-gradient(120% 100% at 50% 0%, #000 40%, transparent 85%);
+              mask-image: radial-gradient(120% 100% at 50% 0%, #000 40%, transparent 85%);
+      animation: gridDrift 40s linear infinite;
+    }
+    @keyframes gridDrift { to { background-position: 46px 46px; } }
+    body.ns-grid-bg { background-image: none; }  /* replaced by depth field */
+    nav, section, footer, .ns-divider { position: relative; z-index: 1; }
+
+    /* ── HERO WORD-BY-WORD ENTRANCE ───────────────── */
+    .hero-title { perspective: 900px; }
+    .hero-word {
+      display: inline-block;
+      opacity: 0;
+      transform: translateY(74px) rotateX(-55deg) scale(0.92);
+      transform-origin: 50% 100%;
+      filter: blur(6px);
+      will-change: transform, opacity, filter;
+    }
+    .hero-title.assembled .hero-word {
+      animation: wordLand 0.9s cubic-bezier(0.16,1,0.3,1) forwards;
+      animation-delay: var(--d, 0s);
+    }
+    @keyframes wordLand {
+      0%   { opacity:0; transform: translateY(74px) rotateX(-55deg) scale(0.92); filter: blur(6px); }
+      60%  { opacity:1; filter: blur(0); }
+      72%  { transform: translateY(-6px) rotateX(0) scale(1.015); }  /* micro bounce */
+      86%  { transform: translateY(2px) scale(0.997); }
+      100% { opacity:1; transform: translateY(0) rotateX(0) scale(1); filter: blur(0);
+             text-shadow: 0 10px 30px rgba(0,0,0,0.45); }
+    }
+    .hero-word.accent.assembled-glow { text-shadow: 0 0 26px var(--ns-cyan-glow), 0 10px 30px rgba(0,0,0,0.45); }
+
+    /* ── ELEVATED 3D BUTTON SYSTEM ────────────────── */
+    /* Applies on top of existing .btn-primary — adds a real side-face + raised feel */
+    .btn-primary.btn-3d {
+      background: linear-gradient(180deg, #1affff 0%, var(--ns-cyan) 46%, #0090c4 100%);
+      box-shadow:
+        0 2px 0 #0076a6,          /* edge */
+        0 6px 0 #005b80,          /* side face */
+        0 14px 26px rgba(0,200,255,0.42),  /* cast shadow */
+        0 1px 0 rgba(255,255,255,0.55) inset;
+      transition: transform 0.18s cubic-bezier(0.2,0.7,0.2,1), box-shadow 0.18s ease;
+    }
+    .btn-primary.btn-3d:hover {
+      transform: translateY(-5px);
+      box-shadow:
+        0 2px 0 #0076a6, 0 9px 0 #005b80,
+        0 22px 40px rgba(0,200,255,0.55),
+        0 1px 0 rgba(255,255,255,0.65) inset;
+    }
+    .btn-primary.btn-3d:active {
+      transform: translateY(3px);
+      box-shadow:
+        0 1px 0 #0076a6, 0 2px 0 #005b80,
+        0 6px 14px rgba(0,200,255,0.35),
+        0 1px 0 rgba(255,255,255,0.4) inset;
+    }
+
+    /* Elevated ghost/dark raised button */
+    .btn-ghost.btn-3d {
+      background: linear-gradient(180deg, var(--ns-surface-2), var(--ns-surface));
+      box-shadow: 0 2px 0 #05141f, 0 6px 0 #04101a, 0 12px 24px rgba(0,0,0,0.5),
+                  0 1px 0 rgba(0,200,255,0.12) inset;
+      color: var(--ns-text-dim);
+    }
+    .btn-ghost.btn-3d:hover {
+      transform: translateY(-4px); color: var(--ns-text);
+      border-color: var(--ns-border-h);
+      box-shadow: 0 2px 0 #05141f, 0 8px 0 #04101a, 0 18px 30px rgba(0,0,0,0.55),
+                  0 0 22px rgba(0,200,255,0.18), 0 1px 0 rgba(0,200,255,0.18) inset;
+    }
+    .btn-ghost.btn-3d:active { transform: translateY(2px);
+      box-shadow: 0 1px 0 #05141f, 0 2px 0 #04101a, 0 5px 12px rgba(0,0,0,0.5); }
+
+    /* ── ROLLING CTA (label flips to an action on hover) ── */
+    .btn-roll { overflow: hidden; }
+    .btn-roll .roll {
+      position: relative; display: inline-grid; overflow: hidden;
+      height: 1.15em; align-items: center;
+      transform-style: preserve-3d; perspective: 300px;
+    }
+    .btn-roll .roll > span {
+      grid-area: 1 / 1;
+      display: inline-flex; align-items: center; gap: 6px;
+      backface-visibility: hidden;
+      transition: transform 0.5s cubic-bezier(0.2,0.8,0.2,1), opacity 0.4s ease;
+    }
+    .btn-roll .roll .r-front { transform: rotateX(0deg) translateZ(0.5em); }
+    .btn-roll .roll .r-back  { transform: rotateX(90deg) translateZ(0.5em); opacity: 0; }
+    .btn-roll:hover .roll .r-front { transform: rotateX(-90deg) translateZ(0.5em); opacity: 0; }
+    .btn-roll:hover .roll .r-back  { transform: rotateX(0deg) translateZ(0.5em); opacity: 1; }
+
+    /* ── SCROLL-ENTRY ELEVATION ───────────────────── */
+    .reveal {
+      opacity: 0;
+      transform: translateY(64px) rotateX(7deg) scale(0.965);
+      transform-origin: 50% 100%;
+      transition:
+        opacity 0.7s cubic-bezier(0.16,1,0.3,1),
+        transform 0.8s cubic-bezier(0.16,1,0.3,1);
+      transition-delay: var(--rd, 0s);
+      will-change: transform, opacity;
+    }
+    .reveal.in { opacity: 1; transform: translateY(0) rotateX(0) scale(1); }
+    .reveal-perspective { perspective: 1200px; }
+
+    /* ── ARCHITECTURE FLOW ────────────────────────── */
+    .arch-wrap { max-width: 900px; margin: 0 auto; }
+    .arch-stage {
+      display: flex; flex-direction: column; align-items: center; gap: 10px;
+      padding: 18px 22px; width: 100%;
+      background: linear-gradient(180deg, var(--ns-surface-2), var(--ns-surface));
+      border: 1px solid var(--ns-border); border-radius: var(--ns-radius-lg);
+      box-shadow: 0 10px 30px rgba(0,0,0,0.35), 0 1px 0 rgba(0,200,255,0.08) inset;
+      position: relative; overflow: hidden;
+    }
+    .arch-stage::before {
+      content:''; position:absolute; top:0; left:0; right:0; height:1px;
+      background: linear-gradient(90deg, transparent, var(--ns-cyan), transparent);
+      opacity: 0.5;
+    }
+    .arch-stage-label {
+      font-family: var(--ns-mono); font-size: 10px; letter-spacing: 0.18em;
+      text-transform: uppercase; color: var(--ns-cyan);
+    }
+    .arch-nodes { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; }
+    .arch-node {
+      font-family: var(--ns-mono); font-size: 11px; color: var(--ns-text-dim);
+      padding: 7px 13px; border-radius: 8px;
+      background: var(--ns-black); border: 1px solid var(--ns-border);
+      display: inline-flex; align-items: center; gap: 7px;
+    }
+    .arch-node .adot { width:6px; height:6px; border-radius:50%; background: var(--ns-text-muted); }
+    .arch-node.active { color: var(--ns-text); border-color: var(--ns-border-h); }
+    .arch-node.active .adot { background: var(--ns-green); box-shadow: 0 0 8px var(--ns-green); }
+    .arch-node.planned .adot { background: var(--ns-amber); }
+    .arch-flow {
+      width: 2px; height: 34px; margin: 0 auto; position: relative;
+      background: linear-gradient(180deg, var(--ns-border-h), transparent);
+      overflow: hidden;
+    }
+    .arch-flow::after {
+      content:''; position:absolute; left:-1px; width:4px; height:10px; border-radius:99px;
+      background: var(--ns-cyan); box-shadow: 0 0 8px var(--ns-cyan);
+      animation: flowDown 1.8s ease-in-out infinite; animation-delay: var(--fd, 0s);
+    }
+
+    /* ── DOMAIN INTELLIGENCE CAPABILITY & INTERACTIVE VIZ ── */
+    .active-domain-card {
+      transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.35s ease, border-color 0.35s ease;
+      cursor: pointer;
+      position: relative;
+    }
+    .active-domain-card:hover {
+      transform: translateY(-6px) scale(1.01);
+      border-color: rgba(0, 200, 255, 0.6);
+      box-shadow: 0 16px 40px rgba(0, 0, 0, 0.6), 0 0 24px rgba(0, 200, 255, 0.2);
+    }
+    .active-domain-card:hover .scan-line { opacity: 1; }
+
+    .domain-viz-card {
+      background: linear-gradient(180deg, var(--ns-surface-2), var(--ns-surface));
+      border: 1px solid rgba(0, 200, 255, 0.25);
+      border-radius: var(--ns-radius-lg);
+      padding: 30px;
+      margin-top: 40px;
+      box-shadow: 0 12px 40px rgba(0,0,0,0.5), 0 0 20px rgba(0,200,255,0.06);
+      position: relative;
+      overflow: hidden;
+    }
+    .domain-viz-card::before {
+      content:''; position:absolute; top:0; left:0; right:0; height:2px;
+      background: linear-gradient(90deg, transparent, var(--ns-cyan), transparent);
+    }
+    .domain-viz-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+      margin: 20px 0;
+      position: relative;
+    }
+    @media (max-width: 768px) {
+      .domain-viz-grid { grid-template-columns: 1fr; }
+    }
+    .viz-node {
+      background: rgba(14, 20, 27, 0.9);
+      border: 1px solid rgba(0, 200, 255, 0.2);
+      border-radius: 10px;
+      padding: 16px;
+      text-align: center;
+      transition: all 0.3s ease;
+      position: relative;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.4);
+    }
+    .viz-node:hover {
+      border-color: var(--ns-cyan);
+      box-shadow: 0 0 18px rgba(0,200,255,0.25);
+      transform: translateY(-2px);
+    }
+    .viz-node-header {
+      font-family: var(--ns-mono);
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      color: var(--ns-cyan);
+      text-transform: uppercase;
+      margin-bottom: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+    }
+    .viz-node-detail {
+      font-size: 11.5px;
+      color: var(--ns-text-muted);
+      line-height: 1.4;
+      font-family: var(--ns-mono);
+    }
+    .viz-pulse-line {
+      stroke-dasharray: 6 6;
+      animation: signalPulse 1.6s linear infinite;
+    }
+    @keyframes signalPulse {
+      to { stroke-dashoffset: -24; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .viz-pulse-line { animation: none; }
+    }
+
+    /* ── SCAN THREAT-CORE (demo loading) ──────────── */
+    .scan-core-stage {
+      display: none;
+      flex-direction: column; align-items: center; gap: 6px;
+      padding: 10px 0 4px;
+    }
+    .scan-core-stage.on { display: flex; animation: fadeInUp 0.4s ease; }
+    .scan-core-canvas { width: 180px; height: 180px; }
+    .scan-core-target {
+      font-family: var(--ns-mono); font-size: 11px; color: var(--ns-cyan);
+      word-break: break-all; text-align: center; max-width: 90%;
+    }
+    .scan-bars { width: 100%; max-width: 420px; margin: 14px auto 0;
+      display: flex; flex-direction: column; gap: 12px; }
+    .scan-bar-row { display: grid; grid-template-columns: 1fr auto; gap: 6px; }
+    .scan-bar-label {
+      font-family: var(--ns-mono); font-size: 10px; letter-spacing: 0.08em;
+      text-transform: uppercase; color: var(--ns-text-muted); grid-column: 1 / -1;
+      display: flex; justify-content: space-between;
+    }
+    .scan-bar-track { grid-column: 1 / -1; height: 5px; border-radius: 99px;
+      background: var(--ns-black); overflow: hidden; border: 1px solid var(--ns-border); }
+    .scan-bar-fill { height: 100%; width: 0%;
+      background: linear-gradient(90deg, var(--ns-blue), var(--ns-cyan));
+      box-shadow: 0 0 10px var(--ns-cyan-glow);
+      transition: width 0.5s cubic-bezier(0.4,0,0.2,1); }
+    .scan-bar-row.done .scan-bar-fill { background: linear-gradient(90deg, var(--ns-green), #4affc0); }
+
+    /* Risk score emergence */
+    @keyframes scoreEmerge {
+      0%   { opacity: 0; transform: scale(0.6); filter: blur(8px); }
+      100% { opacity: 1; transform: scale(1); filter: blur(0); }
+    }
+
+    /* ── REDUCED MOTION: land everything immediately ── */
+    @media (prefers-reduced-motion: reduce) {
+      .hero-word { opacity: 1 !important; transform: none !important; filter: none !important; animation: none !important; }
+      .reveal { opacity: 1 !important; transform: none !important; }
+      .ns-depth-field::after, .arch-flow::after { animation: none !important; }
+      .btn-roll .roll .r-back { display: none; }
+    }
+
+    /* Tablet / mobile: soften 3D cost */
+    @media (max-width: 900px) {
+      .btn-primary.btn-3d, .btn-ghost.btn-3d { box-shadow: 0 4px 14px rgba(0,200,255,0.3), 0 1px 0 rgba(255,255,255,0.4) inset; }
+      .reveal { transform: translateY(40px) scale(0.98); }
+    }
+
+
+    /* ══════════════════════════════════════════════
+       SHINY GLOW BUTTON  (vanilla port of shiny-button.tsx, NeuraShield cyan)
+       Continuous rotating conic-gradient glow border + speckle + sheen + breathe
+    ══════════════════════════════════════════════ */
+    @property --ns-ga  { syntax: "<angle>";      initial-value: 0deg; inherits: false; }
+    @property --ns-gao { syntax: "<angle>";      initial-value: 0deg; inherits: false; }
+    @property --ns-gp  { syntax: "<percentage>"; initial-value: 5%;   inherits: false; }
+    @property --ns-gs  { syntax: "<color>";      initial-value: #ffffff; inherits: false; }
+
+    .ns-shiny {
+      --gleam-base: #0a0f16;
+      --gleam-inset: #0c161f;
+      --gleam-label: #eaf7ff;
+      --gleam-accent: #00c8ff;
+      --gleam-accent-soft: #7fdcff;
+      --duration: 3s;
+      --shadow-size: 2px;
+      --transition: 0.8s cubic-bezier(0.25, 1, 0.5, 1);
+
+      isolation: isolate;
+      position: relative;
+      overflow: hidden;
+      cursor: pointer;
+      display: inline-flex; align-items: center; justify-content: center;
+      outline-offset: 4px;
+      padding: 14px 30px;
+      font-family: var(--ns-font);
+      font-size: 12px; font-weight: 700;
+      letter-spacing: 0.14em; text-transform: uppercase; line-height: 1.2;
+      text-decoration: none;
+      border: 1px solid transparent;
+      border-radius: 40px;
+      color: var(--gleam-label);
+      white-space: nowrap;
+      flex-shrink: 0;
+      background:
+        linear-gradient(var(--gleam-base), var(--gleam-base)) padding-box,
+        conic-gradient(
+          from calc(var(--ns-ga) - var(--ns-gao)),
+          transparent,
+          var(--gleam-accent) var(--ns-gp),
+          var(--ns-gs) calc(var(--ns-gp) * 2),
+          var(--gleam-accent) calc(var(--ns-gp) * 3),
+          transparent calc(var(--ns-gp) * 4)
+        ) border-box;
+      box-shadow: inset 0 0 0 1px var(--gleam-inset),
+                  0 10px 30px rgba(0,200,255,0.22),
+                  0 2px 10px rgba(0,0,0,0.5);
+      transition: var(--transition), box-shadow 0.3s ease, translate 0.2s ease;
+      transition-property: --ns-gao, --ns-gp, --ns-gs, box-shadow, translate;
+    }
+    .ns-shiny-lg { padding: 17px 40px; font-size: 13px; border-radius: 44px; }
+    .ns-shiny-full { width: 100%; }
+    .ns-shiny-sm { padding: 10px 22px; font-size: 10.5px; border-radius: 30px; letter-spacing: 0.1em; }
+
+    .ns-shiny::before, .ns-shiny::after, .ns-shiny span::before {
+      content: ""; pointer-events: none; position: absolute;
+      inset-inline-start: 50%; inset-block-start: 50%; translate: -50% -50%; z-index: -1;
+    }
+    .ns-shiny:hover { translate: 0 -3px; box-shadow: inset 0 0 0 1px var(--gleam-inset), 0 18px 40px rgba(0,200,255,0.4), 0 3px 12px rgba(0,0,0,0.55); }
+    .ns-shiny:active { translate: 0 1px; }
+
+    /* speckle */
+    .ns-shiny::before {
+      --size: calc(100% - var(--shadow-size) * 3);
+      --position: 2px; --space: calc(var(--position) * 2);
+      width: var(--size); height: var(--size);
+      background: radial-gradient(circle at var(--position) var(--position), white calc(var(--position)/4), transparent 0) padding-box;
+      background-size: var(--space) var(--space); background-repeat: space;
+      mask-image: conic-gradient(from calc(var(--ns-ga) + 45deg), black, transparent 10% 90%, black);
+      border-radius: inherit; opacity: 0.35; z-index: -1;
+    }
+    /* sheen */
+    .ns-shiny::after {
+      width: 100%; aspect-ratio: 1;
+      background: linear-gradient(-50deg, transparent, var(--gleam-accent), transparent);
+      mask-image: radial-gradient(circle at bottom, transparent 40%, black);
+      opacity: 0.5;
+    }
+    .ns-shiny span { z-index: 1; display:inline-flex; align-items:center; gap:8px; white-space: nowrap; }
+    .ns-shiny .btn-arrow { transition: transform 0.25s ease; }
+    .ns-shiny:hover .btn-arrow { transform: translateX(4px); }
+
+    /* Navbar single-line strict layout */
+    .ns-nav-inner {
+      max-width: 1440px !important;
+      gap: 16px !important;
+    }
+    .ns-nav-links {
+      display: flex !important;
+      flex-wrap: nowrap !important;
+      white-space: nowrap !important;
+      gap: clamp(10px, 1.3vw, 22px) !important;
+    }
+    .ns-nav-links li {
+      white-space: nowrap !important;
+      flex-shrink: 0 !important;
+    }
+    .ns-nav-links a {
+      white-space: nowrap !important;
+      font-size: 11px !important;
+      font-weight: 600 !important;
+      letter-spacing: 0.07em !important;
+    }
+    .ns-nav-actions {
+      display: flex !important;
+      flex-wrap: nowrap !important;
+      white-space: nowrap !important;
+      flex-shrink: 0 !important;
+      gap: 12px !important;
+    }
+    /* breathe glow (hover) */
+    .ns-shiny span::before {
+      --size: calc(100% + 1.4rem); width: var(--size); height: var(--size);
+      box-shadow: inset 0 -1ex 2rem 4px var(--gleam-accent);
+      opacity: 0; transition: opacity var(--transition);
+      animation: calc(var(--duration) * 1.5) ns-breathe linear infinite;
+    }
+    .ns-shiny, .ns-shiny::before, .ns-shiny::after {
+      animation: ns-ga-spin var(--duration) linear infinite,
+                 ns-ga-spin calc(var(--duration) / 0.4) linear infinite reverse paused;
+      animation-composition: add;
+    }
+    .ns-shiny:is(:hover,:focus-visible) { --ns-gp: 20%; --ns-gao: 95deg; --ns-gs: var(--gleam-accent-soft); }
+    .ns-shiny:is(:hover,:focus-visible), .ns-shiny:is(:hover,:focus-visible)::before, .ns-shiny:is(:hover,:focus-visible)::after { animation-play-state: running; }
+    .ns-shiny:is(:hover,:focus-visible) span::before { opacity: 1; }
+
+    @keyframes ns-ga-spin { to { --ns-ga: 360deg; } }
+    @keyframes ns-breathe { from,to { scale: 1; } 50% { scale: 1.2; } }
+
+    @media (prefers-reduced-motion: reduce) {
+      .ns-shiny, .ns-shiny::before, .ns-shiny::after, .ns-shiny span::before { animation: none !important; }
+      .ns-shiny { transition: none; }
+      .ns-shiny span::before { opacity: 0; }
+    }
+
+    /* ══════════════════════════════════════════════
+       CYBERSECURITY IMAGERY (duotone, fills empty space)
+    ══════════════════════════════════════════════ */
+    .cyber-band {
+      position: relative; overflow: hidden;
+      min-height: 340px; display: flex; align-items: center; justify-content: center;
+      text-align: center; padding: 90px 24px;
+      z-index: 1;
+    }
+    .cyber-band-img {
+      position: absolute; inset: 0; background-size: cover; background-position: center;
+      z-index: -2;
+      transform: scale(1.08);
+    }
+    /* duotone cyan/navy treatment so photos read as NeuraShield */
+    .cyber-band-img::after {
+      content:''; position:absolute; inset:0;
+      background:
+        linear-gradient(180deg, var(--ns-black) 0%, rgba(8,12,16,0.55) 45%, var(--ns-black) 100%),
+        radial-gradient(120% 90% at 50% 50%, rgba(0,120,180,0.35), rgba(8,12,16,0.85) 75%);
+      mix-blend-mode: normal;
+    }
+    .cyber-band-img::before {
+      content:''; position:absolute; inset:0; z-index:1;
+      background: linear-gradient(120deg, rgba(0,200,255,0.18), transparent 40%, rgba(26,111,255,0.16));
+      mix-blend-mode: overlay;
+    }
+    .cyber-band-grid { position:absolute; inset:0; z-index:-1; opacity:0.4;
+      background-image: linear-gradient(rgba(0,200,255,0.06) 1px, transparent 1px), linear-gradient(90deg, rgba(0,200,255,0.06) 1px, transparent 1px);
+      background-size: 44px 44px;
+      -webkit-mask-image: radial-gradient(80% 80% at 50% 50%, #000, transparent 80%); mask-image: radial-gradient(80% 80% at 50% 50%, #000, transparent 80%); }
+    .cyber-band-inner { position: relative; z-index: 2; max-width: 780px; }
+    .cyber-band h2 { font-size: clamp(24px,3.4vw,40px); letter-spacing:-0.02em; margin-bottom:14px; }
+    .cyber-band p { color: var(--ns-text-dim); font-size: 15px; line-height:1.7; max-width:600px; margin:0 auto; }
+
+    /* hero faint circuit texture behind the 3D visual */
+    .hero-cyber-tex {
+      position:absolute; inset:-10% -6% -10% 20%; z-index:0; pointer-events:none;
+      background-size: cover; background-position:center; opacity:0.14;
+      -webkit-mask-image: radial-gradient(70% 70% at 70% 45%, #000, transparent 75%);
+              mask-image: radial-gradient(70% 70% at 70% 45%, #000, transparent 75%);
+      filter: saturate(1.2) hue-rotate(-6deg);
+    }
+    @media (max-width:900px){ .hero-cyber-tex { display:none; } }
+
+  </style>
+</head>
+<body class="ns-grid-bg">
+<div class="ns-depth-field" aria-hidden="true"></div>
+
+<!-- ════════════════════════════════════════════
+     NAVIGATION
+════════════════════════════════════════════ -->
+<nav class="ns-nav" id="ns-nav">
+  <div class="ns-nav-inner">
+    <a href="/" class="ns-logo">
+      <img src="{{ url_for('static', filename='static/ns_logo.png') }}"
+           alt="NeuraShield"
+           class="ns-logo-icon"
+           onerror="this.style.display='none'; document.getElementById('logo-fallback').style.display='flex';">
+      <div id="logo-fallback" style="display:none; width:34px; height:34px; align-items:center; justify-content:center; background:rgba(0,200,255,0.15); border:1px solid rgba(0,200,255,0.3); border-radius:8px; font-size:14px;">🛡</div>
+      <div class="ns-logo-text">
+        <span class="ns-logo-name">NeuraShield</span>
+        <span class="ns-logo-sub">Multi-Layer Threat Intelligence</span>
+      </div>
+    </a>
+
+    <ul class="ns-nav-links">
+      <li><a href="#about">Platform</a></li>
+      <li><a href="#intelligence">Intelligence</a></li>
+      <li><a href="#how-it-works">How It Works</a></li>
+      <li><a href="#analyze">Capabilities</a></li>
+      <li><a href="#demo">Try It</a></li>
+    </ul>
+
+    <div class="ns-nav-actions">
+      {% if session.get('user_id') %}
+        <a href="/dashboard" class="ns-shiny ns-shiny-sm"><span>Dashboard <span class="btn-arrow">→</span></span></a>
+        <a href="/logout" class="btn-ghost" style="color:var(--ns-red);border-color:rgba(239,68,68,0.35);">Logout</a>
+      {% else %}
+        <a href="/login" class="btn-ghost">Login</a>
+        <a href="/dashboard" class="ns-shiny ns-shiny-sm"><span>Try Analysis <span class="btn-arrow">→</span></span></a>
+      {% endif %}
+    </div>
+
+    <div class="ns-hamburger" id="hamburger" onclick="toggleMobileNav()">
+      <span></span><span></span><span></span>
+    </div>
+  </div>
+</nav>
+
+<div class="ns-mobile-nav" id="mobile-nav">
+  <a href="#about">Platform</a>
+  <a href="#intelligence">Intelligence</a>
+  <a href="#how-it-works">How It Works</a>
+  <a href="#analyze">Capabilities</a>
+  <a href="#demo">Try It</a>
+  {% if session.get('user_id') %}
+    <a href="/dashboard">My Dashboard</a>
+    <a href="/logout">Logout</a>
+  {% else %}
+    <a href="/login">Login</a>
+    <a href="/dashboard">Try Analysis</a>
+  {% endif %}
+</div>
+
+<!-- ════════════════════════════════════════════
+     HERO
+════════════════════════════════════════════ -->
+<section class="hero">
+  <!-- Left: Content -->
+  <div class="hero-content">
+    <div class="hero-eyebrow">
+      <div class="hero-eyebrow-line"></div>
+      <span>Unified Cybersecurity Investigation Platform</span>
+      <div class="hero-eyebrow-line"></div>
+    </div>
+
+    <h1 class="hero-title" aria-label="Understand Threats Before They Become Security Incidents.">
+      <span class="hero-word" style="--d:0.15s">Understand</span>
+      <span class="hero-word" style="--d:0.27s">Threats</span><br>
+      <span class="hero-word accent" style="--d:0.39s">Before</span>
+      <span class="hero-word accent" style="--d:0.51s">They</span>
+      <span class="hero-word" style="--d:0.63s">Become</span><br>
+      <span class="hero-word" style="--d:0.75s">Security</span>
+      <span class="hero-word" style="--d:0.87s">Incidents.</span>
+    </h1>
+
+    <p class="hero-desc">
+      An AI-powered cybersecurity investigation platform that connects URL, domain, webpage, email and QR intelligence through adaptive investigation and evidence correlation.
+    </p>
+
+    <div class="hero-ctas">
+      <a href="/investigation-center" class="ns-shiny ns-shiny-lg" id="hero-cta"><span>Launch Investigation Center <span class="btn-arrow">→</span></span></a>
+      <a href="#about" class="btn-ghost btn-3d">Explore Platform</a>
+    </div>
+
+    <div class="hero-stats">
+      <div>
+        <div class="hero-stat-value">5</div>
+        <div class="hero-stat-label">Specialist Layers (URL, Domain, Web, Email, QR)</div>
+      </div>
+      <div style="width:1px; height:32px; background:var(--ns-border);"></div>
+      <div>
+        <div class="hero-stat-value">AI</div>
+        <div class="hero-stat-label">Investigation Agent Brain</div>
+      </div>
+      <div style="width:1px; height:32px; background:var(--ns-border);"></div>
+      <div>
+        <div class="hero-stat-value">DNA</div>
+        <div class="hero-stat-label">Threat DNA &amp; Relationship Graph</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Right: Animated Threat Core Visualization -->
+  <div class="hero-visual">
+    <div class="hero-cyber-tex" style="background-image:url('https://images.unsplash.com/photo-1550751827-4bd374c3f58b?auto=format&fit=crop&w=1200&q=70')"></div>
+    <div class="threat-core-wrap">
+      <div id="threatCore3D" style="position:absolute; inset:0; display:none;" aria-hidden="true"></div>
+      <canvas class="threat-core-canvas" id="threatCanvas" width="380" height="380"></canvas>
+    </div>
+  </div>
+</section>
+
+<!-- ════════════════════════════════════════════
+     ABOUT THE PLATFORM
+════════════════════════════════════════════ -->
+<div class="ns-divider" style="max-width:1280px; margin:0 auto;"></div>
+
+<section class="ns-section" id="about">
+  <div class="ns-section-label">About the Platform</div>
+  <div class="about-grid">
+    <div class="about-text">
+      <h2 class="ns-section-heading">
+        Why phishing is<br>
+        <span class="hl">difficult to detect.</span>
+      </h2>
+      <div style="height:20px;"></div>
+      <p>
+        Phishing attacks are becoming increasingly difficult to identify because malicious links and websites can closely resemble legitimate services — using similar domain names, valid HTTPS certificates, and copied visual interfaces.
+      </p>
+      <p>
+        Traditional detection approaches that rely on a single signal — such as a static blacklist or a single heuristic — may miss suspicious patterns or fail to provide a useful explanation to the user.
+      </p>
+      <p>
+        NeuraShield follows a <span class="hl">multi-layer analysis approach</span> that combines URL structural intelligence, security heuristics, and a machine-learning classifier trained on large-scale phishing datasets. Instead of simply returning a binary label, the platform provides a risk assessment supported by understandable security signals.
+      </p>
+    </div>
+    <div class="about-pillars reveal-perspective">
+      <div class="pillar-item reveal">
+        <div class="pillar-icon">🔬</div>
+        <div>
+          <div class="pillar-title">URL Signal Extraction</div>
+          <div class="pillar-text">Extracts 12 structural and lexical features from the URL — length, character density, suspicious keywords, IP addresses, homograph patterns.</div>
+        </div>
+      </div>
+      <div class="pillar-item reveal">
+        <div class="pillar-icon">⚡</div>
+        <div>
+          <div class="pillar-title">Security Rule Engine</div>
+          <div class="pillar-text">A heuristic rule layer detects known deception tactics — homograph substitution (paypa1, c0m), digit-encoded domains, and direct IP access.</div>
+        </div>
+      </div>
+      <div class="pillar-item reveal">
+        <div class="pillar-icon">🤖</div>
+        <div>
+          <div class="pillar-title">Random Forest Classifier</div>
+          <div class="pillar-text">A machine-learning model trained on large phishing datasets predicts threat probability and provides a confidence score for each scan.</div>
+        </div>
+      </div>
+      <div class="pillar-item reveal">
+        <div class="pillar-icon">📊</div>
+        <div>
+          <div class="pillar-title">Explainable Risk Assessment</div>
+          <div class="pillar-text">Each verdict is accompanied by individual signal scores — showing which factors contributed most to the risk determination.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ════════════════════════════════════════════
+     INTELLIGENCE LAYERS
+════════════════════════════════════════════ -->
+<div class="ns-divider" style="max-width:1280px; margin:0 auto;"></div>
+
+<section class="ns-section" id="intelligence">
+  <div style="text-align:center; margin-bottom:56px;">
+    <div class="ns-section-label" style="justify-content:center;">Intelligence Architecture</div>
+    <h2 class="ns-section-heading">Multi-layer <span class="hl">intelligence pipeline.</span></h2>
+    <p class="ns-section-sub" style="margin:0 auto;">
+      NeuraShield is designed as an adaptive multi-layer cyber threat investigation platform. Each module's status below — Active, In development or Coming soon — is read live from the platform's capability registry, so it always matches what the backend actually supports.
+    </p>
+  </div>
+
+  <div class="layers-grid reveal-perspective">
+    <!-- Layer 1 – Operational -->
+    <div class="ns-card layer-card reveal">
+      <div class="scan-line"></div>
+      <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:16px;">
+        <div class="ns-card-icon">🔗</div>
+        <span class="ns-badge ns-badge-cyan"><span class="dot"></span> Active Module</span>
+      </div>
+      <div class="ns-card-title">URL Intelligence</div>
+      <p class="ns-card-text">Structural and lexical analysis of the URL itself. Detects malicious syntax, token packing, homograph spoofs, and deceptive paths.</p>
+      <div class="layer-features">
+        <div class="layer-feature">URL length &amp; depth metrics</div>
+        <div class="layer-feature">Special character density (@ - ? =)</div>
+        <div class="layer-feature">Suspicious keyword tokens</div>
+        <div class="layer-feature">IP address in hostname detection</div>
+        <div class="layer-feature">Homograph substitution patterns</div>
+        <div class="layer-feature">Digit-in-domain ratio calculation</div>
+        <div class="layer-feature">Protocol &amp; port validation</div>
+        <div class="layer-feature">Random Forest URL ML prediction</div>
+      </div>
+    </div>
+
+    <!-- Layer 2 – Operational (Module 2 Domain Intelligence) -->
+    <div class="ns-card layer-card reveal active-domain-card" id="cardDomainIntel" onclick="window.location.href='/domain-intelligence'" style="cursor:pointer;" title="Click to launch Domain Intelligence investigation">
+      <div class="scan-line"></div>
+      <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:16px;">
+        <div class="ns-card-icon" style="background:rgba(0,200,255,0.08); border-color:rgba(0,200,255,0.25);">🌐</div>
+        <span class="ns-badge ns-badge-cyan"><span class="dot"></span> Active Module</span>
+      </div>
+      <div class="ns-card-title">Domain Intelligence</div>
+      <div style="font-family:var(--ns-mono); font-size:11.5px; color:var(--ns-cyan); margin:-4px 0 10px; font-weight:600;">
+        "Investigate the infrastructure behind a suspicious domain."
+      </div>
+      <p class="ns-card-text" style="font-size:12px; line-height:1.5; color:var(--ns-text-muted); margin-bottom:14px;">
+        NeuraShield does not only inspect URL syntax. It investigates the underlying domain, server topology, and cryptographic posture.
+      </p>
+      <div class="layer-features">
+        <div class="layer-feature">DNS topology</div>
+        <div class="layer-feature">IP infrastructure</div>
+        <div class="layer-feature">Domain registration</div>
+        <div class="layer-feature">Domain age</div>
+        <div class="layer-feature">Registrar</div>
+        <div class="layer-feature">Nameservers</div>
+        <div class="layer-feature">SSL/TLS certificate</div>
+        <div class="layer-feature">Infrastructure signals</div>
+        <div class="layer-feature">Domain-level security indicators</div>
+      </div>
+      <div style="margin-top:16px; padding-top:12px; border-top:1px solid rgba(0,200,255,0.15); display:flex; align-items:center; justify-content:space-between;">
+        <span style="font-family:var(--ns-mono); font-size:11px; color:var(--ns-cyan); font-weight:600;">Launch Domain Investigation →</span>
+        <span class="ns-badge ns-badge-cyan" style="font-size:9.5px;">Module 2</span>
+      </div>
+    </div>
+
+    <!-- Layer 3 – Operational (Module 3 Webpage Intelligence) -->
+    <div class="ns-card layer-card reveal active-domain-card" id="cardWebpageIntel" onclick="window.location.href='/webpage-intelligence'" style="cursor:pointer;" title="Click to launch Webpage Intelligence investigation">
+      <div class="scan-line"></div>
+      <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:16px;">
+        <div class="ns-card-icon" style="background:rgba(0,200,255,0.08); border-color:rgba(0,200,255,0.25);">📄</div>
+        <span class="ns-badge ns-badge-cyan"><span class="dot"></span> Active Module</span>
+      </div>
+      <div class="ns-card-title">Webpage Intelligence</div>
+      <div style="font-family:var(--ns-mono); font-size:11.5px; color:var(--ns-cyan); margin:-4px 0 10px; font-weight:600;">
+        "Safely inspect DOM structure, forms, and client-side behavior."
+      </div>
+      <p class="ns-card-text" style="font-size:12px; line-height:1.5; color:var(--ns-text-muted); margin-bottom:14px;">
+        NeuraShield safely fetches and statically decomposes the webpage: credential harvesting forms, external script injections, hidden iframes, and security headers.
+      </p>
+      <div class="layer-features">
+        <div class="layer-feature">Safe SSRF-protected fetcher</div>
+        <div class="layer-feature">HTML / DOM structural analysis</div>
+        <div class="layer-feature">Password &amp; credential form detection</div>
+        <div class="layer-feature">Cross-domain form submission alerts</div>
+        <div class="layer-feature">JavaScript static pattern screening</div>
+        <div class="layer-feature">Hidden &amp; cross-domain iframe audit</div>
+        <div class="layer-feature">External dependency mapping</div>
+        <div class="layer-feature">Security headers posture (CSP, HSTS)</div>
+        <div class="layer-feature">12 explainable security rules (WEB-001 - 012)</div>
+      </div>
+      <div style="margin-top:16px; padding-top:12px; border-top:1px solid rgba(0,200,255,0.15); display:flex; align-items:center; justify-content:space-between;">
+        <span style="font-family:var(--ns-mono); font-size:11px; color:var(--ns-cyan); font-weight:600;">Launch Webpage Investigation →</span>
+        <span class="ns-badge ns-badge-cyan" style="font-size:9.5px;">Module 3</span>
+      </div>
+    </div>
+
+    <!-- Layer 4 – Planned -->
+    <div class="ns-card layer-card reveal">
+      <div class="scan-line"></div>
+      <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:16px;">
+        <div class="ns-card-icon" style="background:rgba(255,170,0,0.08); border-color:rgba(255,170,0,0.2);">✉️</div>
+        <span class="ns-planned-tag" data-cap-badge="email">⏳ Planned Module</span>
+      </div>
+      <div class="ns-card-title">Email Intelligence</div>
+      <p class="ns-card-text">Sender identity consistency, SPF/DKIM/DMARC evidence, social-engineering language, embedded links (through URL &amp; Domain Intelligence) and static attachment analysis.</p>
+      <div class="layer-features" style="opacity:0.5;">
+        <div class="layer-feature">Sender domain analysis</div>
+        <div class="layer-feature">Suspicious language patterns</div>
+        <div class="layer-feature">Embedded URL extraction</div>
+        <div class="layer-feature">Urgency indicator detection</div>
+        <div class="layer-feature">Header spoofing detection</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Interactive Domain Intelligence Infrastructure Visualization -->
+  <div class="domain-viz-card reveal" id="domainInfraViz" style="max-width:980px; margin:40px auto 0;">
+    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; border-bottom:1px solid rgba(0,200,255,0.15); padding-bottom:16px; margin-bottom:24px;">
+      <div>
+        <div class="ns-section-label" style="margin-bottom:4px;">Interactive Infrastructure Topology</div>
+        <div style="font-family:var(--ns-mono); font-size:14px; font-weight:700; color:var(--ns-text);">
+          Domain → DNS → IP → TLS Correlation Engine
+        </div>
+      </div>
+      <div style="display:flex; align-items:center; gap:8px;">
+        <span style="font-family:var(--ns-mono); font-size:10px; color:var(--ns-text-muted); text-transform:uppercase;">Select Sample:</span>
+        <button type="button" class="ns-badge ns-badge-cyan domain-sample-btn active" onclick="switchDomainViz('khanacademy.org', 'legit')" style="cursor:pointer; background:rgba(0,200,255,0.15); border:1px solid var(--ns-cyan);">khanacademy.org</button>
+        <button type="button" class="ns-badge ns-badge-muted domain-sample-btn" onclick="switchDomainViz('google.com', 'legit')" style="cursor:pointer;">google.com</button>
+        <button type="button" class="ns-badge ns-badge-red domain-sample-btn" onclick="switchDomainViz('paypal-security-update.vip', 'phish')" style="cursor:pointer;">paypal-security-update.vip</button>
+      </div>
+    </div>
+
+    <!-- The Diagram -->
+    <div style="text-align:center; position:relative; padding:10px 0;">
+      <!-- TOP: DOMAIN NODE -->
+      <div style="display:inline-block; margin-bottom:12px;">
+        <div class="viz-node" id="vizNodeDomain" style="border-color:var(--ns-cyan); box-shadow:0 0 20px rgba(0,200,255,0.25); min-width:240px;">
+          <div class="viz-node-header"><span>🌐</span> DOMAIN TARGET</div>
+          <div id="vizDomainText" style="font-family:var(--ns-mono); font-size:15px; font-weight:700; color:var(--ns-cyan);">khanacademy.org</div>
+          <div id="vizDomainSub" style="font-size:10px; color:var(--ns-text-muted); margin-top:2px;">Normalized Registered Domain · PSL Verified</div>
+        </div>
+      </div>
+
+      <!-- SVG CONNECTING PIPELINE WITH ANIMATED SIGNALS -->
+      <div style="max-width:700px; margin:0 auto; height:50px; position:relative;">
+        <svg viewBox="0 0 700 50" style="width:100%; height:50px; overflow:visible;" preserveAspectRatio="none">
+          <path d="M350 0 L350 20 L110 20 L110 50" fill="none" stroke="rgba(0,200,255,0.3)" stroke-width="1.5" />
+          <path d="M350 0 L350 50" fill="none" stroke="rgba(0,200,255,0.3)" stroke-width="1.5" />
+          <path d="M350 0 L350 20 L590 20 L590 50" fill="none" stroke="rgba(0,200,255,0.3)" stroke-width="1.5" />
+          <!-- Animated Signal Pulses -->
+          <path class="viz-pulse-line" d="M350 0 L350 20 L110 20 L110 50" fill="none" stroke="var(--ns-cyan)" stroke-width="2" />
+          <path class="viz-pulse-line" d="M350 0 L350 50" fill="none" stroke="var(--ns-cyan)" stroke-width="2" />
+          <path class="viz-pulse-line" d="M350 0 L350 20 L590 20 L590 50" fill="none" stroke="var(--ns-cyan)" stroke-width="2" />
+        </svg>
+      </div>
+
+      <!-- 3 PARALLEL TELEMETRY PILLARS: DNS | IP | TLS -->
+      <div class="domain-viz-grid">
+        <!-- Branch 1: DNS -->
+        <div class="viz-node" id="vizNodeDns">
+          <div class="viz-node-header"><span>📡</span> DNS TOPOLOGY</div>
+          <div id="vizDnsStatus" style="font-size:12px; font-weight:700; color:var(--ns-green); margin:4px 0;">Resolved ✓ (4 IPv4)</div>
+          <div class="viz-node-detail" id="vizDnsDetail">
+            A Records: 151.101.x.x<br>
+            MX: Google Apps (ASPMX)<br>
+            Resolver: 8.8.8.8 Recursive
+          </div>
+        </div>
+
+        <!-- Branch 2: IP & INFRASTRUCTURE -->
+        <div class="viz-node" id="vizNodeIp">
+          <div class="viz-node-header"><span>🏢</span> IP &amp; INFRASTRUCTURE</div>
+          <div id="vizIpStatus" style="font-size:12px; font-weight:700; color:var(--ns-green); margin:4px 0;">Fastly CDN (Multi-IP)</div>
+          <div class="viz-node-detail" id="vizIpDetail">
+            Route: Public Route Verified<br>
+            Reverse PTR: Fastly Net<br>
+            SSRF Policy: PASS (Non-RFC1918)
+          </div>
+        </div>
+
+        <!-- Branch 3: TLS CRYPTOGRAPHY -->
+        <div class="viz-node" id="vizNodeTls">
+          <div class="viz-node-header"><span>🔒</span> TLS CRYPTOGRAPHY</div>
+          <div id="vizTlsStatus" style="font-size:12px; font-weight:700; color:var(--ns-cyan); margin:4px 0;">Transport Verified ✓</div>
+          <div class="viz-node-detail" id="vizTlsDetail">
+            Issuer: GlobalSign nv-sa<br>
+            Protocol: TLSv1.3 / AES-GCM<br>
+            Notice: Encrypted Transport
+          </div>
+        </div>
+      </div>
+
+      <!-- SVG CONVERGING PIPELINE -->
+      <div style="max-width:700px; margin:0 auto; height:50px; position:relative;">
+        <svg viewBox="0 0 700 50" style="width:100%; height:50px; overflow:visible;" preserveAspectRatio="none">
+          <path d="M110 0 L110 30 L350 30 L350 50" fill="none" stroke="rgba(0,200,255,0.3)" stroke-width="1.5" />
+          <path d="M350 0 L350 50" fill="none" stroke="rgba(0,200,255,0.3)" stroke-width="1.5" />
+          <path d="M590 0 L590 30 L350 30 L350 50" fill="none" stroke="rgba(0,200,255,0.3)" stroke-width="1.5" />
+          <!-- Animated Signal Pulses -->
+          <path class="viz-pulse-line" d="M110 0 L110 30 L350 30 L350 50" fill="none" stroke="var(--ns-cyan)" stroke-width="2" />
+          <path class="viz-pulse-line" d="M350 0 L350 50" fill="none" stroke="var(--ns-cyan)" stroke-width="2" />
+          <path class="viz-pulse-line" d="M590 0 L590 30 L350 30 L350 50" fill="none" stroke="var(--ns-cyan)" stroke-width="2" />
+        </svg>
+      </div>
+
+      <!-- BOTTOM: DOMAIN RISK RESULT NODE -->
+      <div style="display:inline-block; margin-top:8px;">
+        <div class="viz-node" id="vizNodeRisk" style="min-width:320px; border-color:var(--ns-green); box-shadow:0 0 20px rgba(0,214,143,0.2);">
+          <div class="viz-node-header" style="color:var(--ns-green);" id="vizRiskHeader">
+            <span>⚡</span> DOMAIN RISK SYNTHESIS
+          </div>
+          <div id="vizRiskScore" style="font-family:var(--ns-mono); font-size:16px; font-weight:800; color:var(--ns-green);">
+            SCORE: 0 / 100 · LOW RISK
+          </div>
+          <div id="vizRiskReason" style="font-size:11px; color:var(--ns-text-muted); margin-top:4px;">
+            Domain age established (~20.5 yrs) · Valid TLS · Reputable CDN routing
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div style="margin-top:24px; padding-top:16px; border-top:1px solid rgba(255,255,255,0.06); display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
+      <div style="font-size:12px; color:var(--ns-text-muted);">
+        <strong style="color:var(--ns-cyan);">Infrastructure Guarantee:</strong> 100% live telemetry auditing with SSRF filtering and calibrated ML.
+      </div>
+      <a href="/domain-intelligence" class="ns-shiny" style="text-decoration:none; padding:8px 18px; font-size:12px;">
+        <span>Open Domain Intelligence Console →</span>
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- ════════════════════════════════════════════
+     HOW IT WORKS
+════════════════════════════════════════════ -->
+<div class="ns-divider" style="max-width:1280px; margin:0 auto;"></div>
+
+<section class="ns-section-full" id="how-it-works" style="background: linear-gradient(180deg, transparent, rgba(0,200,255,0.02), transparent);">
+  <div style="max-width:1280px; margin:0 auto;">
+    <div style="text-align:center; margin-bottom:56px;">
+      <div class="ns-section-label" style="justify-content:center;">Process</div>
+      <h2 class="ns-section-heading">How NeuraShield <span class="hl">works.</span></h2>
+    </div>
+
+    <div class="process-wrap reveal-perspective">
+      <div class="process-step reveal">
+        <div class="process-number">01</div>
+        <div class="process-content">
+          <div class="process-title">Input Acquisition</div>
+          <div class="process-desc">User submits a suspicious URL through the scan interface or bulk CSV upload (admin).</div>
+        </div>
+      </div>
+
+      <div class="process-connector-line"></div>
+
+      <div class="process-step reveal">
+        <div class="process-number">02</div>
+        <div class="process-content">
+          <div class="process-title">Signal Extraction</div>
+          <div class="process-desc">12 URL-based features are extracted — length, character frequencies, keyword matches, IP patterns, and protocol indicators.</div>
+        </div>
+      </div>
+
+      <div class="process-connector-line" style="animation-delay:0.3s;"></div>
+
+      <div class="process-step reveal">
+        <div class="process-number">03</div>
+        <div class="process-content">
+          <div class="process-title">Security Rule Check</div>
+          <div class="process-desc">Heuristic rules are applied first. Homograph attacks (paypa1, c0m) and direct IP hostnames are flagged immediately.</div>
+        </div>
+      </div>
+
+      <div class="process-connector-line" style="animation-delay:0.6s;"></div>
+
+      <div class="process-step reveal">
+        <div class="process-number">04</div>
+        <div class="process-content">
+          <div class="process-title">ML Classification</div>
+          <div class="process-desc">If rules don't trigger, the Random Forest classifier evaluates the feature vector and returns a probability-based prediction.</div>
+        </div>
+      </div>
+
+      <div class="process-connector-line" style="animation-delay:0.9s;"></div>
+
+      <div class="process-step reveal">
+        <div class="process-number">05</div>
+        <div class="process-content">
+          <div class="process-title">Risk Fusion</div>
+          <div class="process-desc">The heuristic outcome and ML confidence are combined into a unified risk assessment with individual signal scores.</div>
+        </div>
+      </div>
+
+      <div class="process-connector-line" style="animation-delay:1.2s;"></div>
+
+      <div class="process-step reveal">
+        <div class="process-number">06</div>
+        <div class="process-content">
+          <div class="process-title">Explainable Report</div>
+          <div class="process-desc">The result is presented with a verdict, confidence score, and per-signal breakdown — so the assessment can be understood, not just trusted.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ════════════════════════════════════════════
+     WHAT WE CAN ANALYZE
+════════════════════════════════════════════ -->
+<div class="ns-divider" style="max-width:1280px; margin:0 auto;"></div>
+
+<section class="ns-section" id="analyze">
+  <div style="text-align:center; margin-bottom:48px;">
+    <div class="ns-section-label" style="justify-content:center;">Capabilities</div>
+    <h2 class="ns-section-heading">What we can <span class="hl">analyze.</span></h2>
+  </div>
+  <div class="analyze-grid reveal-perspective">
+    <div class="ns-card analyze-card reveal">
+      <div class="scan-line"></div>
+      <span class="analyze-icon">🔗</span>
+      <div class="analyze-title">URL</div>
+      <p class="analyze-desc">Analyze the structural, lexical and pattern-based characteristics of any suspicious URL.</p>
+      <div style="margin-top:14px;">
+        <span data-cap-badge="url" class="ns-badge ns-badge-cyan"><span class="dot"></span> Active</span>
+      </div>
+    </div>
+
+    <div class="ns-card analyze-card reveal">
+      <div class="scan-line"></div>
+      <span class="analyze-icon">📱</span>
+      <div class="analyze-title">QR Code</div>
+      <p class="analyze-desc">Decode a QR image and analyze the extracted destination URL for threats.</p>
+      <div style="margin-top:14px;">
+        <span data-cap-badge="qr" class="ns-planned-tag">⏳ Planned Module</span>
+      </div>
+    </div>
+
+    <div class="ns-card analyze-card reveal">
+      <div class="scan-line"></div>
+      <span class="analyze-icon">✉️</span>
+      <div class="analyze-title">Email</div>
+      <p class="analyze-desc">Analyze suspicious email messages and extract embedded links for threat evaluation.</p>
+      <div style="margin-top:14px;">
+        <span data-cap-badge="email" class="ns-planned-tag">⏳ Planned Module</span>
+      </div>
+    </div>
+
+    <div class="ns-card analyze-card reveal">
+      <div class="scan-line"></div>
+      <span class="analyze-icon">🌐</span>
+      <div class="analyze-title">Webpage</div>
+      <p class="analyze-desc">Analyze webpage characteristics and structural deception indicators when this module is available.</p>
+      <div style="margin-top:14px;">
+        <span data-cap-badge="webpage" class="ns-planned-tag">⏳ Advanced Layer</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- ════════════════════════════════════════════
+     PLATFORM ARCHITECTURE (signal flow)
+════════════════════════════════════════════ -->
+<div class="ns-divider" style="max-width:1280px; margin:0 auto;"></div>
+
+
+<!-- ════════ CYBER IMAGE BAND: connect the signals ════════ -->
+<section class="cyber-band reveal">
+  <div class="cyber-band-img" style="background-image:url('https://images.unsplash.com/photo-1639322537228-f710d846310a?auto=format&fit=crop&w=1600&q=70')"></div>
+  <div class="cyber-band-grid"></div>
+  <div class="cyber-band-inner">
+    <div class="ns-section-label" style="justify-content:center;">Threat Correlation</div>
+    <h2>Connect the signals. <span class="hl">See the whole picture.</span></h2>
+    <p>A single verdict rarely tells the full story. NeuraShield is built to correlate evidence across URL, domain, webpage, brand and email signals — turning isolated indicators into a connected investigation.</p>
+  </div>
+</section>
+
+<section class="ns-section" id="architecture">
+  <div style="text-align:center; margin-bottom:48px;" class="reveal">
+    <div class="ns-section-label" style="justify-content:center;">Platform Architecture</div>
+    <h2 class="ns-section-heading">How a signal travels the <span class="hl">stack.</span></h2>
+    <p class="ns-section-sub" style="margin:12px auto 0;">
+      Node status is read live from the capability registry: highlighted nodes run today; dimmed nodes are in development or coming soon.
+    </p>
+  </div>
+
+  <div class="arch-wrap reveal-perspective">
+    <div class="arch-stage reveal">
+      <div class="arch-stage-label">Inputs</div>
+      <div class="arch-nodes">
+        <span data-cap-node="url" class="arch-node active"><span class="adot"></span>URL</span>
+        <span data-cap-node="qr" class="arch-node planned"><span class="adot"></span>QR</span>
+        <span data-cap-node="email" class="arch-node planned"><span class="adot"></span>Email</span>
+        <span data-cap-node="webpage" class="arch-node planned"><span class="adot"></span>Webpage</span>
+      </div>
+    </div>
+    <div class="arch-flow" style="--fd:0s"></div>
+
+    <div class="arch-stage reveal" style="--rd:0.05s">
+      <div class="arch-stage-label">Intelligence Layers</div>
+      <div class="arch-nodes">
+        <span data-cap-node="url" class="arch-node active"><span class="adot"></span>URL Intelligence</span>
+        <span data-cap-node="domain" class="arch-node active"><span class="adot"></span>Domain Intelligence</span>
+        <span data-cap-node="webpage" class="arch-node planned"><span class="adot"></span>Webpage</span>
+        <span data-cap-node="email" class="arch-node planned"><span class="adot"></span>Email</span>
+        <span data-cap-node="brand" class="arch-node planned"><span class="adot"></span>Brand</span>
+      </div>
+    </div>
+    <div class="arch-flow" style="--fd:0.3s"></div>
+
+    <div class="arch-stage reveal" style="--rd:0.1s">
+      <div class="arch-stage-label">Detection Engine</div>
+      <div class="arch-nodes">
+        <span data-cap-node="rules_ml" class="arch-node active"><span class="adot"></span>Security Rules</span>
+        <span data-cap-node="rules_ml" class="arch-node active"><span class="adot"></span>Random Forest ML</span>
+      </div>
+    </div>
+    <div class="arch-flow" style="--fd:0.6s"></div>
+
+    <div class="arch-stage reveal" style="--rd:0.15s">
+      <div class="arch-stage-label">Risk Fusion</div>
+      <div class="arch-nodes">
+        <span data-cap-node="fusion" class="arch-node active"><span class="adot"></span>Rule + ML Confidence → Unified Risk</span>
+      </div>
+    </div>
+    <div class="arch-flow" style="--fd:0.9s"></div>
+
+    <div class="arch-stage reveal" style="--rd:0.2s">
+      <div class="arch-stage-label">Investigation &nbsp;·&nbsp; Resilience</div>
+      <div class="arch-nodes">
+        <span data-cap-node="dna" class="arch-node planned"><span class="adot"></span>Threat DNA</span>
+        <span data-cap-node="graph" class="arch-node planned"><span class="adot"></span>Relationship Graph</span>
+        <span data-cap-node="resilience" class="arch-node planned"><span class="adot"></span>Adversarial Resilience Lab</span>
+        <span data-cap-node="self_audit" class="arch-node planned"><span class="adot"></span>Model Self-Audit</span>
+      </div>
+    </div>
+    <div class="arch-flow" style="--fd:1.2s"></div>
+
+    <div class="arch-stage reveal" style="--rd:0.25s">
+      <div class="arch-stage-label">Output</div>
+      <div class="arch-nodes">
+        <span data-cap-node="fusion" class="arch-node active"><span class="adot"></span>Risk Score</span>
+        <span data-cap-node="explain" class="arch-node active"><span class="adot"></span>Explainable Signals</span>
+        <span data-cap-node="reports" class="arch-node planned"><span class="adot"></span>Threat Report</span>
+        <span data-cap-node="analytics" class="arch-node planned"><span class="adot"></span>Security Analytics</span>
+      </div>
+    </div>
+  </div>
+
+  <div style="max-width:900px; margin:28px auto 0; display:flex; gap:18px; justify-content:center; flex-wrap:wrap;">
+    <span class="ns-badge ns-badge-cyan"><span class="dot"></span> Active — running today</span>
+    <span class="ns-planned-tag">⏳ Advanced / In development</span>
+  </div>
+</section>
+
+<!-- ════════════════════════════════════════════
+     LIVE DEMO / TRY ANALYSIS
+════════════════════════════════════════════ -->
+<div class="ns-divider" style="max-width:1280px; margin:0 auto;"></div>
+
+<section class="ns-section" id="demo">
+  <div style="text-align:center; margin-bottom:40px;">
+    <div class="ns-section-label" style="justify-content:center;">Live Analysis</div>
+    <h2 class="ns-section-heading">Test a <span class="hl">URL.</span></h2>
+    <p class="ns-section-sub" style="margin:12px auto 0;">
+      Enter any URL below. The analysis runs through our actual security rule engine and machine learning classifier.
+    </p>
+  </div>
+
+  <div class="demo-section">
+    <!-- Form connects to existing backend route -->
+    <form id="demoForm" method="POST" action="/api/demo-scan" onsubmit="runDemoScan(event)">
+      <div class="demo-input-row">
+        <input
+          type="text"
+          name="url"
+          id="demoUrl"
+          class="ns-input"
+          placeholder="https://example.com"
+          required
+          style="flex:1;"
+        >
+        <button type="submit" class="ns-shiny ns-shiny-lg" id="demoBtn"><span>Analyze <span class="btn-arrow">→</span></span></button>
+      </div>
+    </form>
+
+    <!-- Scan Steps (shown during analysis) -->
+    <div id="demoSteps" style="display:none;">
+      <div class="scan-steps-list">
+        <div class="scan-step-item" id="step-1">
+          <div class="s-dot"></div>
+          Extracting URL features...
+        </div>
+        <div class="scan-step-item" id="step-2">
+          <div class="s-dot"></div>
+          Applying security rule engine...
+        </div>
+        <div class="scan-step-item" id="step-3">
+          <div class="s-dot"></div>
+          Running ML classifier...
+        </div>
+        <div class="scan-step-item" id="step-4">
+          <div class="s-dot"></div>
+          Calculating risk assessment...
+        </div>
+      </div>
+      <div class="ns-progress-bar" style="margin-top:10px;">
+        <div class="ns-progress-fill" id="demoProgress"></div>
+      </div>
+    </div>
+
+    <!-- Scan Threat Core (shown during analysis) -->
+    <div class="scan-core-stage" id="scanCoreStage" aria-hidden="true">
+      <canvas class="scan-core-canvas" id="scanCoreCanvas" width="180" height="180"></canvas>
+      <div class="scan-core-target" id="scanCoreTarget"></div>
+      <div class="scan-bars" id="scanBars"></div>
+    </div>
+
+    <!-- Result Area -->
+    <div id="demoResultArea" class="demo-result-area"></div>
+
+    <!-- Login prompt -->
+    <div style="margin-top:24px; padding-top:20px; border-top:1px solid var(--ns-border); text-align:center;">
+      <p style="font-size:12px; color:var(--ns-text-muted);">
+        Want to save your scan history and access advanced features?
+        <a href="/login" style="color:var(--ns-cyan); text-decoration:none;">Login</a>
+        or
+        <a href="/register" style="color:var(--ns-cyan); text-decoration:none;">Create Account</a>
+      </p>
+    </div>
+  </div>
+</section>
+
+<!-- ════════════════════════════════════════════
+     FINAL CTA
+════════════════════════════════════════════ -->
+<div class="ns-divider" style="max-width:1280px; margin:0 auto;"></div>
+
+
+<!-- ════════ CYBER IMAGE BAND: global threat landscape ════════ -->
+<section class="cyber-band reveal">
+  <div class="cyber-band-img" style="background-image:url('https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&w=1600&q=70')"></div>
+  <div class="cyber-band-grid"></div>
+  <div class="cyber-band-inner">
+    <div class="ns-section-label" style="justify-content:center;">The Landscape</div>
+    <h2>Understand the threat <span class="hl">before it becomes an incident.</span></h2>
+    <p>Phishing infrastructure shifts constantly across domains, regions and delivery channels. Layered, explainable analysis is what keeps a verdict trustworthy as the landscape moves.</p>
+  </div>
+</section>
+
+<section class="cta-final ns-section-full" style="position:relative; overflow:hidden;">
+  <canvas id="cta-canvas"></canvas>
+  <div class="cta-bg"></div>
+  <div class="cta-final-content">
+    <div class="ns-section-label" style="justify-content:center;">Ready?</div>
+    <h2 class="ns-section-heading" style="margin-bottom:14px;">Ready to analyze a threat?</h2>
+    <p class="ns-section-sub" style="margin:0 auto 36px;">
+      Analyze a suspicious URL and explore how NeuraShield evaluates security signals across its detection layers.
+    </p>
+    <div style="display:flex; gap:16px; justify-content:center; flex-wrap:wrap;">
+      <a href="#demo" class="ns-shiny ns-shiny-lg"><span>Start Analysis <span class="btn-arrow">→</span></span></a>
+      <a href="/login" class="btn-ghost btn-3d" style="padding:15px 26px;">
+        Login to Dashboard
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- ════════════════════════════════════════════
+     FOOTER
+════════════════════════════════════════════ -->
+<footer class="ns-footer">
+  <div class="ns-footer-inner">
+    <div>
+      <a href="/" class="ns-logo" style="margin-bottom:12px; display:inline-flex;">
+        <img src="{{ url_for('static', filename='static/ns_logo.png') }}"
+             alt="NeuraShield"
+             class="ns-logo-icon"
+             onerror="this.style.display='none';">
+        <div class="ns-logo-text">
+          <span class="ns-logo-name">NeuraShield</span>
+          <span class="ns-logo-sub">Multi-Layer Threat Intelligence</span>
+        </div>
+      </a>
+      <div class="ns-footer-copy" style="margin-top:10px;">C13 Project · Academic Demonstration</div>
+    </div>
+    <ul class="ns-footer-links">
+      <li><a href="#about">Platform</a></li>
+      <li><a href="#intelligence">Intelligence</a></li>
+      <li><a href="#how-it-works">How It Works</a></li>
+      <li><a href="#analyze">Capabilities</a></li>
+      <li><a href="/login">Login</a></li>
+    </ul>
+  </div>
+</footer>
+
+<!-- ════════════════════════════════════════════
+     JAVASCRIPT
+════════════════════════════════════════════ -->
+<script>
+/* ── Navbar scroll behaviour ── */
+const nav = document.getElementById('ns-nav');
+window.addEventListener('scroll', () => {
+  nav.classList.toggle('scrolled', window.scrollY > 40);
+}, { passive: true });
+
+/* ── Mobile nav toggle ── */
+function toggleMobileNav(){
+  document.getElementById('mobile-nav').classList.toggle('open');
+}
+
+/* ── 3D card tilt ── */
+document.querySelectorAll('.ns-card').forEach(card => {
+  card.addEventListener('mousemove', e => {
+    const r = card.getBoundingClientRect();
+    const x = (e.clientX - r.left) / r.width  - 0.5;
+    const y = (e.clientY - r.top)  / r.height - 0.5;
+    card.style.transform = `perspective(600px) rotateY(${x * 6}deg) rotateX(${-y * 6}deg) translateY(-3px)`;
+  });
+  card.addEventListener('mouseleave', () => {
+    card.style.transform = '';
+  });
+});
+
+/* ── Hero Threat Core Canvas ── */
+(function(){
+  const canvas = document.getElementById('threatCanvas');
+  if(!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const W = canvas.width, H = canvas.height;
+  const cx = W/2, cy = H/2;
+
+  const CYAN = '#00c8ff', BLUE = '#1a6fff', RED = '#ff3b3b', GREEN = '#00d68f';
+
+  // Nodes
+  const nodes = [
+    { label:'URL',     x: cx,      y: cy-140, color: CYAN  },
+    { label:'DOMAIN',  x: cx+130,  y: cy-50,  color: BLUE  },
+    { label:'WEBPAGE', x: cx+100,  y: cy+100, color: BLUE  },
+    { label:'EMAIL',   x: cx-130,  y: cy+100, color: BLUE  },
+    { label:'CORE',    x: cx,      y: cy,     color: CYAN  },
+    { label:'REPORT',  x: cx,      y: cy+160, color: GREEN },
+    { label:'RULES',   x: cx-130,  y: cy-50,  color: CYAN  },
+  ];
+
+  const edges = [
+    [0,4],[1,4],[2,4],[3,4],[6,4],[4,5]
+  ];
+
+  // Particles on edges
+  const particles = edges.map(([a,b]) => ({
+    a, b,
+    t: Math.random(),
+    speed: 0.003 + Math.random() * 0.004
+  }));
+
+  let angle = 0;
+
+  function draw(){
+    ctx.clearRect(0,0,W,H);
+
+    // Outer rings
+    [120,90,60].forEach((r,i) => {
+      ctx.beginPath();
+      ctx.arc(cx, cy, r + i*2, 0, Math.PI*2);
+      ctx.strokeStyle = `rgba(0,200,255,${0.06 - i*0.015})`;
+      ctx.lineWidth = 1;
+      ctx.stroke();
+    });
+
+    // Rotating ring
+    ctx.save();
+    ctx.translate(cx,cy);
+    ctx.rotate(angle);
+    ctx.beginPath();
+    ctx.arc(0,0,155,0,Math.PI*2);
+    const grad = ctx.createLinearGradient(-155,-155,155,155);
+    grad.addColorStop(0,'rgba(0,200,255,0.5)');
+    grad.addColorStop(0.5,'rgba(0,200,255,0.05)');
+    grad.addColorStop(1,'rgba(0,200,255,0.5)');
+    ctx.strokeStyle = grad;
+    ctx.lineWidth = 1;
+    ctx.setLineDash([6,18]);
+    ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.restore();
+
+    // Edges
+    edges.forEach(([a,b]) => {
+      const na = nodes[a], nb = nodes[b];
+      ctx.beginPath();
+      ctx.moveTo(na.x, na.y);
+      ctx.lineTo(nb.x, nb.y);
+      ctx.strokeStyle = 'rgba(0,200,255,0.12)';
+      ctx.lineWidth = 1;
+      ctx.stroke();
+    });
+
+    // Particles
+    particles.forEach(p => {
+      p.t += p.speed;
+      if(p.t > 1) p.t = 0;
+      const na = nodes[p.a], nb = nodes[p.b];
+      const px = na.x + (nb.x-na.x)*p.t;
+      const py = na.y + (nb.y-na.y)*p.t;
+      ctx.beginPath();
+      ctx.arc(px,py,2.5,0,Math.PI*2);
+      ctx.fillStyle = CYAN;
+      ctx.shadowColor = CYAN;
+      ctx.shadowBlur = 8;
+      ctx.fill();
+      ctx.shadowBlur = 0;
+    });
+
+    // Nodes
+    nodes.forEach((n,i) => {
+      const isCore   = i === 4;
+      const isReport = i === 5;
+      const r = isCore ? 22 : 14;
+
+      // Glow
+      const grd = ctx.createRadialGradient(n.x,n.y,0,n.x,n.y,r*2);
+      grd.addColorStop(0, isCore ? 'rgba(0,200,255,0.3)' : 'rgba(0,200,255,0.15)');
+      grd.addColorStop(1, 'rgba(0,200,255,0)');
+      ctx.beginPath();
+      ctx.arc(n.x,n.y,r*2,0,Math.PI*2);
+      ctx.fillStyle = grd;
+      ctx.fill();
+
+      // Circle
+      ctx.beginPath();
+      ctx.arc(n.x,n.y,r,0,Math.PI*2);
+      ctx.fillStyle = isCore ? 'rgba(0,200,255,0.2)' : 'rgba(10,15,22,0.9)';
+      ctx.strokeStyle = n.color;
+      ctx.lineWidth = isCore ? 2 : 1;
+      ctx.fill();
+      ctx.stroke();
+
+      // Label
+      ctx.font = isCore ? '700 9px Inter' : '600 8px Inter';
+      ctx.fillStyle = n.color;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(n.label, n.x, isCore ? n.y : n.y + r + 12);
+
+      if(isCore){
+        // Shield icon in center
+        ctx.font = '14px sans-serif';
+        ctx.fillText('🛡', n.x, n.y);
+      }
+    });
+
+    angle += 0.003;
+    requestAnimationFrame(draw);
+  }
+  draw();
+})();
+
+/* ── CTA Background network canvas ── */
+(function(){
+  const canvas = document.getElementById('cta-canvas');
+  if(!canvas) return;
+  const ctx = canvas.getContext('2d');
+  let W,H;
+  const pts = [];
+  const N = 40;
+
+  function resize(){
+    W = canvas.width  = canvas.offsetWidth;
+    H = canvas.height = canvas.offsetHeight;
+  }
+  resize();
+  window.addEventListener('resize', resize, {passive:true});
+
+  for(let i=0;i<N;i++) pts.push({
+    x:Math.random()*W, y:Math.random()*H,
+    vx:(Math.random()-.5)*0.4, vy:(Math.random()-.5)*0.4
+  });
+
+  function frame(){
+    ctx.clearRect(0,0,W,H);
+    pts.forEach(p => {
+      p.x += p.vx; p.y += p.vy;
+      if(p.x<0||p.x>W) p.vx*=-1;
+      if(p.y<0||p.y>H) p.vy*=-1;
+    });
+    for(let i=0;i<N;i++){
+      for(let j=i+1;j<N;j++){
+        const dx=pts[i].x-pts[j].x, dy=pts[i].y-pts[j].y;
+        const d=Math.sqrt(dx*dx+dy*dy);
+        if(d<130){
+          ctx.beginPath();
+          ctx.moveTo(pts[i].x,pts[i].y);
+          ctx.lineTo(pts[j].x,pts[j].y);
+          ctx.strokeStyle=`rgba(0,200,255,${0.12*(1-d/130)})`;
+          ctx.lineWidth=1;
+          ctx.stroke();
+        }
+      }
+      ctx.beginPath();
+      ctx.arc(pts[i].x,pts[i].y,1.5,0,Math.PI*2);
+      ctx.fillStyle='rgba(0,200,255,0.3)';
+      ctx.fill();
+    }
+    requestAnimationFrame(frame);
+  }
+  frame();
+})();
+
+/* ── Demo Scan ── */
+async function runDemoScan(e){
+  e.preventDefault();
+  const url = document.getElementById('demoUrl').value.trim();
+  if(!url) return;
+
+  // Show steps
+  const steps = document.getElementById('demoSteps');
+  const resultArea = document.getElementById('demoResultArea');
+  const progress = document.getElementById('demoProgress');
+  steps.style.display = 'block';
+  resultArea.innerHTML = '';
+
+  // Fire backend API call in parallel immediately
+  const fetchPromise = fetch('/api/demo-scan', {
+    method: 'POST',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({ url })
+  }).then(async r => {
+    const json = await r.json();
+    if (!r.ok || json.error) throw new Error(json.error || 'Scan failed');
+    return json;
+  });
+
+  const stepEls = ['step-1','step-2','step-3','step-4'];
+  const stepPct  = [25, 50, 75, 100];
+
+  // Animate steps
+  for(let i=0; i<stepEls.length; i++){
+    await delay(280);
+    stepEls.forEach((id,j) => {
+      const el = document.getElementById(id);
+      if(j < i)  { el.className='scan-step-item show done'; el.querySelector('.s-dot').style.animation=''; }
+      if(j === i){ el.className='scan-step-item show active'; }
+    });
+    progress.style.width = stepPct[i] + '%';
+  }
+
+  // Await backend response
+  try {
+    const data = await fetchPromise;
+    await delay(180);
+    steps.style.display = 'none';
+    renderResult(data, resultArea);
+  } catch(err) {
+    steps.style.display = 'none';
+    resultArea.innerHTML = `<div style="color:var(--ns-red); font-family:var(--ns-mono); font-size:12px; padding:16px 0;">
+      Error connecting to analysis engine: ${err.message || 'Please try again'}.
+      <br><br><a href="/login" style="color:var(--ns-cyan);">→ Login to use full scanner</a>
+    </div>`;
+  }
+}
+
+function escapeHtml(str) {
+  if (str === null || str === undefined) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
+function renderResult(data, container) {
+  const isPhishing = data.prediction && data.prediction.toLowerCase().includes('phishing');
+  const isLeg      = data.prediction && data.prediction.toLowerCase() === 'legitimate';
+  const prob       = data.probability;
+  const ruleMatch  = data.prediction && data.prediction.includes('rule match');
+  const intel      = data.intelligence || {};
+
+  const verdictLabel = isPhishing ? '\u26a0 Phishing Detected' : (isLeg ? '\u2713 Appears Legitimate' : '\u26a1 Rule Match');
+  const verdictBadge = isPhishing ? 'ns-badge-red' : (isLeg ? 'ns-badge-green' : 'ns-badge-amber');
+  const features     = data.features || {};
+  const structural   = intel.structural    || {};
+  const lexical      = intel.lexical       || {};
+  const secRules     = intel.security_rules || {};
+  const mlClass      = intel.ml_classifier  || {};
+  const compositeRisk  = intel.composite_risk  || 0;
+  const compositeLevel = (intel.composite_level || 'LOW').toLowerCase();
+
+  // Colour helpers
+  function lvColor(lv) {
+    lv = lv.toLowerCase();
+    return lv==='critical'?'var(--ns-red)':lv==='high'?'#ff7c00':lv==='medium'?'var(--ns-amber)':'var(--ns-green)';
+  }
+  function scoreLevel(s) {
+    return s>=70?'CRITICAL':s>=45?'HIGH':s>=20?'MEDIUM':'LOW';
+  }
+
+  // Mini layer card builder
+  function lCard(icon, title, sub, score, level, body) {
+    const lv = level.toLowerCase();
+    const sc = lvColor(lv);
+    return `<div class="m1-layer-card level-${lv}">
+      <div class="m1-layer-header"><span class="m1-layer-icon">${icon}</span><span class="m1-layer-badge ${lv}">${level}</span></div>
+      <div class="m1-layer-title">${title}</div><div class="m1-layer-sub">${sub}</div>
+      <div class="m1-mini-score-row">
+        <span class="m1-mini-score-num" style="color:${sc}">${score}</span>
+        <div class="m1-mini-bar-wrap"><div class="m1-mini-bar-track">
+          <div class="m1-mini-bar-fill" style="width:0%;background:${sc};" data-target="${score}"></div>
+        </div></div>
+      </div>${body}</div>`;
+  }
+
+  // Scores & levels
+  const strucScore = structural.risk_score||0, strucLevel = scoreLevel(strucScore);
+  const lexScore   = lexical.risk_score||0,    lexLevel   = scoreLevel(lexScore);
+  const ruleScore  = secRules.risk_score||0;
+  const ruleSev    = secRules.severity||'NONE';
+  const ruleLevel  = ruleSev==='CRITICAL'?'CRITICAL':ruleSev==='HIGH'?'HIGH':ruleSev==='MEDIUM'?'MEDIUM':'LOW';
+  const mlScore    = mlClass.risk_score||0,    mlLevel    = scoreLevel(mlScore);
+
+  const kwList   = (lexical.suspicious_keywords||[]).slice(0,3);
+  const brandList= lexical.brand_list||[];
+  const rulesHit = (secRules.rules_hit||[]).slice(0,4);
+
+  function dataRow(key, val, cls='') {
+    return `<div class="m1-data-row"><span class="m1-data-key">${key}</span><span class="m1-data-val ${cls}">${val}</span></div>`;
+  }
+
+  const strucBody = `<div class="m1-data-list">
+    ${dataRow('URL Length', structural.url_length+' ch', structural.url_length>75?'warn':'')}
+    ${dataRow('Subdomains', structural.subdomain_count, structural.subdomain_count>1?'warn':'')}
+    ${dataRow('Protocol', structural.https?'HTTPS \u2713':'HTTP \u2717', structural.https?'ok':'danger')}
+    ${dataRow('IP as Host', structural.has_ip?'YES \u26a0':'No', structural.has_ip?'danger':'ok')}
+  </div>`;
+
+  const lexBody = `<div class="m1-data-list">
+    ${dataRow('Domain Entropy', lexical.domain_entropy, lexical.domain_entropy>3.5?'warn':'')}
+    ${dataRow('Brand Spoof', lexical.brand_impersonation?(brandList[0]||'YES'):'No', lexical.brand_impersonation?'danger':'ok')}
+    ${dataRow('Homograph', lexical.homograph?'Detected':'Clean', lexical.homograph?'danger':'ok')}
+    ${kwList.length ? dataRow('Keywords', kwList.join(', '), 'danger') : ''}
+  </div>`;
+
+  const rulesBody = rulesHit.length
+    ? `<div class="m1-rule-list">${rulesHit.map(r=>`<div class="m1-rule-item"><span class="m1-rule-code ${r.sev}">${r.sev}</span><span class="m1-rule-label">${r.label}</span></div>`).join('')}</div>`
+    : `<div class="m1-no-rules">\u2713 No rules triggered</div>`;
+
+  const mlBody = `<div class="m1-data-list">
+    ${dataRow('Verdict', data.prediction||'Unknown', isPhishing?'danger':isLeg?'ok':'warn')}
+    ${dataRow('Confidence', prob!=null?prob+'%':'Rule-based', '')}
+    ${dataRow('Engine', ruleMatch?'Rule Engine':'Random Forest', '')}
+  </div>`;
+
+  // Signals
+  const signals = [
+    { label:'URL Length',          val: Math.min((features.url_length||0)/120,1) },
+    { label:'Suspicious Keywords', val: Math.min(features.suspicious_word||0,1) },
+    { label:'IP in Host',          val: features.has_ip||0 },
+    { label:'Homograph Pattern',   val: features.homograph||0 },
+    { label:'ML Confidence',       val: prob ? prob/100 : (ruleMatch?0.8:0.2) },
+  ];
+  const signalHTML = signals.map(s => {
+    const pct = Math.round(s.val*100);
+    const col = isPhishing ? (pct>40?'red':'') : 'green';
+    return `<div class="ns-signal-row">
+      <span class="ns-signal-label">${s.label}</span>
+      <div class="ns-signal-track"><div class="ns-signal-fill ${col}" style="width:${pct}%"></div></div>
+      <span style="font-family:var(--ns-mono);font-size:10px;color:var(--ns-text-muted);min-width:32px;text-align:right;">${pct}%</span>
+    </div>`;
+  }).join('');
+
+  const clColor = lvColor(compositeLevel);
+  const cardBg  = isPhishing
+    ? 'border-color:rgba(255,59,59,0.35);background:linear-gradient(135deg,var(--ns-surface),rgba(255,59,59,0.04))'
+    : isLeg
+      ? 'border-color:rgba(0,214,143,0.35);background:linear-gradient(135deg,var(--ns-surface),rgba(0,214,143,0.04))'
+      : 'border-color:rgba(255,170,0,0.35);background:linear-gradient(135deg,var(--ns-surface),rgba(255,170,0,0.04))';
+
+  container.innerHTML = `
+    <div class="ns-result-card ${isPhishing?'phishing':isLeg?'legitimate':'warning'}" style="animation:fadeInUp 0.4s ease;${cardBg};padding:24px;">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:14px;">
+        <div>
+          <span class="ns-badge ${verdictBadge}" style="margin-bottom:10px;">${verdictLabel}</span>
+          <div style="font-family:var(--ns-mono);font-size:11px;color:var(--ns-text-muted);word-break:break-all;max-width:400px;margin-top:4px;">${data.url||''}</div>
+        </div>
+        ${prob!=null?`<div style="text-align:right;"><div style="font-family:var(--ns-mono);font-size:32px;font-weight:700;color:${isPhishing?'var(--ns-red)':'var(--ns-green)'};animation:scoreEmerge 0.6s cubic-bezier(0.16,1,0.3,1) both;">${prob}%</div><div style="font-family:var(--ns-mono);font-size:9px;letter-spacing:0.1em;text-transform:uppercase;color:var(--ns-text-muted);">ML Confidence</div></div>`:`<span class="ns-badge ${verdictBadge}">Rule Triggered</span>`}
+      </div>
+
+      <div class="m1-section-label" style="margin:14px 0 10px;">Module 1 &middot; URL Intelligence</div>
+
+      <!-- Composite Risk Gauge -->
+      <div style="display:flex;align-items:center;gap:14px;background:var(--ns-surface-2);border:1px solid var(--ns-border);border-radius:var(--ns-radius-lg);padding:14px 18px;margin-bottom:12px;">
+        <div style="font-family:var(--ns-mono);font-size:38px;font-weight:700;line-height:1;color:${clColor};">${compositeRisk}</div>
+        <div style="flex:1;">
+          <div style="font-family:var(--ns-mono);font-size:8px;letter-spacing:0.14em;text-transform:uppercase;color:var(--ns-text-muted);margin-bottom:5px;">Composite Risk Score</div>
+          <div style="height:6px;background:var(--ns-black);border:1px solid var(--ns-border);border-radius:99px;overflow:hidden;">
+            <div id="landing-risk-bar" style="height:100%;width:0%;background:${clColor};border-radius:99px;transition:width 1s ease;"></div>
+          </div>
+          <div style="font-family:var(--ns-mono);font-size:9px;color:${clColor};margin-top:4px;">${(intel.composite_level||'LOW').toUpperCase()} THREAT LEVEL</div>
+        </div>
+      </div>
+
+      <!-- 4 Layer Cards -->
+      <div class="m1-layers-grid" style="margin-bottom:14px;">
+        ${lCard('\uD83D\uDD0D','URL Structure','Structural Analysis',strucScore,strucLevel,strucBody)}
+        ${lCard('\uD83D\uDCCA','Lexical Intel','Pattern & Entropy',lexScore,lexLevel,lexBody)}
+        ${lCard('\uD83D\uDEE1','Security Rules','Rule Engine',ruleScore,ruleLevel,rulesBody)}
+        ${lCard('\uD83E\uDD16','ML Classifier','Random Forest',mlScore,mlLevel,mlBody)}
+      </div>
+
+      <!-- Signal Breakdown -->
+      <div class="ns-signals">
+        <div class="ns-signals-title">Signal Breakdown</div>
+        ${signalHTML}
+      </div>
+
+      <!-- Domain Infrastructure Bridge (Module 1 -> Module 2) -->
+      ${(() => {
+        const dTarget = (data.domain_intelligence && data.domain_intelligence.target && data.domain_intelligence.target.registered_domain)
+          || (data.target && (data.target.domain || data.target.hostname))
+          || (data.url ? data.url.replace(/^https?:\/\//i,'').split('/')[0].split(':')[0] : '');
+        if (!dTarget) return '';
+        const dIntel = data.domain_intelligence || {};
+        const dDns = dIntel.dns || {};
+        const dWhois = dIntel.registration || {};
+        const dSsl = dIntel.ssl || {};
+        return `
+        <div style="margin:16px 0 12px; padding:14px 16px; background:linear-gradient(135deg, rgba(0,200,255,0.06), rgba(8,12,16,0.6)); border:1px solid rgba(0,200,255,0.25); border-radius:var(--ns-radius-md); display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px;">
+          <div>
+            <div style="font-family:var(--ns-mono); font-size:10px; color:var(--ns-cyan); text-transform:uppercase; letter-spacing:0.1em; display:flex; align-items:center; gap:6px; margin-bottom:4px;">
+              <span style="display:inline-block; width:6px; height:6px; border-radius:50%; background:var(--ns-cyan); box-shadow:0 0 6px var(--ns-cyan);"></span>
+              Underlying Infrastructure (Module 2 Domain Intel)
+            </div>
+            <div style="font-family:var(--ns-mono); font-size:13px; font-weight:700; color:#fff; display:flex; align-items:center; gap:8px;">
+              <span>🌐</span> <span>${escapeHtml(dTarget)}</span>
+              ${dDns.dns_resolution ? '<span class="ns-badge ns-badge-green" style="font-size:9.5px;">DNS Resolved ✓</span>' : ''}
+              ${dSsl.ssl_valid ? '<span class="ns-badge ns-badge-cyan" style="font-size:9.5px;">Valid TLS</span>' : ''}
+            </div>
+            <div style="font-size:11px; color:var(--ns-text-muted); margin-top:3px;">
+              URL syntax inspected. DNS records, WHOIS lifecycle, and SSL certificate audited live.
+            </div>
+          </div>
+          <a href="/domain-intelligence?domain=${encodeURIComponent(dTarget)}" class="ns-shiny" style="text-decoration:none; padding:8px 16px; font-size:11px; white-space:nowrap;">
+            <span>Investigate Domain →</span>
+          </a>
+        </div>`;
+      })()}
+
+      <!-- Footer -->
+      <div style="margin-top:16px;padding-top:14px;border-top:1px solid var(--ns-border);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;">
+        <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;">
+          <div style="font-family:var(--ns-mono);font-size:10px;color:var(--ns-text-muted);">Engine: <span style="color:${ruleMatch?'var(--ns-amber)':'var(--ns-cyan)'};">${ruleMatch?'Security Rule':'ML Classifier'}</span></div>
+          <a href="/login" style="font-family:var(--ns-mono);font-size:10px;color:var(--ns-cyan);text-decoration:none;">\u2192 Login to save history</a>
+        </div>
+        <div class="report-actions" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+          <button type="button" class="btn-report-action" onclick="copyThreatReport(this,'${(data.url||'').replace(/'/g,"\\'")}','${(data.prediction||'').replace(/'/g,"\\'")}','${prob||''}','${ruleMatch?'Security Rule':'ML Classifier'}')">&#128203; Copy Report</button>
+          <button type="button" class="btn-report-action" onclick="shareThreatReport(this,'${(data.url||'').replace(/'/g,"\\'")}','${(data.prediction||'').replace(/'/g,"\\'")}')">&#8599; Share</button>
+          ${data.investigation_id ? `<a href="/report?id=${encodeURIComponent(data.investigation_id)}&url=${encodeURIComponent(data.url || '')}" target="_blank" class="btn-view-report" style="font-size:10px;padding:6px 14px;">VIEW FULL REPORT →</a>` : ''}
+        </div>
+      </div>
+    </div>`;
+
+  requestAnimationFrame(() => {
+    setTimeout(() => {
+      const rb = document.getElementById('landing-risk-bar');
+      if (rb) rb.style.width = compositeRisk + '%';
+      document.querySelectorAll('.m1-mini-bar-fill[data-target]').forEach(el => {
+        el.style.width = el.getAttribute('data-target') + '%';
+      });
+    }, 80);
+  });
+}
+
+function copyThreatReport(btn, url, verdict, prob, method) {
+  const ts = new Date().toUTCString();
+  const text = `--- NEURASHIELD THREAT INTELLIGENCE REPORT ---
+Target URL: ${url}
+Verdict: ${verdict}
+Confidence: ${prob ? prob + '%' : 'Rule Triggered'}
+Detection Method: ${method}
+Timestamp: ${ts}
+Engine: NeuraShield Multi-Layer Threat Classifier
+-----------------------------------------------`;
+
+  const markSuccess = () => {
+    const orig = btn.innerHTML;
+    btn.innerHTML = '✓ Report Copied!';
+    btn.classList.add('copied');
+    setTimeout(() => {
+      btn.innerHTML = orig;
+      btn.classList.remove('copied');
+    }, 2200);
+  };
+
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).then(markSuccess).catch(() => {
+      fallbackCopy(text, markSuccess);
+    });
+  } else {
+    fallbackCopy(text, markSuccess);
+  }
+}
+
+function shareThreatReport(btn, url, verdict) {
+  const shareData = {
+    title: 'NeuraShield Security Scan: ' + verdict,
+    text: `Security scan verdict for ${url}: ${verdict}`,
+    url: window.location.href
+  };
+
+  const markSuccess = () => {
+    const orig = btn.innerHTML;
+    btn.innerHTML = '✓ Link Copied!';
+    btn.classList.add('copied');
+    setTimeout(() => {
+      btn.innerHTML = orig;
+      btn.classList.remove('copied');
+    }, 2000);
+  };
+
+  if (navigator.share) {
+    navigator.share(shareData).catch(() => {});
+  } else {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(window.location.origin + '/#demo').then(markSuccess).catch(() => {
+        fallbackCopy(window.location.origin + '/#demo', markSuccess);
+      });
+    } else {
+      fallbackCopy(window.location.origin + '/#demo', markSuccess);
+    }
+  }
+}
+
+function fallbackCopy(text, cb) {
+  const ta = document.createElement('textarea');
+  ta.value = text;
+  ta.style.position = 'fixed';
+  ta.style.opacity = '0';
+  document.body.appendChild(ta);
+  ta.select();
+  try {
+    document.execCommand('copy');
+    if (cb) cb();
+  } catch(e) {}
+  document.body.removeChild(ta);
+}
+
+function delay(ms){ return new Promise(r => setTimeout(r, ms)); }
+
+/* ── ELEVATION LAYER ── */
+/* ══════════════════════════════════════════════
+   NEURASHIELD ELEVATION LAYER — behaviour (additive)
+════════════════════════════════════════════════ */
+(function(){
+  const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  /* ── 1. HERO WORD ASSEMBLY ─────────────────────── */
+  const title = document.querySelector('.hero-title');
+  if (title) {
+    requestAnimationFrame(() => {
+      title.classList.add('assembled');
+      const acc = title.querySelector('.hero-word.accent');
+      if (acc) {
+        const d = parseFloat(getComputedStyle(acc).getPropertyValue('--d')) || 0;
+        setTimeout(() => acc.classList.add('assembled-glow'), (d + 0.9) * 1000);
+      }
+    });
+  }
+
+  /* ── 2. SCROLL-ENTRY ELEVATION ─────────────────── */
+  const reveals = document.querySelectorAll('.reveal');
+  if (reveals.length) {
+    if (reduce || !('IntersectionObserver' in window)) {
+      reveals.forEach(el => el.classList.add('in'));
+    } else {
+      // stagger siblings that share a parent
+      const seen = new Map();
+      reveals.forEach(el => {
+        const key = el.parentElement;
+        const idx = seen.get(key) || 0; seen.set(key, idx + 1);
+        if (!el.style.transitionDelay) el.style.transitionDelay = Math.min(idx * 0.09, 0.45) + 's';
+      });
+      const io = new IntersectionObserver((entries) => {
+        entries.forEach(e => {
+          if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); }
+        });
+      }, { threshold: 0.14, rootMargin: '0px 0px -8% 0px' });
+      reveals.forEach(el => io.observe(el));
+    }
+  }
+
+  /* ── 3. THREE.JS HERO THREAT CORE (2D fallback stays if THREE missing) ── */
+  function initThreeCore(){
+    const mount = document.getElementById('threatCore3D');
+    if (!mount || typeof THREE === 'undefined') return false;
+    const canvas2d = document.getElementById('threatCanvas');
+    if (canvas2d) canvas2d.style.display = 'none';   // hand off to 3D
+    mount.style.display = 'block';
+
+    const W = mount.clientWidth || 380, H = mount.clientHeight || 380;
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(45, W/H, 0.1, 100);
+    camera.position.set(0, 0, 9);
+    const renderer = new THREE.WebGLRenderer({ antialias:true, alpha:true });
+    renderer.setSize(W, H);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+    mount.appendChild(renderer.domElement);
+
+    const CY = 0x00c8ff, BL = 0x1a6fff, GR = 0x00d68f;
+    const group = new THREE.Group(); scene.add(group);
+
+    // Rotating rings
+    const rings = [];
+    const ringDefs = [
+      { r: 2.6, tube: 0.012, color: CY, op: 0.7, ax:'x', sp: 0.20 },
+      { r: 3.2, tube: 0.008, color: BL, op: 0.4, ax:'y', sp: -0.14 },
+      { r: 3.9, tube: 0.006, color: CY, op: 0.22, ax:'z', sp: 0.08 },
+    ];
+    ringDefs.forEach(d => {
+      const geo = new THREE.TorusGeometry(d.r, d.tube, 8, 120);
+      const mat = new THREE.MeshBasicMaterial({ color:d.color, transparent:true, opacity:d.op });
+      const m = new THREE.Mesh(geo, mat);
+      if (d.ax==='x') m.rotation.x = Math.PI/2;
+      if (d.ax==='z') m.rotation.y = Math.PI/2.4;
+      m.userData = d; rings.push(m); group.add(m);
+    });
+
+    // Core
+    const coreGeo = new THREE.IcosahedronGeometry(1.05, 1);
+    const core = new THREE.Mesh(coreGeo, new THREE.MeshBasicMaterial({ color:CY, wireframe:true, transparent:true, opacity:0.6 }));
+    group.add(core);
+    const coreGlow = new THREE.Mesh(new THREE.SphereGeometry(0.72, 24, 24),
+      new THREE.MeshBasicMaterial({ color:CY, transparent:true, opacity:0.18 }));
+    group.add(coreGlow);
+
+    // Particle field (capped, fewer on small screens)
+    const PN = (W < 340 ? 220 : 460);
+    const pGeo = new THREE.BufferGeometry();
+    const pos = new Float32Array(PN*3);
+    for (let i=0;i<PN;i++){
+      const rr = 3.4 + Math.random()*2.4, th = Math.random()*Math.PI*2, ph = Math.acos(2*Math.random()-1);
+      pos[i*3]   = rr*Math.sin(ph)*Math.cos(th);
+      pos[i*3+1] = rr*Math.sin(ph)*Math.sin(th);
+      pos[i*3+2] = rr*Math.cos(ph);
+    }
+    pGeo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+    const particles = new THREE.Points(pGeo, new THREE.PointsMaterial({ color:CY, size:0.03, transparent:true, opacity:0.5 }));
+    group.add(particles);
+
+    // Orbiting labelled nodes feeding the core
+    function labelSprite(text, color){
+      const c = document.createElement('canvas'); c.width = 256; c.height = 64;
+      const g = c.getContext('2d');
+      g.fillStyle = 'rgba(8,12,16,0.85)'; roundRect(g, 8, 12, 240, 40, 10); g.fill();
+      g.strokeStyle = color; g.lineWidth = 2; roundRect(g, 8, 12, 240, 40, 10); g.stroke();
+      g.fillStyle = color; g.font = '600 26px JetBrains Mono, monospace';
+      g.textAlign='center'; g.textBaseline='middle'; g.fillText(text, 128, 34);
+      const tex = new THREE.CanvasTexture(c); tex.anisotropy = 2;
+      const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map:tex, transparent:true }));
+      sp.scale.set(1.5, 0.375, 1); return sp;
+    }
+    function roundRect(g,x,y,w,h,r){ g.beginPath(); g.moveTo(x+r,y); g.arcTo(x+w,y,x+w,y+h,r); g.arcTo(x+w,y+h,x,y+h,r); g.arcTo(x,y+h,x,y,r); g.arcTo(x,y,x+w,y,r); g.closePath(); }
+
+    const nodeDefs = [
+      {t:'URL', c:'#00c8ff'}, {t:'DOMAIN', c:'#7bb3ff'}, {t:'WEBPAGE', c:'#7bb3ff'},
+      {t:'EMAIL', c:'#7bb3ff'}, {t:'QR', c:'#7bb3ff'}, {t:'BRAND', c:'#7bb3ff'}
+    ];
+    const nodes = nodeDefs.map((d,i) => {
+      const sp = labelSprite(d.t, d.c);
+      sp.userData = { ang: (i/nodeDefs.length)*Math.PI*2, rad: 3.0, y:(Math.random()-0.5)*1.4, sp: 0.12 };
+      group.add(sp);
+      // signal line to core
+      const lg = new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(), new THREE.Vector3()]);
+      const line = new THREE.Line(lg, new THREE.LineBasicMaterial({ color:CY, transparent:true, opacity:0.14 }));
+      sp.userData.line = line; group.add(line);
+      return sp;
+    });
+
+    // Mouse parallax
+    let tx=0, ty=0, mx=0, my=0;
+    function onMove(e){
+      const r = mount.getBoundingClientRect();
+      tx = ((e.clientX - r.left)/r.width - 0.5) * 0.5;
+      ty = ((e.clientY - r.top)/r.height - 0.5) * 0.5;
+    }
+    mount.addEventListener('mousemove', onMove, {passive:true});
+
+    let raf, t=0, running=true;
+    const clock = new THREE.Clock();
+    function frame(){
+      if (!running) return;
+      const dt = Math.min(clock.getDelta(), 0.05); t += dt;
+      rings.forEach(m => {
+        const ax = m.userData.ax, sp = m.userData.sp;
+        m.rotation[ax] += sp*dt;
+      });
+      core.rotation.y += 0.25*dt; core.rotation.x += 0.12*dt;
+      coreGlow.scale.setScalar(1 + Math.sin(t*2.0)*0.06);
+      particles.rotation.y += 0.02*dt;
+      nodes.forEach(sp => {
+        const u = sp.userData; u.ang += u.sp*dt;
+        sp.position.set(Math.cos(u.ang)*u.rad, u.y + Math.sin(t*0.8+u.ang)*0.15, Math.sin(u.ang)*u.rad);
+        const p = sp.geometry ? null : sp.position;
+        const arr = u.line.geometry.attributes.position.array;
+        arr[0]=sp.position.x; arr[1]=sp.position.y; arr[2]=sp.position.z; arr[3]=0; arr[4]=0; arr[5]=0;
+        u.line.geometry.attributes.position.needsUpdate = true;
+      });
+      mx += (tx-mx)*0.05; my += (ty-my)*0.05;
+      group.rotation.y = mx; group.rotation.x = my;
+      renderer.render(scene, camera);
+      raf = requestAnimationFrame(frame);
+    }
+    frame();
+
+    // Pause offscreen / on tab hide (perf)
+    const vis = new IntersectionObserver(es => {
+      es.forEach(e => { running = e.isIntersecting; if (running){ clock.getDelta(); frame(); } });
+    }, { threshold: 0 });
+    vis.observe(mount);
+    document.addEventListener('visibilitychange', () => {
+      running = !document.hidden; if (running){ clock.getDelta(); frame(); }
+    });
+
+    function resize(){
+      const w = mount.clientWidth, h = mount.clientHeight;
+      if (!w || !h) return;
+      camera.aspect = w/h; camera.updateProjectionMatrix(); renderer.setSize(w, h);
+    }
+    window.addEventListener('resize', resize, {passive:true});
+
+    // Cleanup
+    window.addEventListener('pagehide', () => {
+      running=false; cancelAnimationFrame(raf);
+      scene.traverse(o => { if(o.geometry) o.geometry.dispose(); if(o.material){ if(o.material.map) o.material.map.dispose(); o.material.dispose(); }});
+      renderer.dispose();
+    }, {once:true});
+    return true;
+  }
+
+  /* Load Three.js from CDN, then init; keep 2D fallback if it fails */
+  if (!reduce) {
+    if (typeof THREE !== 'undefined') { initThreeCore(); }
+    else {
+      const s = document.createElement('script');
+      s.src = 'https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js';
+      s.async = true;
+      s.onload = () => { try { initThreeCore(); } catch(e){ /* 2D stays */ } };
+      s.onerror = () => { /* offline — 2D canvas remains */ };
+      document.head.appendChild(s);
+    }
+  }
+
+  /* ── 4. UPGRADED DEMO SCAN: threat-core loading + result transition ── */
+  const STAGES = [
+    { label: 'URL Structure Analysis',  ms: 620 },
+    { label: 'Security Rule Engine',    ms: 560 },
+    { label: 'ML Classification',       ms: 680 },
+    { label: 'Risk Fusion',             ms: 520 },
+  ];
+
+  function drawScanCore(canvas, progress){
+    const ctx = canvas.getContext('2d');
+    const W = canvas.width, H = canvas.height, cx=W/2, cy=H/2;
+    ctx.clearRect(0,0,W,H);
+    const a = progress.t;
+    // rings
+    for (let i=0;i<3;i++){
+      ctx.beginPath();
+      ctx.arc(cx, cy, 40 + i*18, a*(1+i*0.3), a*(1+i*0.3) + Math.PI*1.3);
+      ctx.strokeStyle = `rgba(0,200,255,${0.5 - i*0.13})`;
+      ctx.lineWidth = 2 - i*0.4; ctx.stroke();
+    }
+    // scanning sweep
+    ctx.save(); ctx.translate(cx,cy); ctx.rotate(a*2.2);
+    const g = ctx.createLinearGradient(0,0,70,0);
+    g.addColorStop(0,'rgba(0,200,255,0.6)'); g.addColorStop(1,'rgba(0,200,255,0)');
+    ctx.strokeStyle=g; ctx.lineWidth=2; ctx.beginPath(); ctx.moveTo(0,0); ctx.lineTo(70,0); ctx.stroke();
+    ctx.restore();
+    // core pulse
+    const pr = 16 + Math.sin(a*4)*3;
+    const rg = ctx.createRadialGradient(cx,cy,0,cx,cy,pr*2);
+    rg.addColorStop(0,'rgba(0,200,255,0.5)'); rg.addColorStop(1,'rgba(0,200,255,0)');
+    ctx.fillStyle=rg; ctx.beginPath(); ctx.arc(cx,cy,pr*2,0,Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.arc(cx,cy,pr,0,Math.PI*2);
+    ctx.fillStyle='rgba(0,200,255,0.22)'; ctx.strokeStyle='#00c8ff'; ctx.lineWidth=2; ctx.fill(); ctx.stroke();
+    ctx.fillStyle='#00c8ff'; ctx.font='700 13px JetBrains Mono, monospace';
+    ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText('🛡', cx, cy);
+    // orbiting nodes
+    for (let i=0;i<6;i++){
+      const ang = a*1.1 + i*(Math.PI/3);
+      const nx = cx + Math.cos(ang)*74, ny = cy + Math.sin(ang)*74;
+      ctx.beginPath(); ctx.arc(nx,ny,2.5,0,Math.PI*2);
+      ctx.fillStyle = i < progress.stage*1.5 ? '#00d68f' : 'rgba(0,200,255,0.5)'; ctx.fill();
+    }
+  }
+
+  window.runDemoScan = async function(e){
+    e.preventDefault();
+    const url = document.getElementById('demoUrl').value.trim();
+    if (!url) return;
+
+    const legacySteps = document.getElementById('demoSteps');
+    if (legacySteps) legacySteps.style.display = 'none';
+    const resultArea = document.getElementById('demoResultArea');
+    const core = document.getElementById('scanCoreStage');
+    const canvas = document.getElementById('scanCoreCanvas');
+    const target = document.getElementById('scanCoreTarget');
+    const barsWrap = document.getElementById('scanBars');
+    resultArea.innerHTML = `
+      <div class="ns-skeleton-wrap" style="margin:20px auto 0;padding:24px;background:rgba(14,20,27,0.7);border:1px dashed rgba(0,200,255,0.25);border-radius:var(--ns-radius-lg);animation:fadeInUp 0.3s ease;">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px;font-family:var(--ns-mono);font-size:10px;color:var(--ns-cyan);letter-spacing:0.1em;text-transform:uppercase;">
+          <span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--ns-cyan);box-shadow:0 0 6px var(--ns-cyan);"></span>
+          Synthesizing Threat Verdict & Risk Signals...
+        </div>
+        <div class="ns-skeleton-row">
+          <div class="ns-skeleton-line" style="width:140px;height:22px;"></div>
+          <div class="ns-skeleton-line" style="width:60px;height:24px;margin-left:auto;"></div>
+        </div>
+        <div class="ns-skeleton-line" style="width:75%;height:11px;margin-top:10px;"></div>
+        <div class="ns-skeleton-line" style="width:100%;height:10px;margin-top:16px;"></div>
+        <div class="ns-skeleton-line" style="width:90%;height:10px;margin-top:8px;"></div>
+        <div class="ns-skeleton-line" style="width:70%;height:10px;margin-top:8px;"></div>
+      </div>`;
+    target.textContent = url;
+    core.classList.add('on');
+
+    // build bars
+    barsWrap.innerHTML = STAGES.map((s,i)=>`
+      <div class="scan-bar-row" id="sbar-${i}">
+        <div class="scan-bar-label"><span>${s.label}</span><span class="sbar-pct">0%</span></div>
+        <div class="scan-bar-track"><div class="scan-bar-fill"></div></div>
+      </div>`).join('');
+
+    // animate core
+    let coreRAF, prog = { t:0, stage:0 }, animating = true;
+    const dpr = Math.min(window.devicePixelRatio||1, 2);
+    canvas.width = 180*dpr; canvas.height = 180*dpr; canvas.getContext('2d').scale(dpr,dpr);
+    canvas.width = 180; canvas.height = 180; // keep simple 1:1 (crisp enough at 180)
+    (function spin(){ if(!animating) return; prog.t += 0.05; drawScanCore(canvas, prog); coreRAF = requestAnimationFrame(spin); })();
+
+    // Kick the real backend call immediately (parallel with the animation)
+    const fetchPromise = fetch('/api/demo-scan', {
+      method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ url })
+    }).then(r => r.json());
+
+    // Walk the honest stages
+    for (let i=0;i<STAGES.length;i++){
+      prog.stage = i+1;
+      const row = document.getElementById('sbar-'+i);
+      const fill = row.querySelector('.scan-bar-fill');
+      const pctEl = row.querySelector('.sbar-pct');
+      const start = performance.now(), dur = STAGES[i].ms;
+      await new Promise(res => {
+        (function step(now){
+          const p = Math.min((now-start)/dur, 1);
+          fill.style.width = (p*100)+'%'; pctEl.textContent = Math.round(p*100)+'%';
+          if (p<1) requestAnimationFrame(step); else { row.classList.add('done'); res(); }
+        })(start);
+      });
+    }
+
+    let data;
+    try { data = await fetchPromise; }
+    catch(err){
+      animating=false; cancelAnimationFrame(coreRAF); core.classList.remove('on');
+      resultArea.innerHTML = `<div style="color:var(--ns-red);font-family:var(--ns-mono);font-size:12px;padding:16px 0;">
+        Error connecting to analysis engine. Please try again.
+        <br><br><a href="/login" style="color:var(--ns-cyan);">→ Login to use full scanner</a></div>`;
+      return;
+    }
+
+    // transition: intensify → contract → reveal
+    await new Promise(r=>setTimeout(r, 260));
+    animating=false; cancelAnimationFrame(coreRAF);
+    core.classList.remove('on');
+    renderResult(data, resultArea);
+    const card = resultArea.querySelector('.ns-result-card');
+    if (card){
+      const score = card.querySelector('[data-score]');
+      if (score){ score.style.animation = 'scoreEmerge 0.6s cubic-bezier(0.16,1,0.3,1) both'; }
+    }
+  };
+
+  /* ── 5. INTERACTIVE DOMAIN TOPOLOGY SWITCHER (Module 2 Visualizer) ── */
+  window.switchDomainViz = function(domain, type) {
+    const domText = document.getElementById('vizDomainText');
+    const domSub = document.getElementById('vizDomainSub');
+    const dnsStatus = document.getElementById('vizDnsStatus');
+    const dnsDetail = document.getElementById('vizDnsDetail');
+    const ipStatus = document.getElementById('vizIpStatus');
+    const ipDetail = document.getElementById('vizIpDetail');
+    const tlsStatus = document.getElementById('vizTlsStatus');
+    const tlsDetail = document.getElementById('vizTlsDetail');
+    const riskScore = document.getElementById('vizRiskScore');
+    const riskReason = document.getElementById('vizRiskReason');
+    const riskNode = document.getElementById('vizNodeRisk');
+
+    document.querySelectorAll('.domain-sample-btn').forEach(b => {
+      if (b.textContent.trim() === domain) {
+        b.style.borderColor = 'var(--ns-cyan)';
+        b.style.background = 'rgba(0,200,255,0.18)';
+        b.style.color = '#fff';
+      } else {
+        b.style.borderColor = '';
+        b.style.background = '';
+        b.style.color = '';
+      }
+    });
+
+    if (domain === 'google.com') {
+      if (domText) domText.textContent = 'google.com';
+      if (domSub) domSub.textContent = 'Normalized Registered Domain · PSL Verified';
+      if (dnsStatus) { dnsStatus.innerHTML = 'Resolved ✓ (Multi-Anycast)'; dnsStatus.style.color = 'var(--ns-green)'; }
+      if (dnsDetail) dnsDetail.innerHTML = 'A Records: 142.250.x.x<br>MX: google.com (Priority 10)<br>Resolver: 8.8.8.8 Recursive';
+      if (ipStatus) { ipStatus.innerHTML = 'Google LLC (AS15169)'; ipStatus.style.color = 'var(--ns-green)'; }
+      if (ipDetail) ipDetail.innerHTML = 'Route: Global Anycast Tier-1<br>Reverse PTR: 1e100.net<br>SSRF Policy: PASS (Public Route)';
+      if (tlsStatus) { tlsStatus.innerHTML = 'TLS 1.3 · Google Trust Services'; tlsStatus.style.color = 'var(--ns-cyan)'; }
+      if (tlsDetail) tlsDetail.innerHTML = 'Issuer: GTS CA 1C3<br>Cipher: TLS_AES_256_GCM_SHA384<br>Notice: Valid &amp; Trusted EV/OV';
+      if (riskScore) { riskScore.innerHTML = 'SCORE: 0 / 100 · LOW RISK'; riskScore.style.color = 'var(--ns-green)'; }
+      if (riskReason) riskReason.innerHTML = 'Established infrastructure (~27 yrs) · Valid TLS · Trusted Global Anycast ASN';
+      if (riskNode) { riskNode.style.borderColor = 'var(--ns-green)'; riskNode.style.boxShadow = '0 0 20px rgba(0,214,143,0.25)'; }
+    } else if (domain === 'paypal-security-update.vip') {
+      if (domText) domText.textContent = 'paypal-security-update.vip';
+      if (domSub) domSub.textContent = 'Brand Impersonation Target: paypal.com';
+      if (dnsStatus) { dnsStatus.innerHTML = 'Resolved ⚠ (Fast-Flux Pattern)'; dnsStatus.style.color = 'var(--ns-red)'; }
+      if (dnsDetail) dnsDetail.innerHTML = 'A Records: 185.220.101.4<br>MX: None (No Mail Route)<br>Nameservers: Anonymous NS';
+      if (ipStatus) { ipStatus.innerHTML = 'High-Risk Bulletproof Hosting'; ipStatus.style.color = 'var(--ns-red)'; }
+      if (ipDetail) ipDetail.innerHTML = 'ASN: AS44050 (Suspicious)<br>Reverse PTR: Generic dynamic host<br>SSRF Policy: PASS (Public Route)';
+      if (tlsStatus) { tlsStatus.innerHTML = 'Free Short-Lived DV (3 Days Old)'; tlsStatus.style.color = 'var(--ns-amber)'; }
+      if (tlsDetail) tlsDetail.innerHTML = 'Issuer: Let\'s Encrypt DV<br>Subject Alt: paypal-security*<br>Notice: Automated DV Certificate';
+      if (riskScore) { riskScore.innerHTML = 'SCORE: 88 / 100 · HIGH RISK'; riskScore.style.color = 'var(--ns-red)'; }
+      if (riskReason) riskReason.innerHTML = 'High brand spoofing distance · Domain age &lt; 5 days · Missing mail exchange · Untrusted ASN';
+      if (riskNode) { riskNode.style.borderColor = 'var(--ns-red)'; riskNode.style.boxShadow = '0 0 25px rgba(255,77,106,0.35)'; }
+    } else {
+      if (domText) domText.textContent = 'khanacademy.org';
+      if (domSub) domSub.textContent = 'Normalized Registered Domain · PSL Verified';
+      if (dnsStatus) { dnsStatus.innerHTML = 'Resolved ✓ (4 IPv4)'; dnsStatus.style.color = 'var(--ns-green)'; }
+      if (dnsDetail) dnsDetail.innerHTML = 'A Records: 151.101.x.x<br>MX: Google Apps (ASPMX)<br>Resolver: 8.8.8.8 Recursive';
+      if (ipStatus) { ipStatus.innerHTML = 'Fastly CDN (Multi-IP)'; ipStatus.style.color = 'var(--ns-green)'; }
+      if (ipDetail) ipDetail.innerHTML = 'Route: Public Route Verified<br>Reverse PTR: Fastly Net<br>SSRF Policy: PASS (Non-RFC1918)';
+      if (tlsStatus) { tlsStatus.innerHTML = 'Transport Verified ✓'; tlsStatus.style.color = 'var(--ns-cyan)'; }
+      if (tlsDetail) tlsDetail.innerHTML = 'Issuer: GlobalSign nv-sa<br>Protocol: TLSv1.3 / AES-GCM<br>Notice: Encrypted Transport';
+      if (riskScore) { riskScore.innerHTML = 'SCORE: 0 / 100 · LOW RISK'; riskScore.style.color = 'var(--ns-green)'; }
+      if (riskReason) riskReason.innerHTML = 'Domain age established (~20.5 yrs) · Valid TLS · Reputable CDN routing';
+      if (riskNode) { riskNode.style.borderColor = 'var(--ns-green)'; riskNode.style.boxShadow = '0 0 20px rgba(0,214,143,0.2)'; }
+    }
+  };
+})();
+
+</script>
+
+<script>
+/* Hero word scramble-on-open: each word decodes from random glyphs into place */
+(function(){
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  const words = document.querySelectorAll('.hero-title .hero-word');
+  if (!words.length) return;
+  const glyphs = '!<>-_\\/[]{}=+*^?#0123456789ABCDEFXY█▓@$%';
+  words.forEach(w => {
+    const finalText = w.textContent;
+    const d = (parseFloat(getComputedStyle(w).getPropertyValue('--d')) || 0) * 1000;
+    // lock width to avoid reflow jitter
+    w.style.minWidth = w.offsetWidth + 'px';
+    w.setAttribute('data-final', finalText);
+    const dur = 620, start = performance.now() + d;
+    function frame(now){
+      const p = Math.max(0, Math.min((now - start) / dur, 1));
+      const lock = Math.floor(p * finalText.length);
+      let out = '';
+      for (let i=0;i<finalText.length;i++){
+        const ch = finalText[i];
+        if (ch === ' ') { out += ' '; continue; }
+        out += (i < lock || p >= 1) ? ch : glyphs[(Math.random()*glyphs.length)|0];
+      }
+      w.textContent = out;
+      if (p < 1) requestAnimationFrame(frame);
+      else { w.textContent = finalText; w.style.minWidth = ''; }
+    }
+    requestAnimationFrame(frame);
+  });
+})();
+
+</script>
+<script src="/ns_capabilities.js"></script>
+</body>
+</html>

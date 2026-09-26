@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>🛑 Unsafe Website Blocked — NeuraShield Protection</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #070a0e;
+      --card-bg: rgba(16, 22, 30, 0.95);
+      --red: #ff3b3b;
+      --red-glow: rgba(255, 59, 59, 0.25);
+      --amber: #ffaa00;
+      --green: #00d68f;
+      --cyan: #00c8ff;
+      --text: #f1f5f9;
+      --text-muted: #94a3b8;
+      --border: rgba(255, 255, 255, 0.08);
+      --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+      --font-mono: 'JetBrains Mono', monospace;
+    }
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--font-sans);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      position: relative;
+      overflow-x: hidden;
+    }
+    /* Background subtle pulse */
+    body::before {
+      content: '';
+      position: absolute;
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      width: 600px; height: 600px;
+      background: radial-gradient(circle, rgba(255,59,59,0.08) 0%, rgba(7,10,14,0) 70%);
+      pointer-events: none;
+      z-index: 0;
+    }
+    .warning-container {
+      position: relative;
+      z-index: 1;
+      width: 100%;
+      max-width: 680px;
+      background: var(--card-bg);
+      border: 1px solid rgba(255, 59, 59, 0.35);
+      border-radius: 16px;
+      padding: 36px 32px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.8), 0 0 40px var(--red-glow);
+      backdrop-filter: blur(12px);
+    }
+    .shield-header {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      margin-bottom: 24px;
+      padding-bottom: 20px;
+      border-bottom: 1px solid var(--border);
+    }
+    .shield-icon-wrap {
+      width: 56px; height: 56px;
+      border-radius: 14px;
+      background: rgba(255, 59, 59, 0.12);
+      border: 1px solid rgba(255, 59, 59, 0.4);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 28px;
+      box-shadow: 0 0 20px rgba(255,59,59,0.25);
+    }
+    .shield-titles {
+      flex: 1;
+    }
+    .brand-tag {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--red);
+      display: flex; align-items: center; gap: 6px;
+      margin-bottom: 4px;
+    }
+    .brand-tag .dot {
+      width: 6px; height: 6px; border-radius: 50%;
+      background: var(--red);
+      box-shadow: 0 0 8px var(--red);
+    }
+    h1 {
+      font-size: 22px;
+      font-weight: 800;
+      color: #fff;
+      letter-spacing: -0.01em;
+    }
+    .blocked-url-bar {
+      background: rgba(0,0,0,0.4);
+      border: 1px solid rgba(255,255,255,0.06);
+      border-radius: 8px;
+      padding: 10px 14px;
+      font-family: var(--font-mono);
+      font-size: 12px;
+      color: var(--text-muted);
+      word-break: break-all;
+      margin-bottom: 22px;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .blocked-url-bar strong {
+      color: #fff;
+    }
+
+    /* Plain English Cards */
+    .plain-card {
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 16px 18px;
+      margin-bottom: 14px;
+    }
+    .plain-card-title {
+      font-size: 13.5px;
+      font-weight: 700;
+      color: #fff;
+      display: flex; align-items: center; gap: 8px;
+      margin-bottom: 6px;
+    }
+    .plain-card-body {
+      font-size: 13px;
+      color: var(--text-muted);
+      line-height: 1.55;
+    }
+    .plain-card-body strong {
+      color: var(--text);
+    }
+    .plain-card.danger {
+      border-color: rgba(255, 59, 59, 0.25);
+      background: rgba(255, 59, 59, 0.03);
+    }
+    .plain-card.advice {
+      border-color: rgba(0, 214, 143, 0.25);
+      background: rgba(0, 214, 143, 0.03);
+    }
+
+    .action-steps {
+      list-style: none;
+      margin-top: 8px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .action-steps li {
+      font-size: 12.5px;
+      color: #cbd5e1;
+      display: flex; align-items: flex-start; gap: 8px;
+    }
+    .action-steps li span.icon {
+      color: var(--green);
+      font-weight: 700;
+    }
+
+    /* Actions */
+    .button-row {
+      display: flex;
+      gap: 12px;
+      margin-top: 24px;
+      flex-wrap: wrap;
+    }
+    .btn-safety {
+      flex: 1;
+      min-width: 200px;
+      background: linear-gradient(135deg, #00d68f, #009e66);
+      color: #000;
+      font-weight: 800;
+      font-size: 13.5px;
+      padding: 14px 22px;
+      border-radius: 8px;
+      text-decoration: none;
+      display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+      border: none;
+      cursor: pointer;
+      box-shadow: 0 4px 18px rgba(0, 214, 143, 0.35);
+      transition: all 0.2s ease;
+    }
+    .btn-safety:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 24px rgba(0, 214, 143, 0.5);
+    }
+    .btn-dossier {
+      background: rgba(255, 255, 255, 0.04);
+      color: var(--cyan);
+      font-family: var(--font-mono);
+      font-size: 12px;
+      font-weight: 600;
+      padding: 14px 18px;
+      border-radius: 8px;
+      text-decoration: none;
+      display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+      border: 1px solid rgba(0, 200, 255, 0.25);
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    .btn-dossier:hover {
+      background: rgba(0, 200, 255, 0.1);
+      border-color: var(--cyan);
+    }
+
+    .footer-note {
+      font-size: 11px;
+      color: var(--text-muted);
+      text-align: center;
+      margin-top: 20px;
+      font-family: var(--font-mono);
+    }
+  </style>
+</head>
+<body>
+
+  <div class="warning-container">
+    <div class="shield-header">
+      <div class="shield-icon-wrap">🛡️</div>
+      <div class="shield-titles">
+        <div class="brand-tag">
+          <span class="dot"></span>
+          <span>NEURASHIELD ZERO-CLICK CONSUMER PROTECTION</span>
+        </div>
+        <h1>Deceptive Website Blocked</h1>
+      </div>
+    </div>
+
+    <div class="blocked-url-bar">
+      <span>Target:</span>
+      <strong>{{ url }}</strong>
+    </div>
+
+    <!-- 1. What Happened -->
+    <div class="plain-card danger">
+      <div class="plain-card-title">
+        <span>⚠️</span> Why was this website blocked?
+      </div>
+      <div class="plain-card-body">
+        This webpage is pretending to be an authentic corporate login portal, but NeuraShield detected that 
+        <strong>any password, email, or PIN you type here is secretly forwarded to a hacker's server</strong>.
+        <br><br>
+        <span style="font-family:var(--font-mono);font-size:11.5px;color:#ffaa00;">
+          Identified Threat: {{ threat }}
+        </span>
+      </div>
+    </div>
+
+    <!-- 2. What the user should do right now -->
+    <div class="plain-card advice">
+      <div class="plain-card-title">
+        <span>🛡️</span> What should you do right now?
+      </div>
+      <div class="plain-card-body">
+        <ul class="action-steps">
+          <li>
+            <span class="icon">✓</span>
+            <span><strong>If you only clicked the link:</strong> You are 100% safe. NeuraShield blocked the page before it could steal anything. Simply click <em>"Back to Safety"</em> below.</span>
+          </li>
+          <li>
+            <span class="icon">✓</span>
+            <span><strong>If you got this link via SMS or WhatsApp:</strong> Delete the message immediately. Do not forward it to friends or family.</span>
+          </li>
+          <li>
+            <span class="icon">✓</span>
+            <span><strong>If you previously entered your password:</strong> Go to the official website directly (type the name yourself in Google) and change your password immediately.</span>
+          </li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- Action Buttons -->
+    <div class="button-row">
+      <button type="button" class="btn-safety" onclick="goBack()">
+        <span>← Back to Safety (Recommended)</span>
+      </button>
+      <a href="/report?id={{ inv_id }}&url={{ url|urlencode }}" class="btn-dossier" target="_blank">
+        <span>🔍 Technical SOC Dossier</span>
+      </a>
+    </div>
+
+    <div class="footer-note">
+      Protected automatically by NeuraShield Multi-Layer Threat Intelligence · Zero User Effort Required
+    </div>
+  </div>
+
+  <script>
+    function goBack() {
+      if (window.history.length > 1) {
+        window.history.back();
+      } else {
+        window.close();
+        // Fallback
+        window.location.href = "https://google.com";
+      }
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Email Intelligence — NeuraShield</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='neurashield.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='ns_investigation.css') }}">
+</head>
+<body>
+<nav class="ns-nav scrolled" style="background:rgba(8,12,16,0.95);">
+  <div class="ns-nav-inner">
+    <a href="/" class="ns-logo">
+      <img src="{{ url_for('static', filename='static/ns_logo.png') }}" class="ns-logo-icon" alt="NS" onerror="this.style.display='none';">
+      <div class="ns-logo-text"><span class="ns-logo-name">NeuraShield</span><span class="ns-logo-sub">Threat Intelligence</span></div>
+    </a>
+    <div class="ns-nav-actions">
+      <span style="font-family:var(--ns-mono);font-size:11px;color:var(--ns-text-dim);">{{ username }}</span>
+      <a href="/logout" class="btn-ghost">Logout</a>
+    </div>
+  </div>
+</nav>
+
+<div class="inv-layout">
+  <aside class="inv-sidebar">
+    <div class="who"><small>Analyst</small><b>{{ username }}</b></div>
+    <ul class="inv-nav" id="nav"></ul>
+  </aside>
+
+  <main class="inv-main">
+    <div class="inv-wrap">
+      <header class="inv-head">
+        <div class="inv-eyebrow">Module 4 · Email Intelligence <span id="modStatus" class="state" style="margin-left:8px"></span></div>
+        <h1 class="inv-title">Who claims to have sent this — and what supports that claim?</h1>
+        <p class="inv-sub">Upload the original message source (.eml) or paste it. NeuraShield separates what the e-mail <em>claims</em>, what it
+          <em>contains</em>, what is <em>technically verified</em>, what a model <em>predicts</em>, and what <em>cannot be verified</em>.
+          Nothing in the message is executed or rendered.</p>
+      </header>
+
+      <section class="panel" id="inputPanel">
+        <form id="emailForm" novalidate>
+          <div class="grid-2">
+            <div>
+              <label class="drop" id="drop" for="fileInput">
+                <b>Drop an .eml file here</b><br><span class="muted small">or click to choose · max {{ max_mb }} MB · .eml / .txt raw source</span>
+                <div class="file" id="fileName"></div>
+              </label>
+              <input type="file" id="fileInput" accept=".eml,.txt,message/rfc822,text/plain" hidden>
+              <p class="muted small" style="margin:12px 0 0;line-height:1.6">Gmail: ⋮ → <i>Download message</i>. Outlook: <i>File → Save As → .eml</i> (Outlook's .msg format is not supported).
+                Apple Mail: <i>File → Save As → Raw Message Source</i>.</p>
+            </div>
+            <div>
+              <textarea class="raw" id="rawInput" placeholder="…or paste the full raw source here (headers + body). Pasting only the body text works, but sender and authentication checks will be unavailable."></textarea>
+            </div>
+          </div>
+          <div style="display:flex;flex-wrap:wrap;gap:16px 28px;margin-top:16px;align-items:flex-start;justify-content:space-between">
+            <div style="display:grid;gap:10px;max-width:720px">
+              <label class="opt"><input type="checkbox" id="optDomain" checked> <span><b>Domain Intelligence</b> on the sender and link domains (live DNS / RDAP / TLS, up to 5 domains).</span></label>
+              <label class="opt"><input type="checkbox" id="optFetch"> <span><b>Retrieve linked webpages</b> (opt-in, up to 3, SSRF-guarded, static only). Visiting a tracked link can confirm to the sender that the e-mail was opened.</span></label>
+            </div>
+            <button class="btn-elev" type="submit" id="goBtn">Investigate e-mail →</button>
+          </div>
+        </form>
+        <div class="inv-error" id="err"></div>
+      </section>
+
+      <section class="panel core" id="core" aria-live="polite">
+        <canvas id="coreCanvas" aria-hidden="true"></canvas>
+        <div>
+          <div class="inv-eyebrow" id="coreTitle">Investigation running</div>
+          <p class="dim small" id="coreNote" style="margin:0 0 12px">These are the stages the server executes. Their real status and timings are shown when the server responds — no simulated progress.</p>
+          <ul class="stage-list" id="stageList"></ul>
+        </div>
+      </section>
+
+      <div id="result" style="display:none">
+        <div class="sec" id="quick"></div>
+        <div class="sec">
+          <div class="sec-h"><h2>Detailed evidence</h2><span class="n" id="invIdLbl"></span></div>
+          <details class="x" open><summary>Sender identity & consistency</summary><div class="body" id="dIdentity"></div></details>
+          <details class="x"><summary>Authentication (SPF / DKIM / DMARC) & sender domain</summary><div class="body" id="dAuth"></div></details>
+          <details class="x"><summary>Links</summary><div class="body" id="dLinks"></div></details>
+          <details class="x"><summary>Attachments</summary><div class="body" id="dAtt"></div></details>
+          <details class="x"><summary>Content & HTML</summary><div class="body" id="dContent"></div></details>
+          <details class="x"><summary>Received chain (routing)</summary><div class="body" id="dRcv"></div></details>
+          <details class="x"><summary>Evidence coverage</summary><div class="body" id="dCov"></div></details>
+          <details class="x"><summary>All headers</summary><div class="body" id="dHeaders"></div></details>
+        </div>
+        <div style="margin-top:24px"><button class="btn-elev secondary" id="againBtn" type="button">Investigate another e-mail</button></div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script src="{{ url_for('static', filename='ns_investigation.js') }}"></script>
+<script>
+(function () {
+  const $ = (id) => document.getElementById(id);
+  const esc = NS.esc;
+  NS.renderNav($('nav'), 'email');
+  fetch('/api/capabilities').then(r => r.json()).then(c => {
+    const m = (c.modules || []).find(x => x.key === 'email');
+    if (m) { $('modStatus').className = 'state state-' + (m.status === 'ACTIVE' ? 'VERIFIED' : 'UNAVAILABLE'); $('modStatus').textContent = m.status.replace('_', ' ');
+      if (m.limitations && m.limitations.length) $('modStatus').title = m.limitations.join(' '); }
+  }).catch(() => {});
+
+  // Stages the server runs, in order (names match the backend's stage records).
+  const PLAN = [
+    ['parse', 'Email parsing'], ['auth', 'Authentication analysis'], ['headers', 'Header & sender-consistency analysis'],
+    ['sender_dns', 'Sender domain DNS check'], ['content', 'Content analysis'], ['urls', 'URL extraction'],
+    ['url_intel', 'URL Intelligence on extracted links'], ['domain_intel', 'Domain Intelligence on sender/link domains'],
+    ['webpage_intel', 'Webpage Intelligence on linked pages'], ['attachments', 'Attachment static analysis'],
+    ['rules', 'Security rules'], ['ml', 'Email text model'], ['fusion', 'Risk fusion'],
+  ];
+  let file = null;
+  const drop = $('drop');
+  $('fileInput').addEventListener('change', (e) => { file = e.target.files[0] || null; $('fileName').textContent = file ? file.name : ''; });
+  ['dragenter', 'dragover'].forEach(ev => drop.addEventListener(ev, e => { e.preventDefault(); drop.classList.add('over'); }));
+  ['dragleave', 'drop'].forEach(ev => drop.addEventListener(ev, e => { e.preventDefault(); drop.classList.remove('over'); }));
+  drop.addEventListener('drop', e => { file = e.dataTransfer.files[0] || null; $('fileName').textContent = file ? file.name : ''; });
+
+  const core = NS.core($('coreCanvas'));
+  function showError(code, msg) {
+    $('err').innerHTML = `<span class="code">${esc(code)}</span>${esc(msg)}`; $('err').style.display = 'block';
+  }
+  function setRunning(on) {
+    $('core').style.display = on ? 'grid' : 'none'; $('goBtn').disabled = on;
+    if (on) {
+      $('coreTitle').textContent = 'Investigation running';
+      $('stageList').innerHTML = PLAN.map(([k, n]) => `<li><span class="ic">○</span><span>${esc(n)}</span><span class="st">queued</span></li>`).join('');
+      core.start();
+    } else core.stop();
+  }
+  function showStages(stages) {
+    $('coreTitle').textContent = 'Stages executed';
+    $('coreNote').textContent = 'Actual status and duration reported by the server for this investigation.';
+    $('stageList').innerHTML = stages.map(s => {
+      const cls = s.status === 'COMPLETED' ? 'done' : s.status === 'FAILED' ? 'fail' : 'skip';
+      const ic = s.status === 'COMPLETED' ? '✓' : s.status === 'FAILED' ? '✕' : '–';
+      return `<li class="${cls}" title="${esc(s.detail || '')}"><span class="ic">${ic}</span><span>${esc(s.name)}${s.detail ? `<div class="muted small">${esc(s.detail)}</div>` : ''}</span>
+        <span class="st">${s.status === 'COMPLETED' ? esc(s.duration_ms) + ' ms' : esc(s.status.replace(/_/g, ' ').toLowerCase())}</span></li>`;
+    }).join('');
+    $('core').style.display = 'grid';
+  }
+
+  $('emailForm').addEventListener('submit', async (e) => {
+    e.preventDefault(); $('err').style.display = 'none';
+    const raw = $('rawInput').value;
+    if (!file && !raw.trim()) { showError('INVALID_INPUT', 'Choose an .eml file or paste the raw e-mail source.'); return; }
+    const fd = new FormData();
+    if (file) fd.append('email_file', file); else fd.append('raw_email', raw);
+    fd.append('fetch_linked_pages', $('optFetch').checked ? '1' : '0');
+    fd.append('domain_intel', $('optDomain').checked ? '1' : '0');
+    $('result').style.display = 'none'; setRunning(true);
+    let res, data;
+    try { res = await fetch('/api/email/investigate', { method: 'POST', body: fd }); data = await res.json(); }
+    catch (err) { setRunning(false); showError('NETWORK_ERROR', 'The server could not be reached.'); return; }
+    setRunning(false);
+    if (!res.ok) { const er = (data && data.error) || {}; showError(er.code || ('HTTP_' + res.status), er.message || 'Request failed.'); return; }
+    render(data);
+  });
+  $('againBtn').addEventListener('click', () => { $('result').style.display = 'none'; $('core').style.display = 'none'; window.scrollTo({ top: 0, behavior: 'smooth' }); });
+
+  function render(inv) {
+    showStages(inv.stages || []);
+    const em = inv.layers.email;
+    $('quick').innerHTML = NS.quickResult(inv);
+    $('invIdLbl').textContent = inv.investigation_id + ' · DNA ' + inv.threat_dna.fingerprint;
+    $('dIdentity').innerHTML = NS.email.identity(em);
+    $('dAuth').innerHTML = NS.email.auth(em);
+    $('dLinks').innerHTML = NS.email.links(em, inv.layers.url);
+    $('dAtt').innerHTML = NS.email.attachments(em);
+    $('dContent').innerHTML = NS.email.content(em);
+    $('dRcv').innerHTML = NS.email.received(em);
+    $('dCov').innerHTML = NS.coverageTable(inv.coverage);
+    $('dHeaders').innerHTML = NS.email.headers(em);
+    $('result').style.display = 'block';
+    $('quick').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+})();
+</script>
+</body>
+</html>

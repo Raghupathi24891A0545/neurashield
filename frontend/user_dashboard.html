@@ -1,108 +1,682 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>User Dashboard - Phishing Detection</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard — NeuraShield</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='neurashield.css') }}">
+  <style>
+    .ns-layout { display:flex; min-height:100vh; padding-top:68px; }
+
+    /* Sidebar */
+    .ns-sidebar {
+      width: 220px; flex-shrink: 0;
+      background: var(--ns-surface);
+      border-right: 1px solid var(--ns-border);
+      display: flex; flex-direction: column;
+      padding: 28px 0;
+      position: fixed; top: 68px; left: 0; bottom: 0;
+      overflow-y: auto;
+    }
+    .ns-sidebar-logo {
+      padding: 0 20px 24px;
+      border-bottom: 1px solid var(--ns-border);
+      margin-bottom: 16px;
+    }
+    .sidebar-nav { list-style:none; padding:0 10px; }
+    .sidebar-nav li { margin-bottom: 2px; }
+    .sidebar-nav a {
+      display: flex; align-items: center; gap: 10px;
+      padding: 10px 14px;
+      font-size: 12px; font-weight: 500;
+      letter-spacing: 0.04em; text-transform: uppercase;
+      color: var(--ns-text-muted); text-decoration: none;
+      border-radius: var(--ns-radius);
+      transition: var(--ns-transition);
+    }
+    .sidebar-nav a:hover { color: var(--ns-text); background: rgba(0,200,255,0.05); }
+    .sidebar-nav a.active { color: var(--ns-cyan); background: var(--ns-cyan-dim); }
+    .sidebar-nav .icon { font-size: 14px; }
+    .sidebar-bottom {
+      margin-top: auto;
+      padding: 16px;
+      border-top: 1px solid var(--ns-border);
+    }
+
+    /* Main content */
+    .ns-main {
+      flex: 1;
+      margin-left: 220px;
+      padding: 40px;
+      max-width: calc(100vw - 220px);
+    }
+
+    .ns-page-header { margin-bottom: 36px; }
+    .ns-page-title { font-size: 22px; font-weight: 700; letter-spacing: -0.02em; margin-bottom: 4px; }
+    .ns-page-sub {
+      font-family: var(--ns-mono); font-size: 11px;
+      letter-spacing: 0.08em; text-transform: uppercase;
+      color: var(--ns-text-muted);
+    }
+
+    @media(max-width:900px){
+      .ns-sidebar{display:none;}
+      .ns-main{margin-left:0;max-width:100%;padding:20px;}
+    }
+
+    /* Scan card */
+    .scan-card { padding: 32px; margin-bottom: 20px; }
+    .scan-input-row { display: flex; gap: 12px; margin-top: 20px; }
+    @media(max-width:600px){ .scan-input-row{flex-direction:column;} }
+
+    /* Recent table card */
+    .recent-card { padding: 0; }
+    .recent-card-header {
+      padding: 20px 24px;
+      border-bottom: 1px solid var(--ns-border);
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .recent-card-title {
+      font-size: 12px; font-weight: 700;
+      letter-spacing: 0.1em; text-transform: uppercase;
+    }
+
+    /* Future module cards */
+    .modules-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 14px;
+      margin-top: 28px;
+    }
+    @media(max-width:700px){ .modules-grid{grid-template-columns:1fr;} }
+    .module-card { padding: 20px; opacity: 0.6; cursor: not-allowed; }
+    .module-card:hover { opacity: 0.7; transform: none !important; }
+
+    /* M1 url breakdown override for full width */
+    .m1-url-breakdown { font-size: 10px; }
+  </style>
 </head>
 <body>
-    <nav>
-        <a href="/dashboard">Home</a>
-        <a href="/logout">Logout</a>
-    </nav>
 
-    <div class="container" style="margin-top: 80px;">
-        <!-- Advanced Terminal Loader -->
-        <div id="loading-overlay">
-            <div class="terminal-loader" id="terminal-content">
-                <div class="terminal-line">> INITIALIZING SCANNING PROTOCOL...</div>
-            </div>
-            <div class="loader-bar">
-                <div class="loader-progress" id="progress-bar"></div>
-            </div>
-        </div>
+<!-- ── Navbar ── -->
+<nav class="ns-nav scrolled" style="background:rgba(8,12,16,0.95);">
+  <div class="ns-nav-inner">
+    <a href="/" class="ns-logo">
+      <img src="{{ url_for('static', filename='static/ns_logo.png') }}"
+           class="ns-logo-icon" alt="NS"
+           onerror="this.style.display='none';">
+      <div class="ns-logo-text">
+        <span class="ns-logo-name">NeuraShield</span>
+        <span class="ns-logo-sub">Threat Intelligence</span>
+      </div>
+    </a>
+    <div class="ns-nav-actions">
+      <span style="font-family:var(--ns-mono);font-size:11px;color:var(--ns-text-dim);">{{ username }}</span>
+      <a href="/logout" class="btn-ghost">Logout</a>
+    </div>
+  </div>
+</nav>
 
-        <img src="{{ url_for('static', filename='static/cyber_shield.svg') }}" class="cyber-logo" alt="Cyber Shield">
-        <h2>THREAT INTELLIGENCE DASHBOARD</h2>
-        <p>Analyze suspicious URLs using our advanced ML engine.</p>
+<div class="ns-layout">
+  <!-- Sidebar -->
+  <aside class="ns-sidebar">
+    <div class="ns-sidebar-logo">
+      <div style="font-family:var(--ns-mono);font-size:9px;letter-spacing:0.15em;text-transform:uppercase;color:var(--ns-text-muted);">Field Agent</div>
+      <div style="font-size:13px;font-weight:600;color:var(--ns-text);margin-top:2px;">{{ username }}</div>
+    </div>
+    <ul class="sidebar-nav">
+      <li><a href="/investigation-center" style="color:var(--ns-cyan); font-weight:700;"><span class="icon">⚡</span> Investigation Center</a></li>
+      <li><a href="/investigations"><span class="icon">🗂</span> Investigation History</a></li>
+      <li style="margin-top:10px;padding:0 14px;font-family:var(--ns-mono);font-size:9px;letter-spacing:0.15em;text-transform:uppercase;color:var(--ns-text-muted);">Specialists</li>
+      <li><a href="/dashboard" class="active"><span class="icon">🛡</span> URL Intelligence</a></li>
+      <li><a href="/domain-intelligence"><span class="icon">🌐</span> Domain Intel</a></li>
+      <li><a href="/webpage-intelligence"><span class="icon">📄</span> Webpage Intel</a></li>
+      <li><a href="/email-intelligence"><span class="icon">✉️</span> Email Intel</a></li>
+      <li><a href="/investigation-center?type=qr"><span class="icon">📱</span> QR Intelligence</a></li>
+      <li><a href="/upload"><span class="icon">📂</span> Bulk Analysis</a></li>
+    </ul>
+    <div class="sidebar-bottom">
+      <a href="/logout" class="btn-ghost btn-full" style="font-size:10px;">Logout</a>
+    </div>
+  </aside>
 
-        <form method="POST" action="/dashboard" onsubmit="startScan()">
-            <input type="text" name="url" placeholder="Enter Target URL (e.g., http://example.com)" required>
-            <button type="submit">INITIATE DEEP SCAN</button>
-        </form>
-
-        {% if result %}
-        <div class="result {{ result }}">
-            STATUS: {{ result }}
-            {% if probability %}
-            <br>
-            <span style="font-size: 0.7em; opacity: 0.8; letter-spacing: 1px;">CONFIDENCE SCORE: {{ probability }}%</span>
-            {% endif %}
-        </div>
-        {% endif %}
-
-        {% if recent_logs %}
-        <h3 style="margin-top: 40px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 20px;">RECENT OPERATIONS</h3>
-        <table>
-            <thead>
-                <tr>
-                    <th>TARGET</th>
-                    <th>VERDICT</th>
-                    <th>TIMESTAMP</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for log in recent_logs %}
-                <tr>
-                    <td style="word-break: break-all;">{{ log[0] }}</td>
-                    <td class="{{ 'text-danger' if log[1] == 'Phishing' else 'text-success' }}" style="font-weight: bold;">{{ log[1] }}</td>
-                    <td>{{ log[2].split('.')[0] }}</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-        {% endif %}
+  <!-- Main -->
+  <main class="ns-main">
+    <div class="ns-page-header">
+      <div class="ns-page-title">Threat Scanner</div>
+      <div class="ns-page-sub">MODULE 1 — URL Intelligence Engine • Field Agent Console</div>
     </div>
 
-    <script>
-        function startScan() {
-            const overlay = document.getElementById('loading-overlay');
-            const terminal = document.getElementById('terminal-content');
-            const bar = document.getElementById('progress-bar');
-            overlay.style.display = 'flex';
+    <!-- Stats row -->
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:28px;">
+      <div class="ns-stat">
+        <div class="ns-stat-value" id="stat-total">—</div>
+        <div class="ns-stat-label">Total Scans</div>
+      </div>
+      <div class="ns-stat">
+        <div class="ns-stat-value" style="color:var(--ns-red);" id="stat-phishing">—</div>
+        <div class="ns-stat-label">Threats Found</div>
+      </div>
+      <div class="ns-stat">
+        <div class="ns-stat-value" style="color:var(--ns-green);" id="stat-legit">—</div>
+        <div class="ns-stat-label">Legitimate</div>
+      </div>
+    </div>
 
-            const steps = [
-                "> RESOLVING HOST...",
-                "> CHECKING SSL CERTIFICATES...",
-                "> ANALYZING DOM STRUCTURE...",
-                "> EXTRACTING FEATURES...",
-                "> RUNNING ML PREDICTION MODEL...",
-                "> FINALIZING VERDICT..."
-            ];
+    <!-- Scan Card -->
+    <div class="ns-card scan-card">
+      <div class="scan-line"></div>
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;">
+        <span class="ns-badge ns-badge-cyan"><span class="dot"></span> Active</span>
+        <span style="font-family:var(--ns-mono);font-size:10px;letter-spacing:0.1em;text-transform:uppercase;color:var(--ns-text-muted);">URL Intelligence Engine — Module 1</span>
+      </div>
+      <h2 style="font-size:16px;font-weight:700;letter-spacing:-0.01em;margin-bottom:4px;">Analyze a Suspicious URL</h2>
+      <p style="font-size:13px;color:var(--ns-text-dim);">Run through 4 analysis layers: Structural Decomposition · Lexical Intelligence · Security Rule Engine · Random Forest ML Classifier.</p>
 
-            let stepIndex = 0;
-            const totalTime = 2000; // Total animation time (approx)
-            const intervalTime = totalTime / steps.length;
+      <form id="scanForm" onsubmit="startScan(event)">
+        <div class="scan-input-row">
+          <input type="text" name="url" id="scanUrl" class="ns-input"
+                 placeholder="https://suspicious-example.com" required style="flex:1;">
+          <button type="submit" class="btn-primary btn-primary-lg" id="scanBtn">
+            <span class="btn-light"></span>
+            Analyze <span class="btn-arrow">→</span>
+          </button>
+        </div>
+      </form>
 
-            const interval = setInterval(() => {
-                if (stepIndex < steps.length) {
-                    const div = document.createElement('div');
-                    div.className = 'terminal-line';
-                    div.innerText = steps[stepIndex];
-                    terminal.appendChild(div);
-                    
-                    // Update progress bar
-                    const percent = ((stepIndex + 1) / steps.length) * 100;
-                    bar.style.width = percent + '%';
+      <!-- Scan Threat Core (shown during analysis) -->
+      <div class="scan-core-stage" id="scanCoreStage" aria-hidden="true">
+        <canvas class="scan-core-canvas" id="scanCoreCanvas" width="180" height="180"></canvas>
+        <div class="scan-core-target" id="scanCoreTarget"></div>
+        <div class="scan-bars" id="scanBars"></div>
+      </div>
+    </div>
 
-                    stepIndex++;
-                } else {
-                    clearInterval(interval);
-                }
-            }, intervalTime);
-        }
-    </script>
+    <!-- MODULE 1 Result Container -->
+    <div id="scanResultContainer"></div>
+
+    <!-- Recent Operations -->
+    <div class="ns-card recent-card" id="recent-ops" style="margin-bottom:28px;">
+      <div class="recent-card-header">
+        <div class="recent-card-title">Recent Operations</div>
+        <span class="ns-badge ns-badge-cyan" id="recentBadge">{{ recent_logs|length if recent_logs else 0 }} Logged</span>
+      </div>
+      <div class="ns-table-container">
+        <div class="mobile-scroll-hint">← Swipe to view all columns →</div>
+        <table class="ns-table">
+          <thead>
+            <tr>
+              <th>Target URL</th>
+              <th>Verdict</th>
+              <th>Timestamp</th>
+            </tr>
+          </thead>
+          <tbody id="recentLogsBody">
+            {% if recent_logs %}
+              {% for log in recent_logs %}
+              <tr>
+                <td style="font-family:var(--ns-mono);font-size:11px;word-break:break-all;max-width:300px;">{{ log[0] }}</td>
+                <td>
+                  <span class="ns-badge {% if 'Phishing' in log[1] %}ns-badge-red{% else %}ns-badge-green{% endif %}">
+                    {{ log[1] }}
+                  </span>
+                </td>
+                <td style="font-family:var(--ns-mono);font-size:10px;color:var(--ns-text-muted);white-space:nowrap;">
+                  {{ log[2].split('.')[0] if log[2] else '—' }}
+                </td>
+              </tr>
+              {% endfor %}
+            {% else %}
+              <tr id="emptyRecentRow">
+                <td colspan="3" style="text-align:center;padding:24px;font-family:var(--ns-mono);font-size:11px;color:var(--ns-text-muted);">
+                  No threat scans executed yet. Run your first analysis above.
+                </td>
+              </tr>
+            {% endif %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Platform Modules -->
+    <div style="margin-top:36px;">
+      <div style="font-family:var(--ns-mono);font-size:10px;letter-spacing:0.15em;text-transform:uppercase;color:var(--ns-text-muted);margin-bottom:14px;">
+        Active &amp; Connected Intelligence Modules
+      </div>
+      <div class="modules-grid">
+        <!-- Module 2: Domain Intelligence (ACTIVE) -->
+        <a href="/domain-intelligence" class="ns-card" style="padding:20px;text-decoration:none;border-color:rgba(0,200,255,0.35);background:linear-gradient(135deg,var(--ns-surface),rgba(0,200,255,0.06));cursor:pointer;display:block;transition:transform 0.2s,box-shadow 0.2s;" onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 8px 24px rgba(0,200,255,0.15)'" onmouseout="this.style.transform='none';this.style.boxShadow='none'">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px;">
+            <div class="ns-card-icon" style="background:rgba(0,200,255,0.1);border-color:rgba(0,200,255,0.3);color:var(--ns-cyan);">🌐</div>
+            <span class="ns-badge ns-badge-cyan"><span class="dot"></span> Active Module</span>
+          </div>
+          <div class="ns-card-title" style="color:#fff;margin-bottom:4px;">Domain Intelligence</div>
+          <p class="ns-card-text" style="font-size:12px;line-height:1.5;margin-bottom:12px;">Deep infrastructure investigation: DNS topology, WHOIS ownership, Autonomous Systems, and SSL/TLS cryptography.</p>
+          <div style="font-family:var(--ns-mono);font-size:10.5px;color:var(--ns-cyan);font-weight:600;display:flex;align-items:center;justify-content:space-between;">
+            <span>Launch Domain Console</span>
+            <span>→</span>
+          </div>
+        </a>
+
+        <!-- Module 3: Webpage Intelligence (ACTIVE) -->
+        <a href="/webpage-intelligence" class="ns-card" style="padding:20px;text-decoration:none;border-color:rgba(0,200,255,0.35);background:linear-gradient(135deg,var(--ns-surface),rgba(0,200,255,0.06));cursor:pointer;display:block;transition:transform 0.2s,box-shadow 0.2s;" onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 8px 24px rgba(0,200,255,0.15)'" onmouseout="this.style.transform='none';this.style.boxShadow='none'">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px;">
+            <div class="ns-card-icon" style="background:rgba(0,200,255,0.1);border-color:rgba(0,200,255,0.3);color:var(--ns-cyan);">📄</div>
+            <span class="ns-badge ns-badge-cyan"><span class="dot"></span> Active Module</span>
+          </div>
+          <div class="ns-card-title" style="color:#fff;margin-bottom:4px;">Webpage Intelligence</div>
+          <p class="ns-card-text" style="font-size:12px;line-height:1.5;margin-bottom:12px;">DOM structure analysis, credential harvesting forms, cross-domain actions, JavaScript inspection, and security headers.</p>
+          <div style="font-family:var(--ns-mono);font-size:10.5px;color:var(--ns-cyan);font-weight:600;display:flex;align-items:center;justify-content:space-between;">
+            <span>Launch Webpage Console</span>
+            <span>→</span>
+          </div>
+        </a>
+
+        <!-- Threat Dossiers -->
+        <div class="ns-card" style="padding:20px;border-color:rgba(0,200,255,0.3);background:linear-gradient(135deg,var(--ns-surface),rgba(0,200,255,0.04));">
+          <div class="ns-card-icon" style="background:rgba(0,200,255,0.1);border-color:rgba(0,200,255,0.3);color:var(--ns-cyan);">📊</div>
+          <div class="ns-card-title" style="color:var(--ns-cyan);">Threat Dossiers</div>
+          <p class="ns-card-text">Comprehensive 17-section investigation dossier with Threat DNA, evidence ledger, and print support.</p>
+          <div style="margin-top:12px;"><span class="ns-badge ns-badge-cyan" style="font-size:9px;">✓ Active Feature</span></div>
+        </div>
+
+        <!-- Future Modules -->
+        <div class="ns-card module-card">
+          <div class="ns-card-icon" style="background:rgba(255,170,0,0.08);border-color:rgba(255,170,0,0.2);">📱</div>
+          <div class="ns-card-title">QR Scanner</div>
+          <p class="ns-card-text">Decode and analyze QR code destinations.</p>
+          <div style="margin-top:12px;"><span class="ns-planned-tag">⏳ Planned Module</span></div>
+        </div>
+        <a href="/email-intelligence" data-cap-link="email" class="ns-card" style="padding:20px;text-decoration:none;border-color:rgba(0,200,255,0.35);background:linear-gradient(135deg,var(--ns-surface),rgba(0,200,255,0.06));cursor:pointer;display:block;">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px;">
+            <div class="ns-card-icon" style="background:rgba(0,200,255,0.1);border-color:rgba(0,200,255,0.3);color:var(--ns-cyan);">✉️</div>
+            <span data-cap-badge="email" class="ns-planned-tag">…</span>
+          </div>
+          <div class="ns-card-title" style="color:#fff;margin-bottom:4px;">Email Intelligence</div>
+          <p class="ns-card-text" style="font-size:12px;line-height:1.5;margin-bottom:12px;">Sender consistency, SPF/DKIM/DMARC evidence, links through URL &amp; Domain Intelligence, static attachment analysis.</p>
+          <div style="font-family:var(--ns-mono);font-size:10.5px;color:var(--ns-cyan);font-weight:600;display:flex;align-items:center;justify-content:space-between;"><span>Launch Email Console</span><span>→</span></div>
+        </a>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script>
+  // ── Populate stats from recent logs ──
+  const logs = {{ recent_logs | tojson }};
+  document.getElementById('stat-total').textContent = logs.length;
+  const ph = logs.filter(l => l[1] && l[1].includes('Phishing')).length;
+  const le = logs.filter(l => l[1] === 'Legitimate').length;
+  document.getElementById('stat-phishing').textContent = ph;
+  document.getElementById('stat-legit').textContent = le;
+
+  // ── 3D tilt on cards ──
+  document.querySelectorAll('.ns-card').forEach(card => {
+    card.addEventListener('mousemove', e => {
+      const r = card.getBoundingClientRect();
+      const x = (e.clientX - r.left) / r.width - 0.5;
+      const y = (e.clientY - r.top)  / r.height - 0.5;
+      card.style.transform = `perspective(600px) rotateY(${x*5}deg) rotateX(${-y*5}deg) translateY(-2px)`;
+    });
+    card.addEventListener('mouseleave', () => { card.style.transform=''; });
+  });
+
+  // ── Threat Core Canvas ──
+  const STAGES = [
+    { label: 'URL Structure Analysis',   ms: 520 },
+    { label: 'Lexical Intelligence',     ms: 480 },
+    { label: 'Security Rule Engine',     ms: 550 },
+    { label: 'ML Risk Classification',   ms: 420 },
+  ];
+
+  function drawScanCore(canvas, progress) {
+    const ctx = canvas.getContext('2d');
+    const W = canvas.width, H = canvas.height, cx = W/2, cy = H/2;
+    ctx.clearRect(0, 0, W, H);
+    const a = progress.t;
+    for (let i = 0; i < 3; i++) {
+      ctx.beginPath();
+      ctx.arc(cx, cy, 40 + i*18, a*(1+i*0.3), a*(1+i*0.3)+Math.PI*1.3);
+      ctx.strokeStyle = `rgba(0,200,255,${0.5-i*0.13})`;
+      ctx.lineWidth = 2 - i*0.4;
+      ctx.stroke();
+    }
+    ctx.save();
+    ctx.translate(cx, cy);
+    ctx.rotate(a * 2.2);
+    const g = ctx.createLinearGradient(0,0,70,0);
+    g.addColorStop(0,'rgba(0,200,255,0.6)');
+    g.addColorStop(1,'rgba(0,200,255,0)');
+    ctx.strokeStyle = g; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(0,0); ctx.lineTo(70,0); ctx.stroke();
+    ctx.restore();
+    const pr = 16 + Math.sin(a*4)*3;
+    const rg = ctx.createRadialGradient(cx,cy,0,cx,cy,pr*2);
+    rg.addColorStop(0,'rgba(0,200,255,0.5)'); rg.addColorStop(1,'rgba(0,200,255,0)');
+    ctx.fillStyle = rg;
+    ctx.beginPath(); ctx.arc(cx,cy,pr*2,0,Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.arc(cx,cy,pr,0,Math.PI*2);
+    ctx.fillStyle='rgba(0,200,255,0.22)'; ctx.strokeStyle='#00c8ff'; ctx.lineWidth=2;
+    ctx.fill(); ctx.stroke();
+    ctx.fillStyle='#00c8ff'; ctx.font='700 13px JetBrains Mono,monospace';
+    ctx.textAlign='center'; ctx.textBaseline='middle';
+    ctx.fillText('🛡', cx, cy);
+    for (let i=0; i<6; i++) {
+      const ang = a*1.1 + i*(Math.PI/3);
+      const nx = cx+Math.cos(ang)*74, ny = cy+Math.sin(ang)*74;
+      ctx.beginPath(); ctx.arc(nx,ny,2.5,0,Math.PI*2);
+      ctx.fillStyle = i < progress.stage*1.5 ? '#00d68f' : 'rgba(0,200,255,0.5)';
+      ctx.fill();
+    }
+  }
+
+  // ── Scan Handler ──
+  async function startScan(e) {
+    e.preventDefault();
+    const urlInput = document.getElementById('scanUrl');
+    const url = urlInput.value.trim();
+    if (!url) return;
+
+    const core       = document.getElementById('scanCoreStage');
+    const canvas     = document.getElementById('scanCoreCanvas');
+    const target     = document.getElementById('scanCoreTarget');
+    const barsWrap   = document.getElementById('scanBars');
+    const container  = document.getElementById('scanResultContainer');
+    const scanBtn    = document.getElementById('scanBtn');
+
+    scanBtn.disabled = true;
+    target.textContent = url;
+    core.classList.add('on');
+    container.innerHTML = '';
+
+    // Build bars
+    barsWrap.innerHTML = STAGES.map((s,i) => `
+      <div class="scan-bar-row" id="sbar-${i}">
+        <div class="scan-bar-label"><span>${s.label}</span><span class="sbar-pct">0%</span></div>
+        <div class="scan-bar-track"><div class="scan-bar-fill"></div></div>
+      </div>`).join('');
+
+    // Animate core canvas
+    let coreRAF, prog = { t:0, stage:0 }, animating = true;
+    canvas.width=180; canvas.height=180;
+    (function spin(){
+      if(!animating) return;
+      prog.t += 0.05;
+      drawScanCore(canvas, prog);
+      coreRAF = requestAnimationFrame(spin);
+    })();
+
+    // Fire API call in parallel
+    const fetchPromise = fetch('/api/scan', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ url })
+    }).then(async r => {
+      const json = await r.json();
+      if (!r.ok || json.error) throw new Error(json.error || 'Scan failed');
+      return json;
+    });
+
+    // Animate pipeline stages
+    for (let i=0; i<STAGES.length; i++) {
+      prog.stage = i+1;
+      const row  = document.getElementById('sbar-'+i);
+      const fill = row.querySelector('.scan-bar-fill');
+      const pct  = row.querySelector('.sbar-pct');
+      const start = performance.now(), dur = STAGES[i].ms;
+      await new Promise(res => {
+        (function step(now){
+          const p = Math.min((now-start)/dur, 1);
+          fill.style.width = (p*100)+'%';
+          pct.textContent  = Math.round(p*100)+'%';
+          if(p<1) requestAnimationFrame(step);
+          else { row.classList.add('done'); res(); }
+        })(start);
+      });
+    }
+
+    let data;
+    try {
+      data = await fetchPromise;
+    } catch(err) {
+      animating = false; cancelAnimationFrame(coreRAF);
+      core.classList.remove('on'); scanBtn.disabled = false;
+      container.innerHTML = `
+        <div class="ns-card" style="border-color:var(--ns-red);padding:20px;margin-bottom:20px;">
+          <span style="color:var(--ns-red);font-family:var(--ns-mono);font-size:12px;">⚠ Analysis Error: ${err.message || 'Engine connection error. Please try again.'}</span>
+        </div>`;
+      return;
+    }
+
+    await new Promise(r => setTimeout(r, 200));
+    animating = false; cancelAnimationFrame(coreRAF);
+    core.classList.remove('on'); scanBtn.disabled = false;
+
+    renderModule1Result(data);
+  }
+
+  // ── QUICK SCAN Result Renderer (Module 1 Concise + Full Report CTA) ──
+  function renderModule1Result(data) {
+    const container  = document.getElementById('scanResultContainer');
+    const intel      = data.intelligence || {};
+    const inv        = data.investigation || {};
+    const brief      = inv.brief || {};
+    const invId      = data.investigation_id || inv.investigation_id || '';
+
+    const isPhish    = data.prediction && data.prediction.toLowerCase().includes('phishing');
+    const isLeg      = data.prediction && data.prediction.toLowerCase() === 'legitimate';
+    const prob       = data.probability;
+    const ruleMatch  = data.prediction && data.prediction.toLowerCase().includes('rule match');
+
+    const compositeRisk  = intel.composite_risk  != null ? intel.composite_risk : (prob || 0);
+    const compositeLevel = (intel.composite_level || (compositeRisk >= 55 ? 'HIGH' : 'LOW')).toUpperCase();
+
+    // Use fused composite risk as ground truth to prevent lexical false positives (e.g. login on authentic domains)
+    const effectiveThreat = compositeRisk >= 55 || (ruleMatch && compositeRisk >= 40);
+    const effectiveSafe   = compositeRisk < 35 && !ruleMatch;
+
+    // Visual classification styling
+    const cardStatusClass = effectiveThreat ? 'threat' : (effectiveSafe ? 'safe' : 'warn');
+    const verdictLabel    = effectiveThreat ? '⚠ Phishing Threat Detected' : (effectiveSafe ? '✓ Legitimate / Low Risk' : '⚡ Suspicious / Rule Alert');
+    const verdictBadge    = effectiveThreat ? 'ns-badge-red' : (effectiveSafe ? 'ns-badge-green' : 'ns-badge-amber');
+    const scoreColor      = effectiveThreat ? 'var(--ns-red)' : (effectiveSafe ? 'var(--ns-green)' : 'var(--ns-amber)');
+
+    // Verdict explanation sentence
+    const verdictSentence = brief.what_found || (
+      effectiveThreat
+        ? 'Multiple converging signals indicate elevated phishing risk and deceptive characteristics.'
+        : (effectiveSafe
+            ? 'URL structure, domain trust, and lexical patterns are consistent with authentic, legitimate services.'
+            : 'Security telemetry triggered cautionary indicators requiring review.')
+    );
+
+    // Primary signals extraction
+    const primarySignals = [];
+    if (brief.evidence_summary && brief.evidence_summary.length > 0) {
+      brief.evidence_summary.slice(0, 4).forEach(s => primarySignals.push({ text: s, type: isPhish ? 'danger' : 'warn' }));
+    } else if (intel.top_signals && intel.top_signals.length > 0) {
+      intel.top_signals.slice(0, 4).forEach(s => primarySignals.push({ text: s, type: isPhish ? 'danger' : 'warn' }));
+    } else if (data.features) {
+      if (data.features.has_ip) primarySignals.push({ text: 'Raw IP Host Address', type: 'danger' });
+      if (data.features.homograph) primarySignals.push({ text: 'Homograph/Punycode Pattern', type: 'danger' });
+      if (data.features.suspicious_word) primarySignals.push({ text: 'Suspicious Target Keywords', type: 'warn' });
+      if (data.features.url_length > 75) primarySignals.push({ text: `Abnormal URL Length (${data.features.url_length} chars)`, type: 'warn' });
+      if (primarySignals.length === 0) {
+        primarySignals.push({ text: 'Standard URL Anatomy', type: 'ok' });
+        primarySignals.push({ text: 'SSL/HTTPS Protocol', type: 'ok' });
+      }
+    }
+
+    const signalsHTML = primarySignals.map(sig =>
+      `<div class="qs-signal-tag ${sig.type}"><span>${sig.type === 'danger' ? '⚑' : (sig.type === 'warn' ? '⚠' : '✓')}</span> ${sig.text}</div>`
+    ).join('');
+
+    const reportUrl = invId ? `/report?id=${encodeURIComponent(invId)}&url=${encodeURIComponent(data.url || '')}` : '#';
+
+    // Render Quick Scan Card
+    container.innerHTML = `
+      <div class="qs-container">
+        <div class="qs-card ${cardStatusClass}">
+          <div class="scan-line"></div>
+
+          <!-- Top Row: Badge, Score, Meta -->
+          <div class="qs-top-row">
+            <div>
+              <span class="ns-badge ${verdictBadge}" style="margin-bottom:8px;font-size:11px;">${verdictLabel}</span>
+              ${invId ? `<span class="report-id-badge" style="margin-left:8px;"><span style="opacity:0.6;">ID:</span> ${invId}</span>` : ''}
+            </div>
+            <div class="qs-score-wrap">
+              <div class="qs-score-val" style="color:${scoreColor};">${compositeRisk}</div>
+              <div class="qs-score-label">Composite Risk / Level: ${compositeLevel}</div>
+            </div>
+          </div>
+
+          <!-- Target URL Box -->
+          <div class="qs-url-box">${data.url || ''}</div>
+
+          <!-- Executive Summary Brief -->
+          <div class="qs-verdict-summary">${verdictSentence}</div>
+
+          <!-- Key Evidence / Primary Signals -->
+          <div style="margin-bottom:8px;font-family:var(--ns-mono);font-size:10px;text-transform:uppercase;letter-spacing:0.1em;color:var(--ns-text-muted);">
+            Primary Analysis Indicators:
+          </div>
+          <div class="qs-signals-wrap">
+            ${signalsHTML}
+          </div>
+
+          ${data.domain_intelligence ? `
+            <div style="margin-top:14px;padding:12px 14px;background:rgba(0,200,255,0.04);border:1px solid rgba(0,200,255,0.18);border-radius:6px;font-family:var(--ns-mono);font-size:11px;">
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+                <span style="color:var(--ns-cyan);font-weight:700;">🌐 DOMAIN INTELLIGENCE (MODULE 2)</span>
+                <span style="color:var(--ns-text-muted);">Coverage: ${data.domain_intelligence.evidence_coverage || 0}%</span>
+              </div>
+              <div style="display:flex;flex-wrap:wrap;gap:14px;color:var(--ns-text-dim);margin-bottom:8px;">
+                <span>DNS: <strong style="color:${data.domain_intelligence.dns?.dns_resolution?'var(--ns-green)':'var(--ns-red)'}">${data.domain_intelligence.dns?.dns_resolution?'Resolved ✓':'Unresolved'}</strong></span>
+                <span>Age: <strong style="color:var(--ns-text)">${data.domain_intelligence.registration?.domain_age_days != null ? data.domain_intelligence.registration.domain_age_days + 'd' : 'N/A'}</strong></span>
+                <span>SSL: <strong style="color:${data.domain_intelligence.ssl?.ssl_valid?'var(--ns-green)':'var(--ns-amber)'}">${data.domain_intelligence.ssl?.ssl_valid?'Valid TLS ✓':'No/Invalid Cert'}</strong></span>
+                <span>Rules: <strong style="color:${(data.domain_rules?.rules_hit||[]).length>0?'var(--ns-red)':'var(--ns-green)'}">${(data.domain_rules?.rules_hit||[]).length} Triggered</strong></span>
+              </div>
+              <div style="display:flex;justify-content:flex-end;border-top:1px dashed rgba(0,200,255,0.15);padding-top:6px;">
+                <a href="/domain-intelligence?domain=${encodeURIComponent(data.domain_intelligence.target?.registered_domain || data.domain_intelligence.domain || '')}" style="color:var(--ns-cyan);text-decoration:none;font-size:10px;font-weight:600;display:inline-flex;align-items:center;gap:4px;">
+                  <span>Investigate Domain Infrastructure in Console</span>
+                  <span>→</span>
+                </a>
+              </div>
+            </div>
+          ` : ''}
+
+          <!-- Footer Actions & Coverage -->
+          <div class="qs-footer">
+            <div class="qs-coverage-indicator">
+              <span class="qs-coverage-dot"></span>
+              <span>Modules 1 &amp; 2 Active (URL &amp; Domain Intelligence) · Depth: 5 Layers</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+              <button type="button" class="btn-report-action" onclick="copyThreatReport(this,'${(data.url||'').replace(/'/g,"\\'")}','${(data.prediction||'').replace(/'/g,"\\'")}','${prob||''}','${ruleMatch?'Security Rule Engine':'Random Forest ML'}','${invId}')">
+                📋 Copy
+              </button>
+              <button type="button" class="btn-report-action" onclick="shareThreatReport(this,'${(data.url||'').replace(/'/g,"\\'")}','${(data.prediction||'').replace(/'/g,"\\'")}')">
+                ↗ Share
+              </button>
+              <a href="${reportUrl}" class="btn-view-report" ${invId ? 'target="_blank"' : ''}>
+                <span>VIEW FULL REPORT</span>
+                <span>→</span>
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>`;
+
+    // ── Live update stats ──
+    if (data.stats) {
+      document.getElementById('stat-total').textContent    = data.stats.total;
+      document.getElementById('stat-phishing').textContent = data.stats.phishing;
+      document.getElementById('stat-legit').textContent    = data.stats.legitimate;
+    } else {
+      const cur = parseInt(document.getElementById('stat-total').textContent) || 0;
+      document.getElementById('stat-total').textContent = cur + 1;
+      if (isPhish) {
+        const p = parseInt(document.getElementById('stat-phishing').textContent) || 0;
+        document.getElementById('stat-phishing').textContent = p + 1;
+      } else {
+        const l = parseInt(document.getElementById('stat-legit').textContent) || 0;
+        document.getElementById('stat-legit').textContent = l + 1;
+      }
+    }
+
+    // ── Prepend to Recent Operations table ──
+    const tbody = document.getElementById('recentLogsBody');
+    if (tbody) {
+      const emptyRow = document.getElementById('emptyRecentRow');
+      if (emptyRow) emptyRow.remove();
+      const verdictBadgeCls = isPhish ? 'ns-badge-red' : 'ns-badge-green';
+      const timeStr = new Date().toISOString().replace('T',' ').substring(0,19);
+      const newRow = document.createElement('tr');
+      newRow.style.animation = 'fadeInUp 0.3s ease';
+      newRow.innerHTML = `
+        <td style="font-family:var(--ns-mono);font-size:11px;word-break:break-all;max-width:300px;">
+          <a href="${reportUrl}" target="_blank" style="color:var(--ns-cyan);text-decoration:none;">${data.url}</a>
+        </td>
+        <td><span class="ns-badge ${verdictBadgeCls}">${data.prediction}</span></td>
+        <td style="font-family:var(--ns-mono);font-size:10px;color:var(--ns-text-muted);white-space:nowrap;">${timeStr}</td>`;
+      tbody.insertBefore(newRow, tbody.firstChild);
+      while (tbody.children.length > 5) tbody.removeChild(tbody.lastChild);
+      const badge = document.getElementById('recentBadge');
+      if (badge) badge.textContent = tbody.children.length + ' Logged';
+    }
+
+    // Scroll to result
+    container.scrollIntoView({ behavior:'smooth', block:'start' });
+  }
+
+
+  function copyThreatReport(btn, url, verdict, prob, method, invId) {
+    const ts = new Date().toUTCString();
+    const reportLink = invId ? `${window.location.origin}/report?id=${invId}` : `${window.location.origin}/dashboard`;
+    const text = `--- NEURASHIELD THREAT INTELLIGENCE REPORT ---
+Target URL: ${url}
+Verdict: ${verdict}
+Confidence: ${prob ? prob+'%' : 'Rule Triggered'}
+Detection Method: ${method}
+Investigation ID: ${invId || 'N/A'}
+Report URL: ${reportLink}
+Timestamp: ${ts}
+Engine: NeuraShield MODULE 1 — URL Intelligence
+-----------------------------------------------`;
+    const markSuccess = () => {
+      const orig = btn.innerHTML; btn.innerHTML = '✓ Copied!'; btn.classList.add('copied');
+      setTimeout(() => { btn.innerHTML = orig; btn.classList.remove('copied'); }, 2200);
+    };
+    if (navigator.clipboard && navigator.clipboard.writeText)
+      navigator.clipboard.writeText(text).then(markSuccess).catch(() => fallbackCopy(text, markSuccess));
+    else fallbackCopy(text, markSuccess);
+  }
+
+  function shareThreatReport(btn, url, verdict, invId) {
+    const markSuccess = () => {
+      const orig = btn.innerHTML; btn.innerHTML = '✓ Link Copied!'; btn.classList.add('copied');
+      setTimeout(() => { btn.innerHTML = orig; btn.classList.remove('copied'); }, 2000);
+    };
+    const link = invId ? `${window.location.origin}/report?id=${invId}` : `${window.location.origin}/dashboard`;
+    if (navigator.share) {
+      navigator.share({ title:'NeuraShield: '+verdict, text:`Scan result for ${url}: ${verdict}`, url: link }).catch(()=>{});
+    } else {
+      if (navigator.clipboard && navigator.clipboard.writeText)
+        navigator.clipboard.writeText(link).then(markSuccess).catch(() => fallbackCopy(link, markSuccess));
+      else fallbackCopy(link, markSuccess);
+    }
+  }
+
+
+  function fallbackCopy(text, cb) {
+    const ta = document.createElement('textarea');
+    ta.value = text; ta.style.position='fixed'; ta.style.opacity='0';
+    document.body.appendChild(ta); ta.select();
+    try { document.execCommand('copy'); if(cb) cb(); } catch(e) {}
+    document.body.removeChild(ta);
+  }
+</script>
+<script src="/ns_capabilities.js"></script>
 </body>
 </html>

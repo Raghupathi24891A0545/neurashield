@@ -1,22 +1,289 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login - Phishing Detection</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login — NeuraShield</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='neurashield.css') }}">
+  <style>
+    body { display:flex; align-items:center; justify-content:center; min-height:100vh; }
+
+    /* Animated background particles */
+    #login-bg { position:fixed; inset:0; z-index:0; pointer-events:none; }
+
+    .login-wrap {
+      position: relative; z-index: 1;
+      width: 100%; max-width: 440px;
+      padding: 20px;
+    }
+
+    .login-card {
+      background: var(--ns-surface);
+      border: 1px solid var(--ns-border);
+      border-radius: var(--ns-radius-xl);
+      padding: 40px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .login-card::before {
+      content:'';
+      position:absolute; top:0; left:0; right:0; height:1px;
+      background: linear-gradient(90deg, transparent, var(--ns-cyan), transparent);
+    }
+
+    .login-logo {
+      display: flex; align-items: center; justify-content: center;
+      gap: 10px; margin-bottom: 32px;
+      text-decoration: none;
+    }
+
+    .login-heading {
+      text-align: center;
+      font-size: 22px; font-weight: 700;
+      letter-spacing: -0.02em; margin-bottom: 6px;
+    }
+
+    .login-sub {
+      text-align: center;
+      font-family: var(--ns-mono); font-size: 11px;
+      letter-spacing: 0.1em; text-transform: uppercase;
+      color: var(--ns-text-muted); margin-bottom: 32px;
+    }
+
+    .ns-form-group {
+      margin-bottom: 18px;
+    }
+
+    .ns-label {
+      display: block;
+      font-family: var(--ns-mono); font-size: 10px;
+      letter-spacing: 0.12em; text-transform: uppercase;
+      color: var(--ns-text-muted); margin-bottom: 8px;
+    }
+
+    .error-msg {
+      padding: 12px 16px;
+      background: var(--ns-red-dim);
+      border: 1px solid rgba(255,59,59,0.3);
+      border-radius: var(--ns-radius);
+      font-family: var(--ns-mono); font-size: 12px;
+      color: var(--ns-red); margin-bottom: 20px;
+    }
+
+    .login-footer-links {
+      display: flex; justify-content: center; gap: 20px;
+      margin-top: 24px; padding-top: 20px;
+      border-top: 1px solid var(--ns-border);
+    }
+
+    .login-footer-links a {
+      font-family: var(--ns-mono); font-size: 11px;
+      letter-spacing: 0.06em; text-transform: uppercase;
+      color: var(--ns-text-muted); text-decoration: none;
+      transition: color 0.2s;
+    }
+    .login-footer-links a:hover { color: var(--ns-cyan); }
+
+    /* ── ELEVATION ── */
+    .ns-depth-field { position:fixed; inset:0; z-index:0; pointer-events:none;
+      background: radial-gradient(900px 600px at 50% -10%, rgba(0,200,255,0.08), transparent 60%),
+                  radial-gradient(700px 500px at 80% 110%, rgba(26,111,255,0.06), transparent 60%); }
+    .login-wrap { animation: loginRise 0.75s cubic-bezier(0.16,1,0.3,1) both; perspective: 1000px; }
+    @keyframes loginRise {
+      0% { opacity:0; transform: translateY(46px) rotateX(9deg) scale(0.96); }
+      100% { opacity:1; transform: translateY(0) rotateX(0) scale(1); }
+    }
+    /* Physically raised card (depth, not glass) */
+    .login-card {
+      background: linear-gradient(180deg, var(--ns-surface-2), var(--ns-surface));
+      box-shadow:
+        0 2px 0 rgba(0,200,255,0.10) inset,
+        0 30px 60px -20px rgba(0,0,0,0.75),
+        0 12px 30px rgba(0,0,0,0.5),
+        0 0 60px rgba(0,200,255,0.06);
+    }
+    /* Traveling border light */
+    .login-card::after {
+      content:''; position:absolute; inset:-1px; border-radius:inherit; padding:1px;
+      background: conic-gradient(from var(--a,0deg), transparent 0deg, rgba(0,200,255,0.55) 40deg, transparent 90deg, transparent 360deg);
+      -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+      -webkit-mask-composite: xor; mask-composite: exclude;
+      opacity:0.6; animation: borderRun 6s linear infinite; pointer-events:none;
+    }
+    @property --a { syntax:'<angle>'; inherits:false; initial-value:0deg; }
+    @keyframes borderRun { to { --a:360deg; } }
+    /* Input focus elevation */
+    .ns-input { transition: border-color .2s, box-shadow .2s, transform .2s, background .2s; }
+    .ns-input:focus {
+      transform: translateY(-1px);
+      box-shadow: 0 0 0 3px rgba(0,200,255,0.14), 0 8px 20px rgba(0,0,0,0.4);
+    }
+    .ns-form-group { position: relative; }
+    /* Elevated 3D authenticate button */
+    .btn-primary.btn-3d {
+      background: linear-gradient(180deg,#1affff 0%,var(--ns-cyan) 46%,#0090c4 100%);
+      box-shadow: 0 2px 0 #0076a6, 0 6px 0 #005b80, 0 14px 26px rgba(0,200,255,0.42), 0 1px 0 rgba(255,255,255,0.55) inset;
+      transition: transform .18s cubic-bezier(0.2,0.7,0.2,1), box-shadow .18s ease;
+    }
+    .btn-primary.btn-3d:hover { transform: translateY(-4px);
+      box-shadow: 0 2px 0 #0076a6, 0 9px 0 #005b80, 0 22px 40px rgba(0,200,255,0.55), 0 1px 0 rgba(255,255,255,0.65) inset; }
+    .btn-primary.btn-3d:active { transform: translateY(3px);
+      box-shadow: 0 1px 0 #0076a6, 0 2px 0 #005b80, 0 6px 14px rgba(0,200,255,0.35); }
+    .btn-roll { overflow:hidden; }
+    .btn-roll .roll { position:relative; display:inline-grid; height:1.15em; align-items:center; perspective:300px; }
+    .btn-roll .roll>span { grid-area:1/1; display:inline-flex; align-items:center; gap:6px; backface-visibility:hidden;
+      transition: transform .5s cubic-bezier(0.2,0.8,0.2,1), opacity .4s ease; }
+    .btn-roll .roll .r-front { transform: rotateX(0) translateZ(0.5em); }
+    .btn-roll .roll .r-back { transform: rotateX(90deg) translateZ(0.5em); opacity:0; }
+    .btn-roll:hover .roll .r-front { transform: rotateX(-90deg) translateZ(0.5em); opacity:0; }
+    .btn-roll:hover .roll .r-back { transform: rotateX(0) translateZ(0.5em); opacity:1; }
+    @media (prefers-reduced-motion: reduce) {
+      .login-wrap { animation:none; } .login-card::after { animation:none; } .btn-roll .roll .r-back{ display:none; }
+    }
+
+    /* ── PROFESSIONAL SPLIT LAYOUT + IMAGERY ── */
+    body.ns-grid-bg { display: block; }
+    .login-shell {
+      position: relative; z-index: 1;
+      min-height: 100vh; display: grid; grid-template-columns: 1.05fr 0.95fr;
+    }
+    @media (max-width: 860px){ .login-shell { grid-template-columns: 1fr; } .login-visual { display:none !important; } }
+    .login-visual {
+      position: relative; overflow: hidden;
+      display: flex; align-items: flex-end; padding: 56px;
+    }
+    .login-visual-img { position:absolute; inset:0; background-size:cover; background-position:center; transform:scale(1.06); }
+    .login-visual-img::after { content:''; position:absolute; inset:0;
+      background: linear-gradient(180deg, rgba(8,12,16,0.55), rgba(8,12,16,0.85)),
+                  linear-gradient(120deg, rgba(0,200,255,0.22), transparent 45%, rgba(26,111,255,0.28)); }
+    .login-visual-grid { position:absolute; inset:0; opacity:0.5;
+      background-image: linear-gradient(rgba(0,200,255,0.07) 1px, transparent 1px), linear-gradient(90deg, rgba(0,200,255,0.07) 1px, transparent 1px);
+      background-size: 46px 46px; -webkit-mask-image: radial-gradient(90% 90% at 30% 70%, #000, transparent 80%); mask-image: radial-gradient(90% 90% at 30% 70%, #000, transparent 80%); }
+    .login-visual-inner { position: relative; z-index: 2; max-width: 440px; animation: loginRise 0.8s cubic-bezier(0.16,1,0.3,1) both; }
+    .login-visual-eyebrow { font-family:var(--ns-mono); font-size:10px; letter-spacing:0.22em; text-transform:uppercase; color:var(--ns-cyan); margin-bottom:16px; }
+    .login-visual-inner h2 { font-size: clamp(26px,3vw,38px); letter-spacing:-0.02em; line-height:1.12; margin-bottom:16px; }
+    .login-visual-inner p { color: var(--ns-text-dim); font-size:14px; line-height:1.7; margin-bottom:22px; max-width:380px; }
+    .login-trust { display:flex; flex-direction:column; gap:10px; }
+    .login-trust div { display:flex; align-items:center; gap:10px; font-family:var(--ns-mono); font-size:11px; color:var(--ns-text-dim); }
+    .login-trust div::before { content:''; width:6px; height:6px; border-radius:50%; background:var(--ns-green); box-shadow:0 0 8px var(--ns-green); }
+    .login-panel { position: relative; display:flex; align-items:center; justify-content:center; padding: 40px 20px; }
+
+    /* Shiny glow authenticate button (cyan port) */
+    @property --ns-ga  { syntax:"<angle>"; initial-value:0deg; inherits:false; }
+    @property --ns-gao { syntax:"<angle>"; initial-value:0deg; inherits:false; }
+    @property --ns-gp  { syntax:"<percentage>"; initial-value:5%; inherits:false; }
+    @property --ns-gs  { syntax:"<color>"; initial-value:#ffffff; inherits:false; }
+    .ns-shiny { --gleam-base:#0a0f16; --gleam-inset:#0c161f; --gleam-accent:#00c8ff; --gleam-accent-soft:#7fdcff;
+      --duration:3s; --transition:.8s cubic-bezier(.25,1,.5,1);
+      isolation:isolate; position:relative; overflow:hidden; cursor:pointer; width:100%;
+      display:inline-flex; align-items:center; justify-content:center; padding:16px; border:1px solid transparent; border-radius:40px;
+      font-family:var(--ns-font); font-size:12px; font-weight:700; letter-spacing:.14em; text-transform:uppercase; color:#eaf7ff;
+      background: linear-gradient(var(--gleam-base),var(--gleam-base)) padding-box,
+        conic-gradient(from calc(var(--ns-ga) - var(--ns-gao)), transparent, var(--gleam-accent) var(--ns-gp), var(--ns-gs) calc(var(--ns-gp)*2), var(--gleam-accent) calc(var(--ns-gp)*3), transparent calc(var(--ns-gp)*4)) border-box;
+      box-shadow: inset 0 0 0 1px var(--gleam-inset), 0 10px 30px rgba(0,200,255,0.22);
+      transition: var(--transition); transition-property:--ns-gao,--ns-gp,--ns-gs,translate; }
+    .ns-shiny span { z-index:1; display:inline-flex; gap:8px; align-items:center; }
+    .ns-shiny .btn-arrow { transition: transform .25s; } .ns-shiny:hover .btn-arrow { transform:translateX(4px); }
+    .ns-shiny::before, .ns-shiny::after { content:""; position:absolute; inset-inline-start:50%; inset-block-start:50%; translate:-50% -50%; z-index:-1; pointer-events:none; }
+    .ns-shiny::after { width:100%; aspect-ratio:1; background:linear-gradient(-50deg,transparent,var(--gleam-accent),transparent); mask-image:radial-gradient(circle at bottom,transparent 40%,black); opacity:.5; }
+    .ns-shiny:hover { translate:0 -3px; }
+    .ns-shiny, .ns-shiny::after { animation: ns-ga-spin var(--duration) linear infinite, ns-ga-spin calc(var(--duration)/0.4) linear infinite reverse paused; animation-composition:add; }
+    .ns-shiny:is(:hover,:focus-visible) { --ns-gp:20%; --ns-gao:95deg; --ns-gs:var(--gleam-accent-soft); }
+    .ns-shiny:is(:hover,:focus-visible), .ns-shiny:is(:hover,:focus-visible)::after { animation-play-state:running; }
+    @keyframes ns-ga-spin { to { --ns-ga:360deg; } }
+    @media (prefers-reduced-motion: reduce){ .ns-shiny, .ns-shiny::after { animation:none !important; } }
+  </style>
 </head>
-<body>
-    <div class="container">
-        <img src="{{ url_for('static', filename='static/cyber_shield.svg') }}" class="cyber-logo" alt="Cyber Shield">
-        <h2>SECURE ACCESS PORTAL</h2>
-        <form method="POST" action="/login">
-            <input type="text" name="username" placeholder="AGENT ID" required>
-            <input type="password" name="password" placeholder="ACCESS CODE" required>
-            <button type="submit">AUTHENTICATE</button>
-        </form>
-        <a href="/register">REQUEST NEW IDENTITY</a>
+<body class="ns-grid-bg">
+  <div class="ns-depth-field" aria-hidden="true"></div>
+  <canvas id="login-bg"></canvas>
+
+  <div class="login-shell">
+   <aside class="login-visual">
+     <div class="login-visual-img" style="background-image:url('https://images.unsplash.com/photo-1544197150-b99a580bb7a8?auto=format&fit=crop&w=1400&q=72')"></div>
+      <div class="login-visual-grid"></div>
+      <div class="login-visual-inner">
+        <div class="login-visual-eyebrow">NeuraShield · Multi-Layer Threat Intelligence</div>
+        <h2>Multi-layer threat intelligence, <span style="color:var(--ns-cyan)">one console.</span></h2>
+        <p>Unified cybersecurity platform combining structural URL detection, live domain infrastructure auditing, and deep threat investigation.</p>
+        <div class="login-trust">
+          <div>URL Intelligence — Structural, lexical &amp; homograph detection</div>
+          <div>Domain Intelligence — DNS topology, WHOIS &amp; TLS posture</div>
+          <div>Threat Investigation — Unified timeline, graph &amp; Threat DNA</div>
+        </div>
+      </div>
+    </aside>
+    <div class="login-panel">
+    <div class="login-wrap">
+     <a href="/" class="login-logo">
+       <img src="{{ url_for('static', filename='static/ns_logo.png') }}"
+            style="width:32px;height:32px;"
+            alt="NeuraShield"
+            onerror="this.style.display='none';">
+       <div>
+         <div class="ns-logo-name">NeuraShield</div>
+         <div class="ns-logo-sub">Multi-Layer Threat Intelligence</div>
+       </div>
+     </a>
+
+     <div class="login-card">
+       <h1 class="login-heading">Secure Access</h1>
+       <p class="login-sub">URL INTEL · DOMAIN INTEL · THREAT INVESTIGATION</p>
+
+      {% if error %}
+      <div class="error-msg">⚠ {{ error }}</div>
+      {% endif %}
+
+      <form method="POST" action="/login">
+        <div class="ns-form-group">
+          <label class="ns-label" for="username">Agent ID</label>
+          <input type="text" id="username" name="username"
+                 class="ns-input" placeholder="Enter your agent ID" required autocomplete="username">
+        </div>
+        <div class="ns-form-group">
+          <label class="ns-label" for="password">Access Code</label>
+          <input type="password" id="password" name="password"
+                 class="ns-input" placeholder="Enter your access code" required autocomplete="current-password">
+        </div>
+        <div style="height:10px;"></div>
+        <button type="submit" class="ns-shiny" style="margin-top:4px;"><span>Authenticate <span class="btn-arrow">→</span></span></button>
+      </form>
+
+      <div class="login-footer-links">
+        <a href="/">← Back to Platform</a>
+        <a href="/register">Register Agent ID</a>
+      </div>
     </div>
+  </div>
+   </div>
+  </div>
+
+  <script>
+    // Particle background
+    (function(){
+      const c = document.getElementById('login-bg');
+      const ctx = c.getContext('2d');
+      let W,H;
+      const pts = [];
+      function resize(){ W=c.width=window.innerWidth; H=c.height=window.innerHeight; }
+      resize();
+      window.addEventListener('resize',resize,{passive:true});
+      for(let i=0;i<30;i++) pts.push({x:Math.random()*W,y:Math.random()*H,vx:(Math.random()-.5)*.3,vy:(Math.random()-.5)*.3});
+      function frame(){
+        ctx.clearRect(0,0,W,H);
+        pts.forEach(p=>{p.x+=p.vx;p.y+=p.vy;if(p.x<0||p.x>W)p.vx*=-1;if(p.y<0||p.y>H)p.vy*=-1;});
+        for(let i=0;i<pts.length;i++){
+          for(let j=i+1;j<pts.length;j++){
+            const dx=pts[i].x-pts[j].x,dy=pts[i].y-pts[j].y,d=Math.sqrt(dx*dx+dy*dy);
+            if(d<120){ctx.beginPath();ctx.moveTo(pts[i].x,pts[i].y);ctx.lineTo(pts[j].x,pts[j].y);ctx.strokeStyle=`rgba(0,200,255,${.06*(1-d/120)})`;ctx.lineWidth=1;ctx.stroke();}
+          }
+          ctx.beginPath();ctx.arc(pts[i].x,pts[i].y,1.5,0,Math.PI*2);ctx.fillStyle='rgba(0,200,255,0.2)';ctx.fill();
+        }
+        requestAnimationFrame(frame);
+      }
+      frame();
+    })();
+  </script>
 </body>
 </html>

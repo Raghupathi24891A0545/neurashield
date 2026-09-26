@@ -1,0 +1,682 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Threat Intelligence &amp; Incident Response — NeuraShield SOC</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='neurashield.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='ns_investigation.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='investigation_center.css') }}">
+  <style>
+    /* Dedicated Module 6 Explorer Styles */
+    .m6-page-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 24px;
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 24px 20px 80px 20px;
+    }
+    .m6-top-banner {
+      background: linear-gradient(135deg, rgba(6,16,28,0.95), rgba(4,10,18,0.98));
+      border: 1px solid rgba(0, 229, 255, 0.25);
+      border-left: 4px solid var(--ic-cyan);
+      border-radius: 8px;
+      padding: 20px 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 16px;
+    }
+    .m6-top-title h1 {
+      font-size: 22px;
+      font-weight: 700;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin: 0;
+    }
+    .m6-top-title p {
+      font-size: 13px;
+      color: var(--ic-text-dim);
+      margin: 6px 0 0 0;
+    }
+    .m6-tab-bar {
+      display: flex;
+      gap: 12px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      padding-bottom: 8px;
+      margin-top: 10px;
+    }
+    .m6-tab-btn {
+      background: transparent;
+      border: none;
+      color: var(--ic-text-muted);
+      font-size: 13px;
+      font-weight: 600;
+      padding: 8px 16px;
+      border-radius: 4px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      transition: all 0.2s ease;
+    }
+    .m6-tab-btn:hover {
+      color: var(--ic-text);
+      background: rgba(255, 255, 255, 0.05);
+    }
+    .m6-tab-btn.active {
+      color: var(--ic-cyan);
+      background: rgba(0, 229, 255, 0.12);
+      border: 1px solid rgba(0, 229, 255, 0.3);
+    }
+    .m6-stat-cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 16px;
+    }
+    .m6-stat-box {
+      background: rgba(6, 12, 22, 0.7);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 6px;
+      padding: 16px 20px;
+    }
+    .m6-stat-num {
+      font-family: var(--ns-mono);
+      font-size: 26px;
+      font-weight: 700;
+      color: var(--ic-cyan);
+      margin-top: 4px;
+    }
+    .m6-stat-lbl {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      color: var(--ic-text-muted);
+    }
+    /* Incident Table */
+    .m6-table-wrap {
+      background: rgba(6, 12, 22, 0.8);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 6px;
+      overflow-x: auto;
+    }
+    .m6-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12px;
+      text-align: left;
+    }
+    .m6-table th {
+      background: rgba(10, 20, 36, 0.9);
+      padding: 12px 16px;
+      color: var(--ic-text-muted);
+      font-family: var(--ns-mono);
+      font-size: 11px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .m6-table td {
+      padding: 12px 16px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+      color: var(--ic-text);
+      vertical-align: middle;
+    }
+    .m6-table tr:hover td {
+      background: rgba(0, 229, 255, 0.03);
+    }
+    .m6-lookup-box {
+      background: rgba(6, 12, 22, 0.8);
+      border: 1px solid rgba(0, 229, 255, 0.2);
+      border-radius: 6px;
+      padding: 20px;
+    }
+    .m6-search-row {
+      display: flex;
+      gap: 10px;
+      margin-top: 12px;
+    }
+    .m6-search-input {
+      flex: 1;
+      background: #03070d;
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      color: #fff;
+      font-family: var(--ns-mono);
+      font-size: 13px;
+      padding: 10px 14px;
+      border-radius: 4px;
+    }
+    .m6-search-input:focus {
+      outline: none;
+      border-color: var(--ic-cyan);
+      box-shadow: 0 0 10px rgba(0, 229, 255, 0.25);
+    }
+    .m6-select-sm {
+      background: #03070d;
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      color: #fff;
+      font-family: var(--ns-mono);
+      font-size: 11px;
+      padding: 4px 8px;
+      border-radius: 3px;
+    }
+  </style>
+</head>
+<body class="ns-theme-dark">
+<div class="ns-app-shell">
+  <!-- Shared Sidebar Navigation -->
+  <aside class="ns-sidebar" id="sidebar-nav"></aside>
+
+  <!-- Main Content View -->
+  <main class="ns-main">
+    <div class="m6-page-grid">
+
+      <!-- Header Banner -->
+      <div class="m6-top-banner">
+        <div class="m6-top-title">
+          <h1>
+            <span class="ic-tag-pill" style="background:rgba(0,229,255,0.15); color:var(--ic-cyan); border:1px solid rgba(0,229,255,0.3); font-size:12px; padding:3px 8px; border-radius:4px;">MODULE 6</span>
+            <span>Threat Intelligence &amp; Incident Response</span>
+          </h1>
+          <p>Advanced security operations console for indicator enrichment, campaign correlation, and formal case management.</p>
+        </div>
+        <div>
+          <a href="/investigation-center" class="ic-btn-action-primary" style="text-decoration:none; padding:8px 16px; font-size:12px; border-radius:4px; display:inline-flex; align-items:center; gap:8px;">
+            <span>🔬 Open Unified Investigation Center</span>
+          </a>
+        </div>
+      </div>
+
+      <!-- Tab Selectors -->
+      <div class="m6-tab-bar">
+        <button type="button" class="m6-tab-btn active" id="tab-btn-incidents" onclick="switchM6Tab('incidents')">
+          <span>🛡 Incidents &amp; Case Management</span>
+          <span class="ic-dna-badge" id="m6-active-inc-count" style="margin-left:4px;">0</span>
+        </button>
+        <button type="button" class="m6-tab-btn" id="tab-btn-intel" onclick="switchM6Tab('intel')">
+          <span>⚡ Threat Intelligence Explorer</span>
+        </button>
+      </div>
+
+      <!-- VIEW 1: INCIDENTS & CASE MANAGEMENT -->
+      <section id="view-incidents" style="display:flex; flex-direction:column; gap:20px;">
+        <!-- Stats Row -->
+        <div class="m6-stat-cards">
+          <div class="m6-stat-box">
+            <div class="m6-stat-lbl">Total Incidents</div>
+            <div class="m6-stat-num" id="stat-total-incidents">0</div>
+          </div>
+          <div class="m6-stat-box">
+            <div class="m6-stat-lbl">Active (Triaged / Investigating)</div>
+            <div class="m6-stat-num" style="color:var(--ic-amber);" id="stat-active-incidents">0</div>
+          </div>
+          <div class="m6-stat-box">
+            <div class="m6-stat-lbl">Containment Phase</div>
+            <div class="m6-stat-num" style="color:var(--ic-red);" id="stat-containment-incidents">0</div>
+          </div>
+          <div class="m6-stat-box">
+            <div class="m6-stat-lbl">Resolved / Closed</div>
+            <div class="m6-stat-num" style="color:var(--ic-green);" id="stat-resolved-incidents">0</div>
+          </div>
+        </div>
+
+        <!-- Filter & Search Controls -->
+        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
+          <div style="display:flex; gap:8px; align-items:center;">
+            <span style="font-size:12px; color:var(--ic-text-muted);">Status Filter:</span>
+            <select id="incident-status-filter" class="m6-select-sm" onchange="loadIncidents()">
+              <option value="">ALL STATUSES</option>
+              <option value="NEW">NEW</option>
+              <option value="TRIAGED">TRIAGED</option>
+              <option value="INVESTIGATING">INVESTIGATING</option>
+              <option value="CONTAINMENT">CONTAINMENT</option>
+              <option value="REMEDIATION">REMEDIATION</option>
+              <option value="RESOLVED">RESOLVED</option>
+              <option value="CLOSED">CLOSED</option>
+            </select>
+          </div>
+          <button type="button" class="ic-btn-secondary" onclick="loadIncidents()" style="font-size:11px; padding:6px 12px;">
+            <span>🔄 Refresh Incidents</span>
+          </button>
+        </div>
+
+        <!-- Incidents Table -->
+        <div class="m6-table-wrap">
+          <table class="m6-table">
+            <thead>
+              <tr>
+                <th>Incident ID</th>
+                <th>Title / Target</th>
+                <th>Severity</th>
+                <th>Status</th>
+                <th>Assigned Analyst</th>
+                <th>Linked Investigation</th>
+                <th>Created</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="incidents-table-body">
+              <tr>
+                <td colspan="8" style="text-align:center; padding:30px; color:var(--ic-text-muted);">
+                  Loading persistent incidents from database...
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Incident Detail Drawer / Modal -->
+        <div id="incident-detail-modal" class="ic-card" style="display:none; border-color:var(--ic-cyan); margin-top:10px;">
+          <div class="ic-panel-head">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="ic-tag-pill" id="detail-inc-status-badge">TRIAGED</span>
+              <span style="font-weight:700; color:#fff;" id="detail-inc-title">Incident Dossier</span>
+            </div>
+            <button type="button" class="btn-ghost" onclick="closeIncidentDetail()" style="padding:4px 8px;">✕ Close</button>
+          </div>
+          <div id="incident-detail-body" style="padding:16px 20px; font-size:13px; line-height:1.6;">
+            <!-- Dynamic incident content -->
+          </div>
+        </div>
+      </section>
+
+      <!-- VIEW 2: THREAT INTELLIGENCE EXPLORER -->
+      <section id="view-intel" style="display:none; flex-direction:column; gap:20px;">
+        <div class="m6-lookup-box">
+          <div style="font-weight:700; font-size:14px; color:#fff; display:flex; justify-content:space-between; align-items:center;">
+            <span>On-Demand Threat Intelligence Lookup</span>
+            <small style="color:var(--ic-text-muted); font-size:11px;">Queries internal seed DB &amp; external reputation feeds</small>
+          </div>
+          <p style="font-size:12px; color:var(--ic-text-dim); margin:6px 0 0 0;">
+            Query any IoC (Domain, URL, IP, or Email) to verify external threat reputation, first/last seen data, and campaign connections.
+          </p>
+          <div class="m6-search-row">
+            <select id="lookup-type-select" class="m6-select-sm" style="font-size:12px; padding:10px 12px;">
+              <option value="domain">Domain</option>
+              <option value="url">URL</option>
+              <option value="ip">IP Address</option>
+              <option value="email">Email</option>
+            </select>
+            <input type="text" id="lookup-value-input" class="m6-search-input" placeholder="e.g. secure-login-verify-account.com or 198.51.100.24">
+            <button type="button" class="ic-btn-action-primary" id="btn-run-lookup" onclick="runThreatLookup()" style="padding:0 20px; border-radius:4px; font-size:12px; font-weight:700;">
+              <span>Enrich Indicator</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Lookup Result Card -->
+        <div id="lookup-result-card" style="display:none;">
+          <div class="ic-m6-section-title" style="margin-bottom:10px;">
+            <span>Enrichment Findings</span>
+          </div>
+          <div id="lookup-result-content"></div>
+        </div>
+
+        <!-- Reference Threat Indicators Table -->
+        <div class="ic-card">
+          <div class="ic-panel-head">
+            <span>Known Threat Intelligence Baseline Registry</span>
+            <span style="font-size:11px; color:var(--ic-text-muted);">Verified Seed Database</span>
+          </div>
+          <div style="padding:14px; font-size:12px; color:var(--ic-text-dim);">
+            Below is a sample of high-confidence known malicious indicators actively tracked in the NeuraShield Threat Database:
+          </div>
+          <div class="m6-table-wrap">
+            <table class="m6-table">
+              <thead>
+                <tr>
+                  <th>Indicator Type</th>
+                  <th>Value</th>
+                  <th>Status</th>
+                  <th>Reputation Description</th>
+                  <th>Confidence</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><span class="ic-indicator-type">DOMAIN</span></td>
+                  <td><code>secure-login-verify-account.com</code></td>
+                  <td><span class="ic-indicator-status-badge" style="color:var(--ic-red); background:rgba(255,51,85,0.15); border:1px solid var(--ic-red);">KNOWN_MALICIOUS</span></td>
+                  <td>Active credential harvesting portal masquerading as financial login</td>
+                  <td><span style="font-family:var(--ns-mono); color:var(--ic-cyan);">95%</span></td>
+                </tr>
+                <tr>
+                  <td><span class="ic-indicator-type">DOMAIN</span></td>
+                  <td><code>paypal-account-security-alert.xyz</code></td>
+                  <td><span class="ic-indicator-status-badge" style="color:var(--ic-red); background:rgba(255,51,85,0.15); border:1px solid var(--ic-red);">KNOWN_MALICIOUS</span></td>
+                  <td>Brand impersonation targeting PayPal user credentials</td>
+                  <td><span style="font-family:var(--ns-mono); color:var(--ic-cyan);">96%</span></td>
+                </tr>
+                <tr>
+                  <td><span class="ic-indicator-type">IP</span></td>
+                  <td><code>198.51.100.24</code></td>
+                  <td><span class="ic-indicator-status-badge" style="color:var(--ic-red); background:rgba(255,51,85,0.15); border:1px solid var(--ic-red);">KNOWN_MALICIOUS</span></td>
+                  <td>Known command &amp; control / phishing drop server</td>
+                  <td><span style="font-family:var(--ns-mono); color:var(--ic-cyan);">92%</span></td>
+                </tr>
+                <tr>
+                  <td><span class="ic-indicator-type">DOMAIN</span></td>
+                  <td><code>microsoft.com</code></td>
+                  <td><span class="ic-indicator-status-badge" style="color:var(--ic-green); background:rgba(0,221,136,0.15); border:1px solid var(--ic-green);">KNOWN_BENIGN</span></td>
+                  <td>Legitimate verified corporate infrastructure</td>
+                  <td><span style="font-family:var(--ns-mono); color:var(--ic-cyan);">99%</span></td>
+                </tr>
+                <tr>
+                  <td><span class="ic-indicator-type">DOMAIN</span></td>
+                  <td><code>google.com</code></td>
+                  <td><span class="ic-indicator-status-badge" style="color:var(--ic-green); background:rgba(0,221,136,0.15); border:1px solid var(--ic-green);">KNOWN_BENIGN</span></td>
+                  <td>Legitimate verified corporate infrastructure</td>
+                  <td><span style="font-family:var(--ns-mono); color:var(--ic-cyan);">99%</span></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+    </div>
+  </main>
+</div>
+
+<!-- Shared UI Scripts -->
+<script src="{{ url_for('static', filename='ns_investigation.js') }}"></script>
+<script>
+(function() {
+  'use strict';
+  const sidebarNav = document.getElementById('sidebar-nav');
+  if (window.NS && window.NS.renderNav && sidebarNav) {
+    window.NS.renderNav(sidebarNav, 'threat_intel');
+  }
+
+  // Load incidents on startup
+  window.addEventListener('DOMContentLoaded', () => {
+    loadIncidents();
+  });
+})();
+
+function switchM6Tab(tab) {
+  const tabIncidents = document.getElementById('tab-btn-incidents');
+  const tabIntel = document.getElementById('tab-btn-intel');
+  const viewIncidents = document.getElementById('view-incidents');
+  const viewIntel = document.getElementById('view-intel');
+
+  if (tab === 'incidents') {
+    tabIncidents.classList.add('active');
+    tabIntel.classList.remove('active');
+    viewIncidents.style.display = 'flex';
+    viewIntel.style.display = 'none';
+  } else {
+    tabIncidents.classList.remove('active');
+    tabIntel.classList.add('active');
+    viewIncidents.style.display = 'none';
+    viewIntel.style.display = 'flex';
+  }
+}
+
+async function loadIncidents() {
+  const tbody = document.getElementById('incidents-table-body');
+  const statusFilter = document.getElementById('incident-status-filter').value;
+  let url = '/api/incidents?limit=50';
+  if (statusFilter) url += `&status=${encodeURIComponent(statusFilter)}`;
+
+  try {
+    const res = await fetch(url);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+    const incidents = data.incidents || [];
+
+    // Update stats
+    document.getElementById('stat-total-incidents').textContent = incidents.length;
+    document.getElementById('m6-active-inc-count').textContent = incidents.length;
+    let active = 0, containment = 0, resolved = 0;
+    incidents.forEach(inc => {
+      const s = (inc.status || '').toUpperCase();
+      if (s === 'TRIAGED' || s === 'INVESTIGATING' || s === 'NEW') active++;
+      if (s === 'CONTAINMENT' || s === 'REMEDIATION') containment++;
+      if (s === 'RESOLVED' || s === 'CLOSED') resolved++;
+    });
+    document.getElementById('stat-active-incidents').textContent = active;
+    document.getElementById('stat-containment-incidents').textContent = containment;
+    document.getElementById('stat-resolved-incidents').textContent = resolved;
+
+    if (incidents.length === 0) {
+      tbody.innerHTML = `
+        <tr>
+          <td colspan="8" style="text-align:center; padding:30px; color:var(--ic-text-muted);">
+            No incidents recorded in database matching filter "${statusFilter || 'ALL'}".
+          </td>
+        </tr>`;
+      return;
+    }
+
+    tbody.innerHTML = incidents.map(inc => {
+      const sev = (inc.severity || 'HIGH').toUpperCase();
+      let sevColor = 'var(--ic-amber)';
+      if (sev === 'CRITICAL' || sev === 'HIGH') sevColor = 'var(--ic-red)';
+      else if (sev === 'LOW') sevColor = 'var(--ic-green)';
+
+      const st = (inc.status || 'NEW').toUpperCase();
+
+      return `
+        <tr>
+          <td>
+            <b style="font-family:var(--ns-mono); color:var(--ic-cyan);">${esc(inc.incident_id || inc.id)}</b>
+          </td>
+          <td>
+            <div style="font-weight:600;">${esc(inc.title || 'Untitled Incident')}</div>
+            <div style="font-size:11px; color:var(--ic-text-muted);">${esc((inc.description || '').substring(0, 70))}...</div>
+          </td>
+          <td>
+            <span style="font-family:var(--ns-mono); font-weight:700; color:${sevColor};">${esc(sev)}</span>
+          </td>
+          <td>
+            <select class="m6-select-sm" onchange="updateIncidentStatus('${esc(inc.incident_id || inc.id)}', this.value)">
+              <option value="NEW" ${st === 'NEW' ? 'selected' : ''}>NEW</option>
+              <option value="TRIAGED" ${st === 'TRIAGED' ? 'selected' : ''}>TRIAGED</option>
+              <option value="INVESTIGATING" ${st === 'INVESTIGATING' ? 'selected' : ''}>INVESTIGATING</option>
+              <option value="CONTAINMENT" ${st === 'CONTAINMENT' ? 'selected' : ''}>CONTAINMENT</option>
+              <option value="REMEDIATION" ${st === 'REMEDIATION' ? 'selected' : ''}>REMEDIATION</option>
+              <option value="RESOLVED" ${st === 'RESOLVED' ? 'selected' : ''}>RESOLVED</option>
+              <option value="CLOSED" ${st === 'CLOSED' ? 'selected' : ''}>CLOSED</option>
+            </select>
+          </td>
+          <td><span style="color:var(--ic-cyan);">${esc(inc.assigned_to || 'Unassigned')}</span></td>
+          <td>
+            <a href="/report?id=${encodeURIComponent(inc.investigation_id)}" target="_blank" style="font-family:var(--ns-mono); color:var(--ic-cyan); text-decoration:none;">
+              ${esc(inc.investigation_id)} ↗
+            </a>
+          </td>
+          <td style="font-family:var(--ns-mono); font-size:11px; color:var(--ic-text-dim);">${esc(inc.created_at || 'Recently')}</td>
+          <td>
+            <button type="button" class="ic-btn-secondary" style="font-size:11px; padding:3px 8px;" onclick="viewIncidentDetail('${esc(inc.incident_id || inc.id)}')">
+              <span>View Dossier</span>
+            </button>
+          </td>
+        </tr>
+      `;
+    }).join('');
+
+  } catch (err) {
+    tbody.innerHTML = `<tr><td colspan="8" style="text-align:center; color:var(--ic-red); padding:20px;">Failed to load incidents: ${err.message}</td></tr>`;
+  }
+}
+
+async function updateIncidentStatus(incId, newStatus) {
+  try {
+    const res = await fetch(`/api/incidents/${encodeURIComponent(incId)}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status: newStatus, note: `Status updated to ${newStatus} via SOC Console.` })
+    });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    loadIncidents();
+  } catch (err) {
+    alert(`Status update failed: ${err.message}`);
+    loadIncidents();
+  }
+}
+
+async function viewIncidentDetail(incId) {
+  const modal = document.getElementById('incident-detail-modal');
+  const title = document.getElementById('detail-inc-title');
+  const statusBadge = document.getElementById('detail-inc-status-badge');
+  const body = document.getElementById('incident-detail-body');
+
+  modal.style.display = 'block';
+  body.innerHTML = 'Loading dossier...';
+
+  try {
+    const res = await fetch(`/api/incidents/${encodeURIComponent(incId)}`);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const inc = await res.json();
+
+    title.textContent = `${inc.incident_id}: ${inc.title}`;
+    statusBadge.textContent = inc.status;
+    statusBadge.className = `ic-status-pill ${(inc.status || 'triaged').toLowerCase()}`;
+
+    const timelineHtml = (inc.timeline || []).map(t => `
+      <div style="display:flex; gap:12px; margin-bottom:8px; font-size:12px;">
+        <span style="font-family:var(--ns-mono); color:var(--ic-cyan); width:140px;">${esc(t.timestamp || '')}</span>
+        <b style="color:var(--ic-text); width:120px;">${esc(t.event || '')}</b>
+        <span style="color:var(--ic-text-dim); flex:1;">${esc(t.details || '')}</span>
+        <span style="color:var(--ic-text-muted);">${esc(t.actor || '')}</span>
+      </div>
+    `).join('');
+
+    body.innerHTML = `
+      <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap:14px; margin-bottom:18px; padding-bottom:14px; border-bottom:1px solid rgba(255,255,255,0.08);">
+        <div><b>Severity:</b> <span style="font-family:var(--ns-mono); color:var(--ic-red);">${esc(inc.severity)}</span></div>
+        <div><b>Assigned Analyst:</b> <span style="color:var(--ic-cyan);">${esc(inc.assigned_to)}</span></div>
+        <div><b>Linked Investigation:</b> <a href="/report?id=${encodeURIComponent(inc.investigation_id)}" target="_blank" style="color:var(--ic-cyan); font-family:var(--ns-mono);">${esc(inc.investigation_id)}</a></div>
+        <div><b>Created:</b> <span style="font-family:var(--ns-mono);">${esc(inc.created_at)}</span></div>
+      </div>
+      <div>
+        <b style="color:#fff;">Incident Description:</b>
+        <p style="color:var(--ic-text-dim); margin:4px 0 16px 0;">${esc(inc.description || 'No description provided.')}</p>
+      </div>
+      <div>
+        <b style="color:#fff;">Audit &amp; Containment Timeline:</b>
+        <div style="background:rgba(3,7,13,0.6); border:1px solid rgba(255,255,255,0.06); border-radius:4px; padding:12px; margin-top:8px;">
+          ${timelineHtml || '<div style="color:var(--ic-text-muted);">No timeline events recorded.</div>'}
+        </div>
+      </div>
+    `;
+
+    modal.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  } catch (err) {
+    body.innerHTML = `<div style="color:var(--ic-red);">Error loading dossier: ${err.message}</div>`;
+  }
+}
+
+function closeIncidentDetail() {
+  document.getElementById('incident-detail-modal').style.display = 'none';
+}
+
+async function runThreatLookup() {
+  const type = document.getElementById('lookup-type-select').value;
+  const val = document.getElementById('lookup-value-input').value.trim();
+  const card = document.getElementById('lookup-result-card');
+  const content = document.getElementById('lookup-result-content');
+
+  if (!val) {
+    alert('Please enter an indicator to enrich.');
+    return;
+  }
+
+  card.style.display = 'block';
+  content.innerHTML = '<div style="padding:16px; color:var(--ic-cyan);">Querying threat intelligence database...</div>';
+
+  try {
+    const res = await fetch('/api/threat-intelligence/lookup', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ type: type, value: val })
+    });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+    const ind = data.indicator || {};
+    const st = (ind.status || 'NO_MATCH').toUpperCase();
+
+    let stColor = 'var(--ic-text-muted)';
+    let stBg = 'rgba(255,255,255,0.05)';
+    if (st === 'KNOWN_MALICIOUS') { stColor = 'var(--ic-red)'; stBg = 'rgba(255,51,85,0.15)'; }
+    else if (st === 'SUSPICIOUS') { stColor = 'var(--ic-amber)'; stBg = 'rgba(255,170,0,0.15)'; }
+    else if (st === 'KNOWN_BENIGN') { stColor = 'var(--ic-green)'; stBg = 'rgba(0,221,136,0.15)'; }
+
+    function formatIntelDate(val) {
+      if (!val || val === 'UNAVAILABLE' || val === 'None') return '<span class="ic-dim-tag">No Prior Record</span>';
+      try {
+        const d = new Date(val);
+        if (!isNaN(d.getTime())) {
+          return d.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+        }
+      } catch(e) {}
+      return esc(String(val).split('.')[0].replace('T', ' '));
+    }
+
+    function formatIntelConfidence(conf) {
+      if (!conf || conf === 'UNAVAILABLE') return '<span class="ic-conf-badge medium">Standard Verified</span>';
+      const s = String(conf).trim().toUpperCase();
+      if (s === 'HIGH' || s === 'HIGH%') return '<span class="ic-conf-badge high">High (95%+)</span>';
+      if (s === 'MEDIUM' || s === 'MEDIUM%') return '<span class="ic-conf-badge medium">Medium (75%)</span>';
+      if (s === 'LOW' || s === 'LOW%') return '<span class="ic-conf-badge low">Low (&lt;50%)</span>';
+      const num = parseFloat(s);
+      if (!isNaN(num)) return `<span class="ic-conf-badge ${num>=80?'high':num>=50?'medium':'low'}">${Math.round(num)}% Verified</span>`;
+      return `<span class="ic-conf-badge high">${esc(conf)}</span>`;
+    }
+
+    content.innerHTML = `
+      <div class="ic-indicator-card modern">
+        <div class="ic-indicator-head-row">
+          <div class="ic-indicator-badge-group">
+            <span class="ic-indicator-type-pill">${esc((ind.type || type).toUpperCase())}</span>
+            <span class="ic-indicator-val-code">${esc(ind.value || val)}</span>
+          </div>
+          <span class="ic-st-badge ${st === 'KNOWN_MALICIOUS' ? 'malicious' : (st === 'SUSPICIOUS' ? 'suspicious' : (st === 'KNOWN_BENIGN' ? 'benign' : 'clean'))}">
+            ${esc(st)}
+          </span>
+        </div>
+        <div class="ic-indicator-rep-banner ${st.toLowerCase()}">
+          <div class="ic-rep-badge-title">Threat Reputation Assessment</div>
+          <div class="ic-rep-body-text">${esc(ind.reputation || (st === 'NO_MATCH' ? 'Clean reputation in external intelligence repositories.' : 'Reputation available'))}</div>
+        </div>
+        <div class="ic-indicator-meta-grid">
+          <div class="ic-ind-meta-item">
+            <span class="ic-ind-label">Verified Intelligence Sources</span>
+            <span class="ic-ind-val">${esc((ind.sources || []).join(', ') || 'NeuraShield ThreatDB')}</span>
+          </div>
+          <div class="ic-ind-meta-item">
+            <span class="ic-ind-label">Confidence Assessment</span>
+            <span class="ic-ind-val">${formatIntelConfidence(ind.confidence)}</span>
+          </div>
+          <div class="ic-ind-meta-item">
+            <span class="ic-ind-label">First Seen In Feeds</span>
+            <span class="ic-ind-val">${formatIntelDate(ind.first_seen)}</span>
+          </div>
+          <div class="ic-ind-meta-item">
+            <span class="ic-ind-label">Last Observed Activity</span>
+            <span class="ic-ind-val">${formatIntelDate(ind.last_seen)}</span>
+          </div>
+          <div class="ic-ind-meta-item full-width">
+            <span class="ic-ind-label">Correlated Threat Indicators</span>
+            <span class="ic-ind-val">${(ind.related_indicators || []).length ? esc(ind.related_indicators.join(', ')) : '<span class="ic-dim-tag">None identified (Isolated entity)</span>'}</span>
+          </div>
+        </div>
+      </div>
+    `;
+  } catch (err) {
+    content.innerHTML = `<div style="padding:14px; color:var(--ic-red);">Lookup error: ${err.message}</div>`;
+  }
+}
+
+function esc(s) {
+  if (s === null || s === undefined) return '';
+  return String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+}
+</script>
+</body>
+</html>

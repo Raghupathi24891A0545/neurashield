@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cybercrime Evidence Dossier — NeuraShield SOC</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='neurashield.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='ns_investigation.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='investigation_center.css') }}">
+  <style>
+    .pkg-layout { max-width: 1400px; margin: 0 auto; padding: 24px 20px 80px 20px; display: flex; flex-direction: column; gap: 24px; }
+    .pkg-hero {
+      background: linear-gradient(135deg, rgba(6,16,28,0.95), rgba(4,10,18,0.98));
+      border: 1px solid rgba(0, 229, 255, 0.25); border-left: 4px solid #00e5ff;
+      border-radius: 8px; padding: 22px 24px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;
+    }
+    .pkg-hero h1 { margin: 0; font-size: 22px; font-weight: 700; color: #fff; display: flex; align-items: center; gap: 10px; }
+    .pkg-hero p { margin: 6px 0 0 0; font-size: 13px; color: #94a3b8; }
+
+    .card { background: rgba(10, 18, 28, 0.85); border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 22px; }
+    .card h2 { font-size: 16px; color: #e2e8f0; margin: 0 0 16px 0; display: flex; align-items: center; gap: 8px; border-bottom: 1px solid rgba(255,255,255,0.06); padding-bottom: 10px; }
+
+    .pkg-grid { display: grid; grid-template-columns: 1fr 1.2fr; gap: 20px; }
+    @media (max-width: 992px) { .pkg-grid { grid-template-columns: 1fr; } }
+
+    .field-group { margin-bottom: 14px; }
+    .field-group label { display: block; font-size: 11px; text-transform: uppercase; color: #64748b; font-family: var(--ns-mono, monospace); margin-bottom: 6px; font-weight: 600; }
+    .field-group input, .field-group select, .field-group textarea {
+      width: 100%; box-sizing: border-box; background: rgba(4, 9, 15, 0.8); border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 6px; color: #fff; padding: 10px 12px; font-size: 13px; font-family: var(--ns-mono, monospace);
+    }
+    .field-group input:focus, .field-group textarea:focus { border-color: #00e5ff; outline: none; box-shadow: 0 0 0 2px rgba(0,229,255,0.15); }
+
+    .disclaimer-box {
+      background: rgba(245, 158, 11, 0.1); border: 1px solid rgba(245, 158, 11, 0.3); border-radius: 6px; padding: 14px;
+      font-size: 12px; color: #fde68a; line-height: 1.5; margin-bottom: 16px;
+    }
+
+    .seal-box {
+      background: rgba(0,0,0,0.5); border: 1px solid rgba(0, 229, 255, 0.3); border-radius: 6px; padding: 14px;
+      font-family: var(--ns-mono, monospace); font-size: 11px; color: #cbd5e1; margin-bottom: 14px;
+    }
+
+    .complaint-text {
+      background: rgba(0,0,0,0.6); border: 1px solid rgba(255,255,255,0.1); border-radius: 6px; padding: 16px;
+      font-family: var(--ns-mono, monospace); font-size: 12px; color: #f1f5f9; line-height: 1.6; white-space: pre-wrap;
+      max-height: 380px; overflow-y: auto; user-select: text;
+    }
+  </style>
+</head>
+<body>
+
+<nav class="ns-nav scrolled" style="background:rgba(6, 9, 14, 0.96); border-bottom: 1px solid rgba(0, 200, 255, 0.16);">
+  <div class="ns-nav-inner">
+    <a href="/" class="ns-logo">
+      <img src="{{ url_for('static', filename='static/ns_logo.png') }}" class="ns-logo-icon" alt="NS" onerror="this.style.display='none';">
+      <div class="ns-logo-text">
+        <span class="ns-logo-name">NeuraShield</span>
+        <span class="ns-logo-sub">Cybersecurity Investigation Platform</span>
+      </div>
+    </a>
+    <div class="ns-nav-actions">
+      <span style="font-family:var(--ns-mono);font-size:11px;color:#94a3b8;margin-left:14px;">{{ username }}</span>
+      <a href="/logout" class="btn-ghost" style="margin-left:8px;">Logout</a>
+    </div>
+  </div>
+</nav>
+
+<div class="inv-layout">
+  <aside class="inv-sidebar">
+    <div class="who">
+      <small>Security Operations</small>
+      <b>{{ username }}</b>
+    </div>
+    <ul class="inv-nav" id="sidebar-nav"></ul>
+  </aside>
+
+  <main class="inv-main">
+    <div class="pkg-layout">
+      <!-- Hero -->
+      <div class="pkg-hero">
+        <div>
+          <h1><span>📁</span> Module 20 — Cybercrime Evidence Dossier Workflow</h1>
+          <p>Compiles cryptographically sealed, court-ready forensic dossiers to streamline official reporting to national cybercrime authorities.</p>
+        </div>
+        <a href="https://cybercrime.gov.in" target="_blank" rel="noopener noreferrer" class="ic-btn-primary" style="background:#ea580c; border-color:#f97316;">
+          <span>Official Reporting Portal ↗</span>
+        </a>
+      </div>
+
+      <div class="disclaimer-box">
+        <strong>⚠️ Official Reporting Notice:</strong> NeuraShield structures, correlates, and cryptographically signs forensic investigation evidence for documentation. NeuraShield does NOT automatically submit complaints on your behalf; users must file directly with law enforcement using the official National Cyber Crime Reporting Portal.
+      </div>
+
+      <!-- Main Workflow Grid -->
+      <div class="pkg-grid">
+        <!-- Configuration Card -->
+        <div class="card">
+          <h2><span>⚖️</span> Select Case & Generate Package</h2>
+          <form id="pkgForm" onsubmit="generatePackage(event)">
+            <div class="field-group">
+              <label for="invSelect">Investigation Reference</label>
+              <select id="invSelect" required>
+                <option value="">-- Choose Completed Investigation --</option>
+              </select>
+            </div>
+            <div class="field-group">
+              <label for="incidentDesc">Incident Summary / Victim Impact</label>
+              <textarea id="incidentDesc" rows="4" placeholder="Briefly describe the context: e.g. Received unsolicited SMS with malicious banking link targeting SBI account; no credentials entered."></textarea>
+            </div>
+            <div class="field-group">
+              <label for="analystRef">Reporting Analyst / User</label>
+              <input type="text" id="analystRef" value="{{ username }}" readonly>
+            </div>
+
+            <button type="submit" class="ic-btn-primary" id="btnGen" style="width:100%;">
+              <span>Build Cryptographically Sealed Dossier</span>
+            </button>
+          </form>
+        </div>
+
+        <!-- Generated Package Display -->
+        <div class="card">
+          <h2><span>📜</span> Sealed Evidence Package</h2>
+          <div id="pkgEmpty" style="text-align:center; padding:50px 20px; color:#64748b;">
+            <div style="font-size:36px; margin-bottom:12px; opacity:0.5;">📦</div>
+            <p style="font-size:13px; margin:0;">Select an investigation to package IoCs, Threat DNA, and formatted evidence into a legal reporting dossier.</p>
+          </div>
+          <div id="pkgContent" style="display:none;">
+            <div class="seal-box">
+              <div style="color:#00e5ff; font-weight:bold; margin-bottom:4px;">CRYPTOGRAPHIC SEAL (SHA-256):</div>
+              <div id="pkgHash" style="word-break:break-all; font-size:10px; color:#34d399;"></div>
+              <div style="margin-top:6px; font-size:10px; color:#94a3b8; display:flex; justify-content:space-between;">
+                <span id="pkgId"></span>
+                <span id="pkgTimestamp"></span>
+              </div>
+            </div>
+
+            <div style="margin-bottom:8px; display:flex; justify-content:space-between; align-items:center;">
+              <span style="font-size:11px; text-transform:uppercase; color:#64748b; font-family:var(--ns-mono);">Standardized Incident Narrative:</span>
+              <button class="btn-ghost" onclick="copyComplaintText()" style="font-size:11px; padding:3px 8px;">Copy Narrative</button>
+            </div>
+            <div class="complaint-text" id="complaintText"></div>
+
+            <div style="margin-top:16px; display:flex; gap:10px;">
+              <button class="ic-btn-primary" onclick="downloadPackageJson()" style="flex:1;">
+                <span>Download Forensic JSON</span>
+              </button>
+              <a href="https://cybercrime.gov.in" target="_blank" rel="noopener noreferrer" class="btn-ghost" style="flex:1; text-align:center; display:flex; align-items:center; justify-content:center; text-decoration:none;">
+                Proceed to CyberCrime.gov.in ↗
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script src="{{ url_for('static', filename='ns_investigation.js') }}"></script>
+<script>
+  let currentDossier = null;
+
+  document.addEventListener('DOMContentLoaded', () => {
+    NS.renderNav(document.getElementById('sidebar-nav'), 'evidence_packages');
+    loadInvestigationOptions();
+  });
+
+  async function loadInvestigationOptions() {
+    try {
+      const res = await fetch('/api/investigations');
+      const data = await res.json();
+      const list = data.investigations || [];
+      const sel = document.getElementById('invSelect');
+
+      const urlParams = new URLSearchParams(window.location.search);
+      const preselected = urlParams.get('id');
+
+      list.forEach(inv => {
+        const opt = document.createElement('option');
+        opt.value = inv.id;
+        opt.textContent = `${inv.id} — ${inv.target} (${inv.risk_level || 'RISK_UNKNOWN'})`;
+        if (preselected && inv.id === preselected) opt.selected = true;
+        sel.appendChild(opt);
+      });
+
+      if (preselected) {
+        document.getElementById('btnGen').click();
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  }
+
+  async function generatePackage(e) {
+    e.preventDefault();
+    const invId = document.getElementById('invSelect').value;
+    if (!invId) return alert('Please choose an investigation');
+
+    const desc = document.getElementById('incidentDesc').value.trim();
+    const btn = document.getElementById('btnGen');
+    btn.disabled = true;
+    btn.textContent = 'Assembling IoCs & Computing Hash...';
+
+    try {
+      const res = await fetch('/api/evidence-package/build', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ investigation_id: invId, incident_description: desc })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to assemble evidence package');
+
+      currentDossier = data;
+      renderDossier(data);
+    } catch (err) {
+      alert(err.message);
+    } finally {
+      btn.disabled = false;
+      btn.textContent = 'Build Cryptographically Sealed Dossier';
+    }
+  }
+
+  function renderDossier(data) {
+    document.getElementById('pkgEmpty').style.display = 'none';
+    document.getElementById('pkgContent').style.display = 'block';
+
+    document.getElementById('pkgHash').textContent = data.evidence_hash || 'SHA256-PENDING';
+    document.getElementById('pkgId').textContent = 'PACKAGE REF: ' + (data.package_id || 'PKG-NS');
+    document.getElementById('pkgTimestamp').textContent = 'SEALED: ' + (data.sealed_at || new Date().toISOString());
+
+    document.getElementById('complaintText').textContent = data.complaint_narrative || 'Evidence package compiled successfully.';
+  }
+
+  function copyComplaintText() {
+    const text = document.getElementById('complaintText').textContent;
+    navigator.clipboard.writeText(text);
+    alert('Standardized complaint narrative copied to clipboard.');
+  }
+
+  function downloadPackageJson() {
+    if (!currentDossier) return;
+    const blob = new Blob([JSON.stringify(currentDossier, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `NeuraShield_Evidence_${currentDossier.investigation_id || 'Dossier'}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+</script>
+</body>
+</html>

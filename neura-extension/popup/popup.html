@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NeuraShield Security Console</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+
+  <!-- Top App Header -->
+  <header class="ns-header">
+    <div class="ns-brand">
+      <img src="../assets/icon48.png" class="ns-logo-img" alt="NeuraShield">
+      <div>
+        <div class="ns-brand-title">NEURASHIELD</div>
+        <div class="ns-brand-sub">CYBERSECURITY SOC CONSOLE</div>
+      </div>
+    </div>
+    <div class="ns-backend-pill" id="backendPill">
+      <span class="ns-pulse-dot" id="backendDot"></span>
+      <span id="backendStatusText">CHECKING...</span>
+    </div>
+  </header>
+
+  <!-- Mode Selector Tabs -->
+  <nav class="ns-mode-tabs">
+    <button class="ns-tab-btn active" id="tabEmailMode">
+      <span>✉</span> Gmail Email
+    </button>
+    <button class="ns-tab-btn" id="tabUrlMode">
+      <span>🔍</span> Investigate URL
+    </button>
+  </nav>
+
+  <!-- Main Scrollable Body Area -->
+  <main class="ns-main-container">
+
+    <!-- MODE 1: GMAIL EMAIL MODE -->
+    <section id="sectionEmailMode" class="ns-section">
+      <div id="emailTargetCard" class="ns-card ns-target-card">
+        <div class="ns-card-header">
+          <span class="ns-card-label">Active Email Target</span>
+          <span class="ns-badge" id="emailStatusBadge">AWAITING INPUT</span>
+        </div>
+        <div id="emailDetectedContent">
+          <div class="ns-target-field">
+            <span class="ns-field-label">Sender</span>
+            <span class="ns-field-val" id="emailSenderVal">Open an email in Gmail</span>
+          </div>
+          <div class="ns-target-grid">
+            <div class="ns-target-field">
+              <span class="ns-field-label">Claimed Org</span>
+              <span class="ns-field-val" id="emailOrgVal">—</span>
+            </div>
+            <div class="ns-target-field">
+              <span class="ns-field-label">Domain</span>
+              <span class="ns-field-val-mono" id="emailDomainVal">—</span>
+            </div>
+          </div>
+          <div class="ns-target-field" style="margin-top:6px;">
+            <span class="ns-field-label">Subject</span>
+            <span class="ns-field-val" id="emailSubjectVal" style="font-size:11px;">—</span>
+          </div>
+          <div class="ns-target-field" style="margin-top:6px;">
+            <span class="ns-field-label">Embedded Links</span>
+            <span class="ns-field-val" id="emailLinksCountVal">0 links detected</span>
+          </div>
+          <div class="ns-target-field" style="margin-top:6px;">
+            <span class="ns-field-label">Attachments</span>
+            <span class="ns-field-val" id="emailAttachmentsVal">0 attachments</span>
+          </div>
+        </div>
+
+        <div class="ns-action-row" style="margin-top:14px;">
+          <button id="btnAnalyzeEmail" class="ns-btn-primary" disabled>
+            <span>⚡</span> ANALYZE WITH NEURASHIELD
+          </button>
+          <button id="btnRefreshGmail" class="ns-btn-secondary" title="Re-sync current Gmail view">
+            ↻ Sync
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- MODE 2: DIRECT URL INVESTIGATION -->
+    <section id="sectionUrlMode" class="ns-section" style="display:none;">
+      <div class="ns-card">
+        <div class="ns-card-header">
+          <span class="ns-card-label">Target Investigation</span>
+          <span class="ns-badge">URL / DOMAIN</span>
+        </div>
+        
+        <!-- Current Tab Auto-Detection Pill -->
+        <div class="ns-current-tab-box" id="currentTabContainer" style="background:rgba(6,182,212,0.06);border:1px solid rgba(6,182,212,0.25);border-radius:6px;padding:10px 12px;margin-bottom:12px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
+            <span class="ns-field-label">Active Browser Tab</span>
+            <span class="ns-badge" style="color:#38bdf8;border-color:rgba(6,182,212,0.3);">AUTO-DETECTED</span>
+          </div>
+          <div id="currentTabUrlText" style="font-family:var(--font-mono);font-size:11px;color:#38bdf8;word-break:break-all;margin-bottom:8px;">
+            Detecting active tab...
+          </div>
+          <button id="btnScanCurrentTab" class="ns-btn-primary" style="padding:7px 12px;font-size:10px;width:100%;">
+            <span>⚡</span> SCAN CURRENT TAB
+          </button>
+        </div>
+
+        <div style="display:flex;align-items:center;gap:8px;margin:10px 0;">
+          <div style="flex:1;height:1px;background:var(--border);"></div>
+          <span style="font-size:9px;font-family:var(--font-mono);color:var(--text-dim);text-transform:uppercase;">OR ENTER CUSTOM TARGET</span>
+          <div style="flex:1;height:1px;background:var(--border);"></div>
+        </div>
+
+        <div class="ns-input-group">
+          <input type="text" id="targetUrlInput" class="ns-input" placeholder="https://example.com/login" spellcheck="false">
+          <button id="btnInvestigateUrl" class="ns-btn-primary" style="margin-top:10px;width:100%;">
+            <span>⚡</span> INVESTIGATE CUSTOM URL
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- LIVE SCANNING HUD (VISIBLE DURING INVESTIGATION) -->
+    <div id="scanningHud" class="ns-card ns-scanning-card" style="display:none;">
+      <div class="ns-radar-wrap">
+        <div class="ns-radar-circle"></div>
+        <div class="ns-radar-sweep"></div>
+      </div>
+      <div class="ns-scan-info">
+        <div class="ns-scan-title" id="scanStageTitle">INITIALIZING INVESTIGATION...</div>
+        <div class="ns-scan-steps" id="scanStepsList">
+          <div class="ns-step-item">● Extracting technical indicators...</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- INVESTIGATION REPORT CONTAINER -->
+    <div id="reportContainer" style="display:none;">
+      
+      <!-- Risk Banner -->
+      <div class="ns-risk-banner" id="riskBanner">
+        <div class="ns-risk-main">
+          <div class="ns-risk-level-label">INVESTIGATION VERDICT</div>
+          <div class="ns-risk-verdict" id="repVerdictText">VERIFIED</div>
+          <div class="ns-risk-reason" id="repReasonText">Reason description</div>
+        </div>
+        <div class="ns-risk-score-box">
+          <div class="ns-score-num" id="repScoreNum">0</div>
+          <div class="ns-score-lbl">RISK SCORE</div>
+        </div>
+      </div>
+
+      <!-- Report Section Tabs -->
+      <div class="ns-rep-tabs">
+        <button class="ns-rep-tab-btn active" data-rep-tab="repSummary">Summary</button>
+        <button class="ns-rep-tab-btn" data-rep-tab="repBrand">Brand</button>
+        <button class="ns-rep-tab-btn" data-rep-tab="repAttachments">Attachments</button>
+        <button class="ns-rep-tab-btn" data-rep-tab="repAgentAI">Agent AI</button>
+        <button class="ns-rep-tab-btn" data-rep-tab="repEvidence">Evidence</button>
+        <button class="ns-rep-tab-btn" data-rep-tab="repDna">Threat DNA</button>
+        <button class="ns-rep-tab-btn" data-rep-tab="repLinks">Links</button>
+        <button class="ns-rep-tab-btn" data-rep-tab="repDomain">Domain</button>
+        <button class="ns-rep-tab-btn" data-rep-tab="repWeb">Website</button>
+        <button class="ns-rep-tab-btn" data-rep-tab="repGuidance">Guidance</button>
+      </div>
+
+      <!-- Tab Content 1: SUMMARY -->
+      <div id="repSummary" class="ns-rep-tab-content active">
+        <div class="ns-card">
+          <div class="ns-card-header">
+            <span class="ns-card-label">Identity & Verification Status</span>
+            <span class="ns-badge" id="summaryVerifBadge">CHECKED</span>
+          </div>
+          <div id="summaryVerificationChecklist" class="ns-checklist"></div>
+        </div>
+
+        <div class="ns-card" id="summaryDbCheckCard" style="margin-top:10px;">
+          <div class="ns-card-header">
+            <span class="ns-card-label">TKR & Institutional Database Verification</span>
+            <span class="ns-badge" id="summaryDbBadge" style="color:#00e5ff;">SQLITE DIRECTORY</span>
+          </div>
+          <div id="summaryDbCheckContent" style="font-size:11px;color:#cbd5e1;line-height:1.6;"></div>
+        </div>
+
+        <div class="ns-card" style="margin-top:10px;">
+          <div class="ns-card-header">
+            <span class="ns-card-label">Cross-Source Correlation</span>
+          </div>
+          <p id="repCorrelationText" class="ns-hint-text" style="color:#e2e8f0;line-height:1.6;">
+            Correlation notes
+          </p>
+        </div>
+      </div>
+
+      <!-- Tab Content: BRAND IMPERSONATION -->
+      <div id="repBrand" class="ns-rep-tab-content">
+        <div class="ns-card" id="repBrandCard">
+          <div class="ns-card-header">
+            <span class="ns-card-label">Brand Impersonation Intelligence</span>
+            <span class="ns-badge" id="repBrandBadge">VERIFYING</span>
+          </div>
+          <div id="repBrandContent" style="font-size:12px; line-height:1.6;"></div>
+        </div>
+      </div>
+
+      <!-- Tab Content: ATTACHMENTS -->
+      <div id="repAttachments" class="ns-rep-tab-content">
+        <div class="ns-card" id="repAttachmentsCard">
+          <div class="ns-card-header">
+            <span class="ns-card-label">Attachment Forensic Inspection</span>
+            <span class="ns-badge" id="repAttachmentsBadge">0 Files</span>
+          </div>
+          <div id="repAttachmentsContent"></div>
+        </div>
+      </div>
+
+      <!-- Tab Content 2: AGENT AI DECISIONS -->
+      <div id="repAgentAI" class="ns-rep-tab-content">
+        <div class="ns-card">
+          <div class="ns-card-header">
+            <span class="ns-card-label">Agentic AI — Autonomous Decisions</span>
+            <span class="ns-badge" id="agentModuleCountBadge">0 Modules</span>
+          </div>
+          <div id="repAgentDecisionsList" style="max-height:280px;overflow-y:auto;"></div>
+          <div id="repAgentExecSummary" style="margin-top:10px;font-size:11px;color:#94a3b8;line-height:1.6;"></div>
+        </div>
+      </div>
+
+      <!-- Tab Content 3: EVIDENCE -->
+      <div id="repEvidence" class="ns-rep-tab-content">
+        <div id="repEvidenceList" class="ns-evidence-list"></div>
+      </div>
+
+      <!-- Tab Content 3: THREAT DNA -->
+      <div id="repDna" class="ns-rep-tab-content">
+        <div class="ns-card">
+          <div class="ns-card-header">
+            <span class="ns-card-label">Threat DNA Traits</span>
+            <span class="ns-badge" id="dnaCountBadge">0 Traits</span>
+          </div>
+          <p class="ns-hint-text">Fingerprinted behavioral markers and indicators:</p>
+          <div id="repDnaChips" class="ns-dna-chips-wrap"></div>
+        </div>
+      </div>
+
+      <!-- Tab Content 4: LINKS -->
+      <div id="repLinks" class="ns-rep-tab-content">
+        <div id="repLinksList"></div>
+      </div>
+
+      <!-- Tab Content 5: DOMAIN -->
+      <div id="repDomain" class="ns-rep-tab-content">
+        <div class="ns-card" id="repDomainCard"></div>
+      </div>
+
+      <!-- Tab Content 6: WEBSITE -->
+      <div id="repWeb" class="ns-rep-tab-content">
+        <div class="ns-card" id="repWebCard"></div>
+      </div>
+
+      <!-- Tab Content 7: GUIDANCE -->
+      <div id="repGuidance" class="ns-rep-tab-content">
+        <div class="ns-card">
+          <div class="ns-card-header">
+            <span class="ns-card-label">SOC Analyst Recommended Guidance</span>
+          </div>
+          <div id="repGuidanceList" class="ns-guidance-list"></div>
+        </div>
+      </div>
+
+    </div>
+
+  </main>
+
+  <!-- Sticky Footer -->
+  <footer class="ns-footer">
+    <button id="btnOpenWebConsole" class="ns-btn-secondary ns-btn-sm">
+      <span>↗</span> Open in SOC Console
+    </button>
+    <button id="btnExportJson" class="ns-btn-secondary ns-btn-sm">
+      <span>💾</span> Export JSON
+    </button>
+  </footer>
+
+  <script src="../api/api.js"></script>
+  <script src="popup.js"></script>
+</body>
+</html>

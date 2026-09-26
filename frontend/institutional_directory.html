@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Institutional Directory — NeuraShield Security Admin</title>
+  <link rel="stylesheet" href="/neurashield.css">
+  <style>
+    .ns-layout{display:flex;min-height:100vh;padding-top:68px;}
+    .ns-sidebar{width:220px;flex-shrink:0;background:var(--ns-surface);border-right:1px solid var(--ns-border);display:flex;flex-direction:column;padding:28px 0;position:fixed;top:68px;left:0;bottom:0;overflow-y:auto;}
+    .ns-sidebar-logo{padding:0 20px 24px;border-bottom:1px solid var(--ns-border);margin-bottom:16px;}
+    .sidebar-nav{list-style:none;padding:0 10px;}
+    .sidebar-nav li{margin-bottom:2px;}
+    .sidebar-nav a{display:flex;align-items:center;gap:10px;padding:10px 14px;font-size:12px;font-weight:500;letter-spacing:0.04em;text-transform:uppercase;color:var(--ns-text-muted);text-decoration:none;border-radius:var(--ns-radius);transition:var(--ns-transition);}
+    .sidebar-nav a:hover{color:var(--ns-text);background:rgba(0,200,255,0.05);}
+    .sidebar-nav a.active{color:var(--ns-cyan);background:var(--ns-cyan-dim);}
+    .sidebar-bottom{margin-top:auto;padding:16px;border-top:1px solid var(--ns-border);}
+    .ns-main{flex:1;margin-left:220px;padding:40px;max-width:calc(100vw - 220px);}
+    .ns-page-title{font-size:22px;font-weight:700;letter-spacing:-0.02em;margin-bottom:4px;}
+    .ns-page-sub{font-family:var(--ns-mono);font-size:11px;letter-spacing:0.08em;text-transform:uppercase;color:var(--ns-text-muted);}
+    
+    .inst-grid{display:grid;grid-template-columns:2fr 1fr;gap:24px;margin-top:24px;}
+    @media(max-width:1100px){.inst-grid{grid-template-columns:1fr;}}
+
+    .inst-card{background:var(--ns-surface);border:1px solid var(--ns-border);border-radius:8px;padding:24px;margin-bottom:20px;}
+    .inst-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px;}
+    .inst-name{font-size:18px;font-weight:700;color:var(--ns-text);}
+    .inst-domains{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px;}
+    .domain-chip{font-family:var(--ns-mono);font-size:11px;padding:4px 10px;border-radius:4px;background:rgba(6,182,212,0.1);color:var(--ns-cyan);border:1px solid rgba(6,182,212,0.25);}
+    .alias-chip{font-family:var(--ns-mono);font-size:11px;padding:4px 8px;border-radius:4px;background:rgba(255,255,255,0.05);color:var(--ns-text-muted);border:1px solid var(--ns-border);}
+
+    .table-wrap{overflow-x:auto;margin-top:16px;}
+    table.ns-table{width:100%;border-collapse:collapse;font-size:12px;}
+    table.ns-table th{background:rgba(255,255,255,0.02);padding:10px 14px;text-align:left;font-family:var(--ns-mono);font-size:10px;letter-spacing:0.08em;text-transform:uppercase;color:var(--ns-text-muted);border-bottom:1px solid var(--ns-border);}
+    table.ns-table td{padding:12px 14px;border-bottom:1px solid var(--ns-border);color:var(--ns-text);}
+    
+    .status-badge{display:inline-block;padding:3px 8px;border-radius:4px;font-family:var(--ns-mono);font-size:10px;font-weight:600;}
+    .status-active{background:rgba(34,197,94,0.15);color:#4ade80;border:1px solid rgba(34,197,94,0.3);}
+    .status-inactive{background:rgba(239,68,68,0.15);color:#f87171;border:1px solid rgba(239,68,68,0.3);}
+    
+    .csv-box{width:100%;min-height:120px;background:rgba(0,0,0,0.3);border:1px solid var(--ns-border);border-radius:6px;color:var(--ns-text);font-family:var(--ns-mono);font-size:11px;padding:12px;box-sizing:border-box;resize:vertical;}
+    .form-group{margin-bottom:16px;}
+    .form-group label{display:block;font-size:11px;font-family:var(--ns-mono);text-transform:uppercase;letter-spacing:0.05em;color:var(--ns-text-muted);margin-bottom:6px;}
+    .form-control{width:100%;background:rgba(0,0,0,0.3);border:1px solid var(--ns-border);border-radius:6px;padding:8px 12px;color:var(--ns-text);font-size:12px;box-sizing:border-box;}
+  </style>
+</head>
+<body>
+
+<!-- Navbar -->
+<nav class="ns-nav scrolled" style="background:rgba(8,12,16,0.95);">
+  <div class="ns-nav-inner">
+    <a href="/" class="ns-logo">
+      <div class="ns-logo-text">
+        <span class="ns-logo-name">NeuraShield</span>
+        <span class="ns-logo-sub">Institutional Security Directory</span>
+      </div>
+    </a>
+    <div class="ns-nav-actions">
+      <span class="ns-badge ns-badge-cyan"><span class="dot"></span> SOC Admin</span>
+      <span style="font-family:var(--ns-mono);font-size:11px;color:var(--ns-text-dim);margin:0 12px;">{{ username or 'Admin' }}</span>
+      <a href="/logout" class="btn-ghost">Logout</a>
+    </div>
+  </div>
+</nav>
+
+<div class="ns-layout">
+  <!-- Sidebar -->
+  <aside class="ns-sidebar">
+    <div class="ns-sidebar-logo">
+      <div style="font-family:var(--ns-mono);font-size:9px;letter-spacing:0.15em;text-transform:uppercase;color:var(--ns-text-muted);">Admin Portal</div>
+      <div style="font-size:13px;font-weight:600;color:var(--ns-text);margin-top:2px;">{{ username or 'Security Admin' }}</div>
+    </div>
+    <ul class="sidebar-nav">
+      <li><a href="/admin"><span class="icon">📊</span> Command Center</a></li>
+      <li><a href="/admin/institutions" class="active"><span class="icon">🏛</span> Institutions & Gmail</a></li>
+      <li><a href="/investigation-center"><span class="icon">⚡</span> Investigation Center</a></li>
+      <li><a href="/domain-intelligence"><span class="icon">🌐</span> Domain Intel</a></li>
+      <li><a href="/upload"><span class="icon">📂</span> Bulk Analysis</a></li>
+    </ul>
+    <div class="sidebar-bottom">
+      <a href="/logout" class="btn-ghost btn-full" style="font-size:10px;">Logout</a>
+    </div>
+  </aside>
+
+  <!-- Main -->
+  <main class="ns-main">
+    <div style="display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:24px;">
+      <div>
+        <div class="ns-page-title">Institutional Directory & Sender Authentication</div>
+        <div class="ns-page-sub">Authorized Institutional Domains · Member Records · Phishing Impersonation Defense</div>
+      </div>
+      <div>
+        <button class="ns-btn ns-btn-cyan" onclick="document.getElementById('addMemberModal').scrollIntoView({behavior:'smooth'});">+ Add Member</button>
+      </div>
+    </div>
+
+    <!-- Active Institutions Cards -->
+    <div id="institutionsContainer">
+      <div style="color:var(--ns-text-muted);font-size:12px;font-family:var(--ns-mono);">Loading institutional directory...</div>
+    </div>
+
+    <!-- Grid: Member Management & CSV Import -->
+    <div class="inst-grid">
+      <!-- Member Directory List -->
+      <div class="inst-card">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+          <div>
+            <div style="font-size:14px;font-weight:700;">Verified Institutional Members</div>
+            <div style="font-size:11px;color:var(--ns-text-muted);">Directory entries authorized to transmit institutional communications</div>
+          </div>
+          <span class="ns-badge ns-badge-cyan" id="memberCountBadge">0 Members</span>
+        </div>
+        <div class="table-wrap">
+          <table class="ns-table">
+            <thead>
+              <tr>
+                <th>Email</th>
+                <th>Name</th>
+                <th>Role</th>
+                <th>Department</th>
+                <th>Status</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody id="membersTableBody">
+              <tr><td colspan="6" style="text-align:center;color:var(--ns-text-muted);">Loading members...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- CSV Bulk Import & Add Member -->
+      <div>
+        <div class="inst-card" id="addMemberModal">
+          <div style="font-size:14px;font-weight:700;margin-bottom:4px;">Bulk Import Members (CSV)</div>
+          <div style="font-size:11px;color:var(--ns-text-muted);margin-bottom:16px;">
+            Format: <code>email,displayName,role,department,status</code>
+          </div>
+          <div class="form-group">
+            <textarea id="csvContent" class="csv-box" placeholder="faculty-demo@official.example,Demo Faculty,Faculty,CSE,ACTIVE
+student-demo@official.example,Demo Student,Student,CSE,ACTIVE"></textarea>
+          </div>
+          <button class="ns-btn ns-btn-cyan" style="width:100%;" onclick="importCsv()">Import Member Roster</button>
+          <div id="csvMsg" style="margin-top:10px;font-size:11px;font-family:var(--ns-mono);"></div>
+        </div>
+
+        <div class="inst-card">
+          <div style="font-size:14px;font-weight:700;margin-bottom:4px;">Add Individual Member</div>
+          <div style="font-size:11px;color:var(--ns-text-muted);margin-bottom:16px;">Direct registration to institutional directory</div>
+          <div class="form-group">
+            <label>Member Email</label>
+            <input type="email" id="newMemberEmail" class="form-control" placeholder="user@tkrcet.ac.in">
+          </div>
+          <div class="form-group">
+            <label>Display Name</label>
+            <input type="text" id="newMemberName" class="form-control" placeholder="Prof. Jane Doe">
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+            <div class="form-group">
+              <label>Role</label>
+              <input type="text" id="newMemberRole" class="form-control" placeholder="Faculty / Staff / Student">
+            </div>
+            <div class="form-group">
+              <label>Department</label>
+              <input type="text" id="newMemberDept" class="form-control" placeholder="CSE / Admin">
+            </div>
+          </div>
+          <button class="ns-btn ns-btn-outline" style="width:100%;" onclick="addSingleMember()">Add Authorized Member</button>
+          <div id="addMemberMsg" style="margin-top:10px;font-size:11px;font-family:var(--ns-mono);"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Verification Audit Events Log -->
+    <div class="inst-card" style="margin-top:24px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+        <div>
+          <div style="font-size:14px;font-weight:700;">Live Verification Audit Trail</div>
+          <div style="font-size:11px;color:var(--ns-text-muted);">Real-time audit log of sender verification requests received from Chrome extension & Gmail</div>
+        </div>
+        <button class="btn-ghost" onclick="loadAuditEvents()" style="font-size:11px;">↻ Refresh</button>
+      </div>
+      <div class="table-wrap">
+        <table class="ns-table">
+          <thead>
+            <tr>
+              <th>Timestamp</th>
+              <th>Sender</th>
+              <th>Claimed Org</th>
+              <th>Verdict</th>
+              <th>Explanation</th>
+            </tr>
+          </thead>
+          <tbody id="auditTableBody">
+            <tr><td colspan="5" style="text-align:center;color:var(--ns-text-muted);">Loading audit log...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script>
+let currentInstId = 1;
+
+async function loadInstitutions() {
+  try {
+    const res = await fetch('/api/institutions');
+    const data = await res.json();
+    const list = data.institutions || [];
+    const container = document.getElementById('institutionsContainer');
+    
+    if (!list.length) {
+      container.innerHTML = '<div style="color:var(--ns-text-muted);">No institutions configured.</div>';
+      return;
+    }
+    
+    currentInstId = list[0].id;
+    container.innerHTML = list.map(inst => `
+      <div class="inst-card">
+        <div class="inst-header">
+          <div>
+            <div class="inst-name">${inst.name} <span class="status-badge status-active">${inst.status}</span></div>
+            <div style="font-size:12px;color:var(--ns-text-muted);margin-top:4px;">${inst.description || 'Configured Institutional Directory Profile'}</div>
+          </div>
+          <span class="ns-badge ns-badge-cyan">${inst.member_count} Members</span>
+        </div>
+        <div>
+          <div style="font-family:var(--ns-mono);font-size:10px;text-transform:uppercase;letter-spacing:0.05em;color:var(--ns-text-muted);">Configured Official Domains:</div>
+          <div class="inst-domains">
+            ${inst.domains.map(d => `<span class="domain-chip">🌐 ${d.domain} <span style="opacity:0.6;font-size:9px;">[${d.type}]</span></span>`).join('')}
+          </div>
+        </div>
+        <div style="margin-top:14px;">
+          <div style="font-family:var(--ns-mono);font-size:10px;text-transform:uppercase;letter-spacing:0.05em;color:var(--ns-text-muted);">Claim / Identity Aliases:</div>
+          <div class="inst-domains">
+            ${inst.aliases.map(a => `<span class="alias-chip">🏷 ${a}</span>`).join('')}
+          </div>
+        </div>
+      </div>
+    `).join('');
+    
+    loadInstitutionDetails(currentInstId);
+  } catch (err) {
+    console.error('Failed to load institutions:', err);
+  }
+}
+
+async function loadInstitutionDetails(id) {
+  try {
+    const res = await fetch(`/api/institutions/${id}`);
+    const inst = await res.json();
+    document.getElementById('memberCountBadge').textContent = `${(inst.members || []).length} Members`;
+    
+    const tbody = document.getElementById('membersTableBody');
+    if (!inst.members || !inst.members.length) {
+      tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--ns-text-muted);">No members enrolled.</td></tr>';
+      return;
+    }
+    
+    tbody.innerHTML = inst.members.map(m => `
+      <tr>
+        <td style="font-family:var(--ns-mono);">${m.email}</td>
+        <td><strong>${m.display_name || '—'}</strong></td>
+        <td>${m.role || '—'}</td>
+        <td>${m.department || '—'}</td>
+        <td><span class="status-badge ${m.status === 'ACTIVE' ? 'status-active' : 'status-inactive'}">${m.status}</span></td>
+        <td>
+          <button class="btn-ghost" style="padding:4px 8px;font-size:10px;" onclick="toggleStatus(${m.id}, '${m.status === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE'}')">
+            ${m.status === 'ACTIVE' ? 'Deactivate' : 'Activate'}
+          </button>
+        </td>
+      </tr>
+    `).join('');
+  } catch (err) {
+    console.error('Failed to load institution details:', err);
+  }
+}
+
+async function toggleStatus(memberId, newStatus) {
+  try {
+    await fetch(`/api/institutions/${currentInstId}/members/${memberId}/status`, {
+      method: 'PATCH',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({status: newStatus})
+    });
+    loadInstitutionDetails(currentInstId);
+  } catch (err) {
+    alert('Failed to update member status');
+  }
+}
+
+async function importCsv() {
+  const content = document.getElementById('csvContent').value.trim();
+  const msgEl = document.getElementById('csvMsg');
+  if (!content) {
+    msgEl.innerHTML = '<span style="color:#f87171;">Please enter CSV rows.</span>';
+    return;
+  }
+  msgEl.innerHTML = '<span style="color:var(--ns-cyan);">Importing roster...</span>';
+  try {
+    const res = await fetch(`/api/institutions/${currentInstId}/import`, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({csv_content: content})
+    });
+    const result = await res.json();
+    if (result.success) {
+      msgEl.innerHTML = `<span style="color:#4ade80;">✓ Imported: ${result.imported}, Updated: ${result.updated}</span>`;
+      document.getElementById('csvContent').value = '';
+      loadInstitutionDetails(currentInstId);
+    } else {
+      msgEl.innerHTML = `<span style="color:#f87171;">Error: ${result.error || 'Import failed'}</span>`;
+    }
+  } catch (err) {
+    msgEl.innerHTML = `<span style="color:#f87171;">Import request failed: ${err.message}</span>`;
+  }
+}
+
+async function addSingleMember() {
+  const email = document.getElementById('newMemberEmail').value.trim();
+  const name = document.getElementById('newMemberName').value.trim();
+  const role = document.getElementById('newMemberRole').value.trim();
+  const dept = document.getElementById('newMemberDept').value.trim();
+  const msgEl = document.getElementById('addMemberMsg');
+
+  if (!email || !email.includes('@')) {
+    msgEl.innerHTML = '<span style="color:#f87171;">Valid email is required.</span>';
+    return;
+  }
+  msgEl.innerHTML = '<span style="color:var(--ns-cyan);">Saving member...</span>';
+  try {
+    const res = await fetch(`/api/institutions/${currentInstId}/members`, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({email, display_name: name, role, department: dept, status: 'ACTIVE'})
+    });
+    const data = await res.json();
+    if (data.success) {
+      msgEl.innerHTML = '<span style="color:#4ade80;">✓ Member registered successfully.</span>';
+      document.getElementById('newMemberEmail').value = '';
+      document.getElementById('newMemberName').value = '';
+      loadInstitutionDetails(currentInstId);
+    } else {
+      msgEl.innerHTML = `<span style="color:#f87171;">Error: ${data.error}</span>`;
+    }
+  } catch (err) {
+    msgEl.innerHTML = `<span style="color:#f87171;">Request failed: ${err.message}</span>`;
+  }
+}
+
+async function loadAuditEvents() {
+  try {
+    const res = await fetch('/api/institutions/verification-events');
+    const data = await res.json();
+    const events = data.events || [];
+    const tbody = document.getElementById('auditTableBody');
+    if (!events.length) {
+      tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--ns-text-muted);">No verification events recorded yet.</td></tr>';
+      return;
+    }
+    tbody.innerHTML = events.map(e => {
+      let badgeClass = 'status-inactive';
+      if (e.result === 'VERIFIED_INSTITUTIONAL_SENDER') badgeClass = 'status-active';
+      else if (e.result === 'POSSIBLE_ORGANIZATION_IMPERSONATION') badgeClass = 'status-inactive';
+      else badgeClass = 'alias-chip';
+
+      return `
+        <tr>
+          <td style="font-family:var(--ns-mono);font-size:11px;color:var(--ns-text-dim);">${new Date(e.timestamp).toLocaleTimeString()}</td>
+          <td style="font-family:var(--ns-mono);"><strong>${e.email}</strong></td>
+          <td>${e.claimed_org || '—'}</td>
+          <td><span class="status-badge ${badgeClass}">${e.result.replace(/_/g, ' ')}</span></td>
+          <td style="font-size:11px;color:var(--ns-text-muted);">${e.reason || '—'}</td>
+        </tr>
+      `;
+    }).join('');
+  } catch (err) {
+    console.error('Failed to load audit events:', err);
+  }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  loadInstitutions();
+  loadAuditEvents();
+});
+</script>
+</body>
+</html>

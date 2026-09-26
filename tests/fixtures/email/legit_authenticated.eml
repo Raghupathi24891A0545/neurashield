@@ -1,0 +1,23 @@
+Return-Path: <bounces+123@mail.example.com>
+Received: from mail.example.com (mail.example.com [93.184.215.14])
+        by mx.recipient-provider.test with ESMTPS id abc123
+        for <alice@recipient.test>; Tue, 22 Sep 2026 10:15:02 +0000
+Authentication-Results: mx.recipient-provider.test;
+       spf=pass smtp.mailfrom=mail.example.com;
+       dkim=pass header.d=example.com header.s=s1;
+       dmarc=pass (p=REJECT) header.from=example.com
+DKIM-Signature: v=1; a=rsa-sha256; d=example.com; s=s1; h=from:to:subject:date; bh=abc=; b=def=
+From: Example Team <team@example.com>
+To: Alice <alice@recipient.test>
+Subject: Your September account summary
+Date: Tue, 22 Sep 2026 10:15:00 +0000
+Message-ID: <20260922101500.abc@example.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=utf-8
+
+Hi Alice,
+
+Here is your monthly summary. You can review it any time by signing in at https://www.example.com/account.
+
+Thanks,
+The Example Team

@@ -1,0 +1,213 @@
+{
+  "model_version": "email-text-lr-2026-09-24",
+  "trained_at": "2026-09-24T15:57:13.937712+00:00",
+  "positive_class": "fraud_scam+phishing",
+  "training_sources": [
+    "CEAS_08.csv",
+    "Enron.csv",
+    "Ling.csv",
+    "Nazario.csv",
+    "SpamAssasin.csv",
+    "eval.parquet",
+    "test.parquet"
+  ],
+  "rows": 50605,
+  "class_balance": {
+    "positive": 1522,
+    "negative": 49083
+  },
+  "evaluation": "5-fold GroupKFold over near-duplicate template groups (out-of-fold)",
+  "headline_metrics": {
+    "precision": 0.9675,
+    "recall": 0.9783,
+    "f1": 0.9729,
+    "roc_auc": 0.9996,
+    "pr_auc": 0.9949,
+    "false_positive_rate": 0.001,
+    "false_negative_rate": 0.0217,
+    "confusion_matrix": [
+      [
+        49033,
+        50
+      ],
+      [
+        33,
+        1489
+      ]
+    ],
+    "n": 50605
+  },
+  "per_source": {
+    "CEAS_08.csv": {
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1": 0.0,
+      "roc_auc": null,
+      "pr_auc": null,
+      "false_positive_rate": 0.0013006438186902516,
+      "false_negative_rate": null,
+      "confusion_matrix": [
+        [
+          15357,
+          20
+        ],
+        [
+          0,
+          0
+        ]
+      ],
+      "n": 15377
+    },
+    "Enron.csv": {
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1": 0.0,
+      "roc_auc": null,
+      "pr_auc": null,
+      "false_positive_rate": 0.001047851903597625,
+      "false_negative_rate": null,
+      "confusion_matrix": [
+        [
+          14300,
+          15
+        ],
+        [
+          0,
+          0
+        ]
+      ],
+      "n": 14315
+    },
+    "Ling.csv": {
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1": 0.0,
+      "roc_auc": null,
+      "pr_auc": null,
+      "false_positive_rate": 0.0004621072088724584,
+      "false_negative_rate": null,
+      "confusion_matrix": [
+        [
+          2163,
+          1
+        ],
+        [
+          0,
+          0
+        ]
+      ],
+      "n": 2164
+    },
+    "Nazario.csv": {
+      "precision": 1.0,
+      "recall": 0.9783180026281209,
+      "f1": 0.9890401859847227,
+      "roc_auc": null,
+      "pr_auc": null,
+      "false_positive_rate": null,
+      "false_negative_rate": 0.021681997371879105,
+      "confusion_matrix": [
+        [
+          0,
+          0
+        ],
+        [
+          33,
+          1489
+        ]
+      ],
+      "n": 1522
+    },
+    "SpamAssasin.csv": {
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1": 0.0,
+      "roc_auc": null,
+      "pr_auc": null,
+      "false_positive_rate": 0.00027901785714285713,
+      "false_negative_rate": null,
+      "confusion_matrix": [
+        [
+          3583,
+          1
+        ],
+        [
+          0,
+          0
+        ]
+      ],
+      "n": 3584
+    },
+    "eval.parquet": {
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1": 0.0,
+      "roc_auc": null,
+      "pr_auc": null,
+      "false_positive_rate": 0.0009606147934678194,
+      "false_negative_rate": null,
+      "confusion_matrix": [
+        [
+          7280,
+          7
+        ],
+        [
+          0,
+          0
+        ]
+      ],
+      "n": 7287
+    },
+    "test.parquet": {
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1": 0.0,
+      "roc_auc": null,
+      "pr_auc": null,
+      "false_positive_rate": 0.0009439899307740718,
+      "false_negative_rate": null,
+      "confusion_matrix": [
+        [
+          6350,
+          6
+        ],
+        [
+          0,
+          0
+        ]
+      ],
+      "n": 6356
+    }
+  },
+  "source_shift_false_positive_rates": {
+    "CEAS_08.csv": {
+      "held_out_ham": 15377,
+      "false_positive_rate": 0.0075437341484034595
+    },
+    "Enron.csv": {
+      "held_out_ham": 14315,
+      "false_positive_rate": 0.0023751309814879495
+    },
+    "Ling.csv": {
+      "held_out_ham": 2164,
+      "false_positive_rate": 0.0004621072088724584
+    },
+    "SpamAssasin.csv": {
+      "held_out_ham": 3584,
+      "false_positive_rate": 0.00027901785714285713
+    },
+    "eval.parquet": {
+      "held_out_ham": 7287,
+      "false_positive_rate": 0.0009606147934678194
+    },
+    "test.parquet": {
+      "held_out_ham": 6356,
+      "false_positive_rate": 0.0012586532410320957
+    }
+  },
+  "limitations": [
+    "Text-only: no headers, links or attachments.",
+    "Corpora are 1998\u20132008 era; modern phishing differs.",
+    "Positive and negative examples come from different collections, so the model may learn source style."
+  ]
+}

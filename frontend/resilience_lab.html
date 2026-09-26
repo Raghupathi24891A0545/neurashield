@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Adversarial Resilience Lab — NeuraShield SOC</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='neurashield.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='ns_investigation.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='investigation_center.css') }}">
+  <style>
+    .res-layout { max-width: 1400px; margin: 0 auto; padding: 24px 20px 80px 20px; display: flex; flex-direction: column; gap: 24px; }
+    .res-hero {
+      background: linear-gradient(135deg, rgba(6,16,28,0.95), rgba(4,10,18,0.98));
+      border: 1px solid rgba(0, 229, 255, 0.25); border-left: 4px solid #00e5ff;
+      border-radius: 8px; padding: 22px 24px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;
+    }
+    .res-hero h1 { margin: 0; font-size: 22px; font-weight: 700; color: #fff; display: flex; align-items: center; gap: 10px; }
+    .res-hero p { margin: 6px 0 0 0; font-size: 13px; color: #94a3b8; }
+
+    .card { background: rgba(10, 18, 28, 0.85); border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 22px; }
+    .card h2 { font-size: 16px; color: #e2e8f0; margin: 0 0 16px 0; display: flex; align-items: center; gap: 8px; border-bottom: 1px solid rgba(255,255,255,0.06); padding-bottom: 10px; }
+
+    .res-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+    @media (max-width: 992px) { .res-grid { grid-template-columns: 1fr; } }
+
+    .field-group { margin-bottom: 14px; }
+    .field-group label { display: block; font-size: 11px; text-transform: uppercase; color: #64748b; font-family: var(--ns-mono, monospace); margin-bottom: 6px; font-weight: 600; }
+    .field-group input, .field-group select {
+      width: 100%; box-sizing: border-box; background: rgba(4, 9, 15, 0.8); border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 6px; color: #fff; padding: 10px 12px; font-size: 13px; font-family: var(--ns-mono, monospace);
+    }
+    .field-group input:focus { border-color: #00e5ff; outline: none; box-shadow: 0 0 0 2px rgba(0,229,255,0.15); }
+
+    .perturbation-card { background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.06); border-radius: 6px; padding: 14px; margin-bottom: 12px; }
+    .diff-table { width: 100%; border-collapse: collapse; font-size: 12px; font-family: var(--ns-mono, monospace); margin-top: 8px; }
+    .diff-table th { text-align: left; padding: 6px 10px; color: #64748b; background: rgba(255,255,255,0.02); }
+    .diff-table td { padding: 6px 10px; border-top: 1px solid rgba(255,255,255,0.04); }
+
+    .badge-res { display: inline-block; padding: 3px 8px; border-radius: 4px; font-size: 10px; font-weight: 700; font-family: var(--ns-mono, monospace); text-transform: uppercase; }
+    .res-high { background: rgba(34, 197, 94, 0.15); color: #4ade80; border: 1px solid rgba(34, 197, 94, 0.3); }
+    .res-moderate { background: rgba(245, 158, 11, 0.15); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.3); }
+    .res-vulnerable { background: rgba(239, 68, 68, 0.2); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.4); }
+  </style>
+</head>
+<body>
+
+<nav class="ns-nav scrolled" style="background:rgba(6, 9, 14, 0.96); border-bottom: 1px solid rgba(0, 200, 255, 0.16);">
+  <div class="ns-nav-inner">
+    <a href="/" class="ns-logo">
+      <img src="{{ url_for('static', filename='static/ns_logo.png') }}" class="ns-logo-icon" alt="NS" onerror="this.style.display='none';">
+      <div class="ns-logo-text">
+        <span class="ns-logo-name">NeuraShield</span>
+        <span class="ns-logo-sub">Cybersecurity Investigation Platform</span>
+      </div>
+    </a>
+    <div class="ns-nav-actions">
+      <span style="font-family:var(--ns-mono);font-size:11px;color:#94a3b8;margin-left:14px;">{{ username }}</span>
+      <a href="/logout" class="btn-ghost" style="margin-left:8px;">Logout</a>
+    </div>
+  </div>
+</nav>
+
+<div class="inv-layout">
+  <aside class="inv-sidebar">
+    <div class="who">
+      <small>Model & Security</small>
+      <b>{{ username }}</b>
+    </div>
+    <ul class="inv-nav" id="sidebar-nav"></ul>
+  </aside>
+
+  <main class="inv-main">
+    <div class="res-layout">
+      <!-- Hero -->
+      <div class="res-hero">
+        <div>
+          <h1><span>🔬</span> Module 16 — Adversarial Resilience Lab</h1>
+          <p>Defensive adversarial testing against URL obfuscation, homoglyphs, hexadecimal encoding, and evasion heuristics to evaluate model robustness.</p>
+        </div>
+        <div style="font-family:var(--ns-mono); font-size:12px; color:#a78bfa; background:rgba(167,139,250,0.1); border:1px solid rgba(167,139,250,0.25); padding:8px 14px; border-radius:6px;">
+          Mode: Defensive Validation Only
+        </div>
+      </div>
+
+      <!-- Main Workbench Grid -->
+      <div class="res-grid">
+        <!-- Input Configuration Card -->
+        <div class="card">
+          <h2><span>⚡</span> Inject Perturbations & Evaluate</h2>
+          <form id="resForm" onsubmit="runResilienceTest(event)">
+            <div class="field-group">
+              <label for="resTarget">Baseline Suspicious URL / Target</label>
+              <input type="text" id="resTarget" placeholder="e.g. http://paypal-security-verification.com/login" required>
+            </div>
+            <div class="field-group">
+              <label for="resType">Target Vector</label>
+              <select id="resType">
+                <option value="URL">URL Vector</option>
+                <option value="DOMAIN">Domain Vector</option>
+              </select>
+            </div>
+
+            <div style="margin: 16px 0; padding: 12px; background: rgba(0,0,0,0.3); border-radius: 6px; border: 1px solid rgba(255,255,255,0.06);">
+              <div style="font-size:11px; text-transform:uppercase; color:#64748b; font-family:var(--ns-mono); margin-bottom:8px;">Automated Perturbation Suite:</div>
+              <ul style="margin:0; padding-left:18px; font-size:12px; color:#94a3b8; line-height:1.6;">
+                <li>Hexadecimal / Percent Encoding of Hostname Tokens</li>
+                <li>Cyrillic / Greek Homoglyph Character Substitution</li>
+                <li>Subdomain Squatting & Excessive Depth Injection</li>
+                <li>Suspicious Keyword Hyphenation (e.g. <code>-auth-verify</code>)</li>
+                <li>Double Slash & Path Obfuscation Techniques</li>
+              </ul>
+            </div>
+
+            <button type="submit" class="ic-btn-primary" id="btnTest" style="width:100%;">
+              <span>Execute Adversarial Resilience Test</span>
+            </button>
+          </form>
+        </div>
+
+        <!-- Resilience Summary Card -->
+        <div class="card">
+          <h2><span>📊</span> Robustness Telemetry</h2>
+          <div id="testEmpty" style="text-align:center; padding:50px 20px; color:#64748b;">
+            <div style="font-size:36px; margin-bottom:12px; opacity:0.5;">🧪</div>
+            <p style="font-size:13px; margin:0;">Enter a target URL and run the suite to observe how NeuraShield's detection layers respond under adversarial stress.</p>
+          </div>
+          <div id="testResults" style="display:none;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; padding-bottom:12px; border-bottom:1px solid rgba(255,255,255,0.08);">
+              <div>
+                <span style="font-size:11px; text-transform:uppercase; color:#64748b; font-family:var(--ns-mono);">Overall Resilience Status:</span>
+                <div id="resilienceBadge" style="margin-top:4px;"></div>
+              </div>
+              <div style="text-align:right;">
+                <span style="font-size:11px; text-transform:uppercase; color:#64748b; font-family:var(--ns-mono);">Resilience Score:</span>
+                <div id="resilienceScore" style="font-family:var(--ns-mono); font-size:20px; font-weight:800; color:#00e5ff; margin-top:2px;"></div>
+              </div>
+            </div>
+
+            <div style="font-size:11px; text-transform:uppercase; color:#64748b; font-family:var(--ns-mono); margin-bottom:8px;">Original Baseline Assessment:</div>
+            <div style="background:rgba(0,0,0,0.4); border:1px solid rgba(255,255,255,0.06); border-radius:6px; padding:10px 14px; font-size:12px; font-family:var(--ns-mono); margin-bottom:16px;">
+              <div>Target: <span id="baseTarget" style="color:#fff;"></span></div>
+              <div style="margin-top:4px;">Risk: <span id="baseRisk" style="color:#f87171; font-weight:bold;"></span> | ML Prob: <span id="baseProb" style="color:#38bdf8;"></span></div>
+            </div>
+
+            <div style="font-size:11px; text-transform:uppercase; color:#64748b; font-family:var(--ns-mono); margin-bottom:8px;">Perturbation Tests Executed:</div>
+            <div id="perturbationsList" style="max-height:360px; overflow-y:auto;"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script src="{{ url_for('static', filename='ns_investigation.js') }}"></script>
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    NS.renderNav(document.getElementById('sidebar-nav'), 'resilience_lab');
+  });
+
+  async function runResilienceTest(e) {
+    e.preventDefault();
+    const btn = document.getElementById('btnTest');
+    btn.disabled = true;
+    btn.textContent = 'Generating Perturbations & Testing Robustness...';
+
+    const target = document.getElementById('resTarget').value.trim();
+    const target_type = document.getElementById('resType').value;
+
+    try {
+      const res = await fetch('/api/resilience/test', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ target, target_type })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Resilience test execution failed');
+
+      renderResilienceData(data);
+    } catch (err) {
+      alert(err.message);
+    } finally {
+      btn.disabled = false;
+      btn.textContent = 'Execute Adversarial Resilience Test';
+    }
+  }
+
+  function renderResilienceData(data) {
+    document.getElementById('testEmpty').style.display = 'none';
+    document.getElementById('testResults').style.display = 'block';
+
+    const status = data.resilience_status || 'RESILIENT';
+    const badge = document.getElementById('resilienceBadge');
+    badge.className = 'badge-res ' + (status === 'HIGH_RESILIENCE' || status === 'RESILIENT' ? 'res-high' : (status === 'MODERATE_RESILIENCE' ? 'res-moderate' : 'res-vulnerable'));
+    badge.textContent = status.replace(/_/g, ' ');
+
+    document.getElementById('resilienceScore').textContent = Math.round((data.resilience_score || 0) * 100) + '%';
+
+    const baseline = data.baseline || {};
+    document.getElementById('baseTarget').textContent = baseline.target || 'N/A';
+    document.getElementById('baseRisk').textContent = baseline.risk_level || 'LOW';
+    document.getElementById('baseProb').textContent = baseline.ml_probability !== null ? (Math.round(baseline.ml_probability * 100) + '%') : 'UNAVAILABLE';
+
+    const list = document.getElementById('perturbationsList');
+    const tests = data.perturbation_results || [];
+    if (!tests.length) {
+      list.innerHTML = '<div style="color:#64748b; font-size:12px;">No perturbation results recorded.</div>';
+      return;
+    }
+
+    list.innerHTML = tests.map(t => `
+      <div class="perturbation-card">
+        <div style="display:flex; justify-content:space-between; font-size:11px; margin-bottom:6px;">
+          <strong style="color:#38bdf8;">${NS.esc(t.technique)}</strong>
+          <span class="badge-res ${t.detection_retained ? 'res-high' : 'res-vulnerable'}">${t.detection_retained ? 'RETAINED' : 'EVADED'}</span>
+        </div>
+        <div style="font-size:11px; font-family:var(--ns-mono); color:#cbd5e1; word-break:break-all;">
+          ${NS.esc(t.perturbed_target)}
+        </div>
+        <table class="diff-table">
+          <tr><th>Metric</th><th>Baseline</th><th>Perturbed</th><th>Shift</th></tr>
+          <tr><td>ML Score</td><td>${baseline.ml_probability !== null ? (baseline.ml_probability * 100).toFixed(1) + '%' : 'UNAVAIL'}</td><td>${t.ml_probability !== null ? (t.ml_probability * 100).toFixed(1) + '%' : 'UNAVAIL'}</td><td>${t.ml_delta !== undefined ? (t.ml_delta > 0 ? '+' : '') + (t.ml_delta * 100).toFixed(1) + '%' : '0%'}</td></tr>
+          <tr><td>Rule Flags</td><td>${baseline.rules_triggered_count || 0}</td><td>${t.rules_triggered_count || 0}</td><td>${(t.rules_triggered_count || 0) - (baseline.rules_triggered_count || 0)}</td></tr>
+        </table>
+      </div>
+    `).join('');
+  }
+</script>
+</body>
+</html>

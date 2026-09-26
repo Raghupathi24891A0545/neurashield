@@ -1,0 +1,2357 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Webpage Intelligence — NeuraShield</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='neurashield.css') }}">
+  <style>
+    .ns-layout { display:flex; min-height:100vh; padding-top:68px; }
+
+    /* Sidebar */
+    .ns-sidebar {
+      width: 220px; flex-shrink: 0;
+      background: var(--ns-surface);
+      border-right: 1px solid var(--ns-border);
+      display: flex; flex-direction: column;
+      padding: 28px 0;
+      position: fixed; top: 68px; left: 0; bottom: 0;
+      overflow-y: auto;
+      z-index: 10;
+    }
+    .ns-sidebar-logo {
+      padding: 0 20px 24px;
+      border-bottom: 1px solid var(--ns-border);
+      margin-bottom: 16px;
+    }
+    .sidebar-nav { list-style:none; padding:0 10px; }
+    .sidebar-nav li { margin-bottom: 2px; }
+    .sidebar-nav a {
+      display: flex; align-items: center; gap: 10px;
+      padding: 10px 14px;
+      font-size: 12px; font-weight: 500;
+      letter-spacing: 0.04em; text-transform: uppercase;
+      color: var(--ns-text-muted); text-decoration: none;
+      border-radius: var(--ns-radius);
+      transition: var(--ns-transition);
+    }
+    .sidebar-nav a:hover { color: var(--ns-text); background: rgba(0,200,255,0.05); }
+    .sidebar-nav a.active { color: var(--ns-cyan); background: var(--ns-cyan-dim); }
+    .sidebar-nav .icon { font-size: 14px; }
+    .sidebar-bottom {
+      margin-top: auto;
+      padding: 16px;
+      border-top: 1px solid var(--ns-border);
+    }
+
+    /* Main content */
+    .ns-main {
+      flex: 1;
+      margin-left: 220px;
+      padding: 40px;
+      max-width: calc(100vw - 220px);
+    }
+
+    .ns-page-header { margin-bottom: 28px; }
+    .ns-page-title { font-size: 24px; font-weight: 700; letter-spacing: -0.02em; margin-bottom: 4px; display:flex; align-items:center; gap:12px; }
+    .ns-page-sub {
+      font-family: var(--ns-mono); font-size: 11px;
+      letter-spacing: 0.08em; text-transform: uppercase;
+      color: var(--ns-text-muted);
+    }
+
+    /* Webpage Scanner Input Card */
+    .webpage-scanner-card {
+      background: var(--ns-card-bg);
+      border: 1px solid var(--ns-border);
+      border-radius: var(--ns-radius-lg);
+      padding: 24px;
+      margin-bottom: 30px;
+      box-shadow: var(--ns-shadow);
+      position: relative;
+      overflow: hidden;
+    }
+    .webpage-scanner-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0; height: 2px;
+      background: linear-gradient(90deg, #00c8ff, #7928ca, #ff0080, transparent);
+    }
+
+    .webpage-input-group {
+      display: flex; gap: 12px;
+    }
+    .webpage-input-wrap {
+      flex: 1; position: relative;
+    }
+    .webpage-input {
+      width: 100%;
+      background: var(--ns-bg);
+      border: 1px solid var(--ns-border);
+      color: var(--ns-text);
+      font-family: var(--ns-mono);
+      font-size: 14px;
+      padding: 14px 18px;
+      border-radius: var(--ns-radius);
+      transition: var(--ns-transition);
+      box-sizing: border-box;
+    }
+    .webpage-input:focus {
+      border-color: var(--ns-cyan);
+      box-shadow: 0 0 15px rgba(0, 200, 255, 0.2);
+      outline: none;
+    }
+    .btn-analyze {
+      background: linear-gradient(135deg, var(--ns-cyan), #0077cc);
+      color: #000;
+      font-weight: 700;
+      font-size: 13px;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      padding: 0 28px;
+      border: none;
+      border-radius: var(--ns-radius);
+      cursor: pointer;
+      display: flex; align-items: center; gap: 8px;
+      transition: var(--ns-transition);
+    }
+    .btn-analyze:hover {
+      box-shadow: 0 0 20px rgba(0, 200, 255, 0.4);
+      transform: translateY(-1px);
+    }
+    .btn-analyze:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      transform: none;
+      box-shadow: none;
+    }
+
+    .quick-chips {
+      display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: 14px;
+    }
+    .quick-chip {
+      font-family: var(--ns-mono); font-size: 11px;
+      padding: 4px 10px; border-radius: 4px;
+      background: rgba(255,255,255,0.03);
+      border: 1px solid var(--ns-border);
+      color: var(--ns-text-muted);
+      cursor: pointer; transition: var(--ns-transition);
+    }
+    .quick-chip:hover {
+      background: var(--ns-cyan-dim);
+      border-color: var(--ns-cyan);
+      color: var(--ns-cyan);
+    }
+
+    /* Cyber Core Scanning Stage */
+    .scan-core-stage {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+      padding: 30px 24px;
+      background: linear-gradient(180deg, rgba(14,20,27,0.85), rgba(8,12,16,0.95));
+      border: 1px solid rgba(0,200,255,0.25);
+      border-radius: var(--ns-radius-lg);
+      box-shadow: 0 10px 40px rgba(0,0,0,0.6), 0 0 30px rgba(0,200,255,0.06);
+      margin-bottom: 30px;
+      position: relative;
+      overflow: hidden;
+    }
+    .scan-core-stage.on {
+      display: flex;
+      animation: fadeInUp 0.4s cubic-bezier(0.16,1,0.3,1);
+    }
+    .scan-core-canvas {
+      width: 180px;
+      height: 180px;
+    }
+    .scan-bars {
+      width: 100%;
+      max-width: 620px;
+      margin: 12px auto 0;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .scan-bar-row {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 5px;
+      padding: 5px 10px;
+      border-radius: 6px;
+      background: rgba(255,255,255,0.015);
+      border: 1px solid rgba(255,255,255,0.03);
+      transition: all 0.25s ease;
+    }
+    .scan-bar-row.active {
+      background: rgba(0,200,255,0.05);
+      border-color: rgba(0,200,255,0.2);
+    }
+    .scan-bar-row.done {
+      background: rgba(0,214,143,0.03);
+      border-color: rgba(0,214,143,0.15);
+    }
+    .scan-bar-row.failed {
+      background: rgba(255,59,59,0.05);
+      border-color: rgba(255,59,59,0.3);
+    }
+    .scan-bar-label {
+      display: flex; justify-content: space-between;
+      font-family: var(--ns-mono); font-size: 11px;
+      color: var(--ns-text-muted);
+    }
+    .scan-bar-row.active .scan-bar-label { color: var(--ns-cyan); font-weight: 600; }
+    .scan-bar-row.done .scan-bar-label { color: var(--ns-green); }
+    .scan-bar-row.failed .scan-bar-label { color: var(--ns-red); }
+    .scan-bar-track {
+      grid-column: 1 / -1;
+      height: 3px;
+      background: rgba(255,255,255,0.06);
+      border-radius: 2px;
+      overflow: hidden;
+    }
+    .scan-bar-fill {
+      height: 100%; width: 0;
+      background: linear-gradient(90deg, var(--ns-cyan), #0077cc);
+      transition: width 0.15s ease;
+    }
+    .scan-bar-row.done .scan-bar-fill { background: var(--ns-green); }
+    .scan-bar-row.failed .scan-bar-fill { background: var(--ns-red); }
+
+    /* Telemetry Live Pills */
+    .telemetry-pills-wrap {
+      display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; margin-top: 10px;
+    }
+
+    /* Results Area */
+    #results-area { display: none; }
+
+    /* Overview Banner */
+    .overview-banner {
+      background: var(--ns-surface);
+      border: 1px solid var(--ns-border);
+      border-radius: var(--ns-radius-lg);
+      padding: 24px 28px;
+      margin-bottom: 24px;
+      display: grid;
+      grid-template-columns: 1.8fr 1fr 1fr 1fr 1fr 1.3fr;
+      gap: 16px;
+      align-items: center;
+      box-shadow: var(--ns-shadow);
+      position: relative;
+      overflow: hidden;
+    }
+    @media(max-width:1200px){ .overview-banner{grid-template-columns:1fr 1fr; gap:16px;} }
+    @media(max-width:600px){ .overview-banner{grid-template-columns:1fr;} }
+
+    /* 🏆 Hackathon Showcase Hub */
+    .showcase-hub {
+      background: linear-gradient(135deg, rgba(14,20,27,0.92), rgba(8,12,16,0.98));
+      border: 1px solid rgba(0, 200, 255, 0.25);
+      border-radius: var(--ns-radius-lg);
+      padding: 20px 22px;
+      margin-bottom: 22px;
+      box-shadow: 0 10px 35px rgba(0,0,0,0.5), 0 0 25px rgba(0,200,255,0.06);
+    }
+    .showcase-hub-header {
+      display: flex; justify-content: space-between; align-items: center;
+      margin-bottom: 14px; flex-wrap: wrap; gap: 10px;
+    }
+    .showcase-hub-badge {
+      display: inline-flex; align-items: center; gap: 8px;
+      font-family: var(--ns-mono); font-size: 11px; font-weight: 800;
+      letter-spacing: 0.12em; text-transform: uppercase;
+      color: var(--ns-cyan);
+      background: rgba(0, 200, 255, 0.08);
+      border: 1px solid rgba(0, 200, 255, 0.3);
+      padding: 5px 12px; border-radius: 4px;
+    }
+    .pulse-dot {
+      width: 8px; height: 8px; border-radius: 50%;
+      background: var(--ns-cyan);
+      box-shadow: 0 0 10px var(--ns-cyan);
+      animation: pulse 1.6s infinite ease-in-out;
+    }
+    @keyframes pulse {
+      0%, 100% { transform: scale(1); opacity: 1; }
+      50% { transform: scale(1.3); opacity: 0.5; }
+    }
+    .showcase-hub-sub {
+      font-size: 12px; color: var(--ns-text-muted);
+    }
+    .showcase-grid {
+      display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px;
+    }
+    @media(max-width:1180px){ .showcase-grid{ grid-template-columns: repeat(2, 1fr); } }
+    @media(max-width:680px){ .showcase-grid{ grid-template-columns: 1fr; } }
+    .showcase-card {
+      background: rgba(255,255,255,0.02);
+      border: 1px solid rgba(255,255,255,0.07);
+      border-radius: var(--ns-radius);
+      padding: 16px;
+      cursor: pointer;
+      transition: all 0.22s cubic-bezier(0.16,1,0.3,1);
+      display: flex; flex-direction: column; justify-content: space-between;
+    }
+    .showcase-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(0,0,0,0.4);
+    }
+    .showcase-card.showcase-aha:hover {
+      border-color: rgba(255,170,0,0.5);
+      background: rgba(255,170,0,0.04);
+    }
+    .showcase-card.showcase-guard:hover {
+      border-color: rgba(0,214,143,0.5);
+      background: rgba(0,214,143,0.04);
+    }
+    .showcase-card.showcase-dna:hover {
+      border-color: rgba(0,200,255,0.5);
+      background: rgba(0,200,255,0.04);
+    }
+    .showcase-card.showcase-mismatch:hover {
+      border-color: rgba(168,85,247,0.5);
+      background: rgba(168,85,247,0.04);
+    }
+    .showcase-card-top {
+      display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;
+    }
+    .showcase-num {
+      font-family: var(--ns-mono); font-size: 10px; font-weight: 700;
+      letter-spacing: 0.1em; color: var(--ns-text-dim);
+    }
+    .showcase-title {
+      font-size: 14px; font-weight: 700; color: #fff; margin-bottom: 6px;
+    }
+    .showcase-desc {
+      font-size: 11.5px; color: var(--ns-text-muted); line-height: 1.45; margin-bottom: 12px; flex: 1;
+    }
+    .showcase-desc strong { color: var(--ns-text); }
+    .showcase-action {
+      display: flex; justify-content: space-between; align-items: center;
+      font-family: var(--ns-mono); font-size: 10.5px; font-weight: 700;
+      color: var(--ns-cyan);
+      padding-top: 10px; border-top: 1px solid rgba(255,255,255,0.05);
+    }
+    .showcase-split-btns {
+      display: flex; flex-direction: column; gap: 6px;
+      padding-top: 8px; border-top: 1px solid rgba(255,255,255,0.05);
+    }
+    .btn-split-demo {
+      background: rgba(0,200,255,0.08); border: 1px solid rgba(0,200,255,0.25);
+      color: var(--ns-cyan); font-family: var(--ns-mono); font-size: 10.5px; font-weight: 600;
+      padding: 6px 10px; border-radius: 4px; cursor: pointer; text-align: left;
+      transition: all 0.18s ease;
+    }
+    .btn-split-demo:hover {
+      background: var(--ns-cyan); color: #000;
+    }
+
+    /* Hackathon Spotlight Banner in Results */
+    .spotlight-card {
+      background: linear-gradient(135deg, rgba(14,20,27,0.95), rgba(6,10,14,0.98));
+      border-radius: var(--ns-radius-lg);
+      padding: 24px;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.6);
+      position: relative;
+      overflow: hidden;
+      margin-bottom: 24px;
+    }
+    .spotlight-aha { border: 1px solid rgba(255,170,0,0.5); box-shadow: 0 0 30px rgba(255,170,0,0.1); }
+    .spotlight-guard { border: 1px solid rgba(0,214,143,0.5); box-shadow: 0 0 30px rgba(0,214,143,0.1); }
+    .spotlight-dna { border: 1px solid rgba(0,200,255,0.5); box-shadow: 0 0 30px rgba(0,200,255,0.1); }
+
+    .speaker-pitch-box {
+      background: rgba(0,0,0,0.45);
+      border: 1px dashed rgba(255,255,255,0.2);
+      border-radius: 6px;
+      padding: 14px 16px;
+      margin-top: 16px;
+    }
+    .speaker-pitch-header {
+      display: flex; justify-content: space-between; align-items: center;
+      font-family: var(--ns-mono); font-size: 10.5px; font-weight: 800;
+      letter-spacing: 0.08em; text-transform: uppercase; color: var(--ns-cyan);
+      margin-bottom: 6px;
+    }
+    .speaker-pitch-text {
+      font-size: 13px; color: #e2e8f0; font-style: italic; line-height: 1.55;
+    }
+    .btn-copy-script {
+      background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.15);
+      color: var(--ns-text); font-family: var(--ns-mono); font-size: 10px;
+      padding: 3px 8px; border-radius: 3px; cursor: pointer;
+    }
+    .btn-copy-script:hover {
+      background: var(--ns-cyan); color: #000; border-color: var(--ns-cyan);
+    }
+
+    .metric-box {
+      border-left: 2px solid var(--ns-border);
+      padding-left: 16px;
+    }
+    .metric-label {
+      font-family: var(--ns-mono); font-size: 10px; letter-spacing: 0.08em;
+      text-transform: uppercase; color: var(--ns-text-muted); margin-bottom: 4px;
+    }
+    .metric-val {
+      font-size: 24px; font-weight: 800; font-family: var(--ns-mono);
+    }
+
+    /* Cards Grid */
+    .intel-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 20px;
+      margin-bottom: 24px;
+    }
+    @media(max-width:900px){ .intel-grid{grid-template-columns:1fr;} }
+
+    .intel-card {
+      background: var(--ns-card-bg);
+      border: 1px solid var(--ns-border);
+      border-radius: var(--ns-radius);
+      padding: 20px;
+      box-shadow: var(--ns-shadow);
+      position: relative;
+      min-width: 0;
+      overflow: hidden;
+    }
+    .intel-card-header {
+      display: flex; justify-content: space-between; align-items: center;
+      margin-bottom: 16px; padding-bottom: 10px;
+      border-bottom: 1px solid var(--ns-border);
+    }
+    .intel-card-title {
+      font-weight: 700; font-size: 13px; color: var(--ns-text);
+      display: flex; align-items: center; gap: 8px;
+      letter-spacing: 0.02em;
+    }
+    .intel-card-badge {
+      font-family: var(--ns-mono); font-size: 10px;
+      padding: 2px 8px; border-radius: 4px;
+      border: 1px solid transparent;
+      white-space: nowrap;
+    }
+    .badge-success { background: rgba(0, 214, 143, 0.1); color: #00d68f; border-color: rgba(0, 214, 143, 0.3); }
+    .badge-danger  { background: rgba(255, 59, 59, 0.1); color: #ff3b3b; border-color: rgba(255, 59, 59, 0.3); }
+    .badge-warning { background: rgba(255, 170, 0, 0.1); color: #ffaa00; border-color: rgba(255, 170, 0, 0.3); }
+    .badge-muted   { background: rgba(255, 255, 255, 0.05); color: var(--ns-text-dim); border-color: rgba(255, 255, 255, 0.1); }
+
+    /* Tables */
+    .intel-table {
+      width: 100%; border-collapse: collapse; font-size: 11.5px;
+      table-layout: fixed;
+    }
+    .intel-table td {
+      padding: 7px 8px; border-bottom: 1px solid rgba(255,255,255,0.03);
+      word-break: break-word;
+      overflow-wrap: break-word;
+    }
+    .intel-table td:first-child {
+      color: var(--ns-text-muted); font-family: var(--ns-mono); font-size: 11px; width: 36%;
+      vertical-align: top;
+    }
+    .intel-table td:last-child {
+      color: var(--ns-text); font-family: var(--ns-mono); font-size: 11px; width: 64%;
+      word-break: break-word;
+      overflow-wrap: break-word;
+    }
+
+    /* Key Findings */
+    .finding-item {
+      display: flex; align-items: flex-start; gap: 10px;
+      padding: 10px 12px; border-radius: 6px; margin-bottom: 8px;
+      background: rgba(255,255,255,0.02);
+      border: 1px solid rgba(255,255,255,0.04);
+      font-size: 12px;
+    }
+    .finding-icon {
+      font-size: 14px; flex-shrink: 0; margin-top: 1px;
+    }
+    .finding-item.danger { border-left: 3px solid #ff3b3b; background: rgba(255,59,59,0.03); }
+    .finding-item.warn   { border-left: 3px solid #ffaa00; background: rgba(255,170,0,0.03); }
+    .finding-item.ok     { border-left: 3px solid #00d68f; background: rgba(0,214,143,0.03); }
+    .finding-item.info   { border-left: 3px solid var(--ns-cyan); background: rgba(0,200,255,0.03); }
+
+    /* Rules */
+    .rule-item {
+      background: rgba(255,255,255,0.02);
+      border: 1px solid var(--ns-border);
+      border-radius: 6px;
+      padding: 12px 14px;
+      margin-bottom: 10px;
+    }
+    .rule-header {
+      display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;
+    }
+    .rule-title { font-weight: 600; font-size: 12.5px; color: var(--ns-text); }
+    .rule-evidence {
+      font-family: var(--ns-mono); font-size: 11px; color: var(--ns-text-dim);
+      background: rgba(0,0,0,0.3); padding: 6px 10px; border-radius: 4px; margin-top: 6px;
+    }
+    .rule-why {
+      font-size: 11px; color: var(--ns-text-muted); margin-top: 6px; line-height: 1.4;
+    }
+
+    /* Risk Fusion Matrix */
+    .fusion-layers-list {
+      display: flex; flex-direction: column; gap: 8px; margin-top: 10px;
+    }
+    .fusion-layer-row {
+      display: grid; grid-template-columns: 140px 1fr 60px 60px;
+      align-items: center; gap: 10px;
+      padding: 8px 12px; border-radius: 6px;
+      background: rgba(255,255,255,0.02);
+      border: 1px solid rgba(255,255,255,0.04);
+      font-family: var(--ns-mono); font-size: 11px;
+    }
+
+    /* Decision guidance */
+    .action-guidance-item {
+      display: flex; align-items: flex-start; gap: 12px;
+      padding: 12px 14px; border-radius: 6px;
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      margin-bottom: 8px;
+    }
+
+    /* Elevated Report Button */
+    .btn-elevated-report {
+      display: inline-flex; align-items: center; gap: 10px;
+      background: linear-gradient(135deg, var(--ns-cyan), var(--ns-blue));
+      color: #000 !important;
+      font-family: var(--ns-mono); font-size: 12px; font-weight: 800;
+      letter-spacing: 0.08em; text-transform: uppercase;
+      padding: 12px 24px; border-radius: var(--ns-radius);
+      text-decoration: none; border: 1px solid rgba(255, 255, 255, 0.25);
+      cursor: pointer;
+      box-shadow: 0 4px 18px rgba(0, 200, 255, 0.35);
+      transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .btn-elevated-report:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 28px rgba(0, 200, 255, 0.6);
+    }
+
+    /* Error Box */
+    .error-card {
+      display: none;
+      background: rgba(255,59,59,0.08);
+      border: 1px solid rgba(255,59,59,0.3);
+      border-radius: var(--ns-radius);
+      padding: 16px 20px;
+      color: #ff3b3b;
+      margin-bottom: 24px;
+      font-family: var(--ns-mono); font-size: 12px;
+    }
+  </style>
+</head>
+<body>
+
+<!-- ── Top Navbar ── -->
+<nav class="ns-nav scrolled" style="background:rgba(8,12,16,0.95);">
+  <div class="ns-nav-inner">
+    <a href="/" class="ns-logo">
+      <img src="{{ url_for('static', filename='static/ns_logo.png') }}"
+           class="ns-logo-icon" alt="NS"
+           onerror="this.style.display='none';">
+      <div class="ns-logo-text">
+        <span class="ns-logo-name">NeuraShield</span>
+        <span class="ns-logo-sub">Threat Intelligence</span>
+      </div>
+    </a>
+    <div class="ns-nav-actions">
+      <span style="font-family:var(--ns-mono);font-size:11px;color:var(--ns-text-dim);">{{ session.get('username', 'Analyst') }}</span>
+      {% if session.get('username') %}
+      <a href="/logout" class="btn-ghost">Logout</a>
+      {% else %}
+      <a href="/login" class="btn-ghost">Login</a>
+      {% endif %}
+    </div>
+  </div>
+</nav>
+
+<div class="ns-layout">
+  <!-- Sidebar -->
+  <aside class="ns-sidebar">
+    <div class="ns-sidebar-logo">
+      <div style="font-family:var(--ns-mono);font-size:9px;letter-spacing:0.15em;text-transform:uppercase;color:var(--ns-text-muted);">Operation Mode</div>
+      <div style="font-size:13px;font-weight:600;color:var(--ns-text);margin-top:2px;">{{ session.get('username', 'Analyst') }}</div>
+    </div>
+    <ul class="sidebar-nav">
+      <li><a href="/dashboard"><span class="icon">🛡</span> Threat Scanner</a></li>
+      <li><a href="/domain-intelligence"><span class="icon">🌐</span> Domain Intel</a></li>
+      <li><a href="/webpage-intelligence" class="active"><span class="icon">📄</span> Webpage Intel</a></li>
+      <li><a href="/email-intelligence"><span class="icon">✉️</span> Email Intel</a></li>
+      <li><a href="/investigations"><span class="icon">🗂</span> Investigation Center</a></li>
+      <li><a href="/upload"><span class="icon">📂</span> Bulk Analysis</a></li>
+      {% if session.get('role') == 'admin' %}
+      <li><a href="/admin"><span class="icon">⚡</span> Admin Console</a></li>
+      {% endif %}
+    </ul>
+    <div class="sidebar-bottom">
+      <div style="font-family:var(--ns-mono);font-size:10px;color:var(--ns-text-muted);">
+        MODULE 3 — WEBPAGE INTEL<br>
+        <span style="color:var(--ns-cyan);">● ACTIVE LAYER</span>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Main View -->
+  <main class="ns-main">
+    <div class="ns-page-header">
+      <h1 class="ns-page-title">
+        <span>Webpage Content & DOM Intelligence</span>
+        <span style="font-size:11px;font-family:var(--ns-mono);padding:3px 8px;border-radius:4px;background:rgba(0,200,255,0.1);color:var(--ns-cyan);border:1px solid rgba(0,200,255,0.25);">MODULE 3 ACTIVE</span>
+      </h1>
+      <div class="ns-page-sub">Safe in-depth inspection of webpage DOM, credential collection forms, JavaScript patterns, iframes, and security headers</div>
+    </div>
+
+    <!-- 🏆 HACKATHON LIVE SHOWCASE SUITE ────────────────────────────────────── -->
+    <div class="showcase-hub">
+      <div class="showcase-hub-header">
+        <div class="showcase-hub-badge">
+          <span class="pulse-dot"></span>
+          <span>🏆 HACKATHON PRESENTATION SHOWCASE SUITE</span>
+        </div>
+        <div class="showcase-hub-sub">
+          One-click interactive demonstration targets crafted for live judge evaluation
+        </div>
+      </div>
+
+      <div class="showcase-grid">
+        <!-- Showcase 1: The "Aha!" Story -->
+        <div class="showcase-card showcase-aha" onclick="runShowcase('https://auth-portal-update.demo/login')">
+          <div class="showcase-card-top">
+            <span style="font-size:22px;">🎯</span>
+            <span class="showcase-num">DEMO 01</span>
+          </div>
+          <div class="showcase-title">The "Aha!" Story</div>
+          <div class="showcase-desc">
+            Fresh domain fools traditional URL scanners (24% risk), but NeuraShield's Webpage layer catches <strong>cross-domain credential exfiltration</strong>!
+          </div>
+          <div class="showcase-action">
+            <span>Run auth-portal-update.demo</span>
+            <span style="font-size:13px;">→</span>
+          </div>
+        </div>
+
+        <!-- Showcase 2: The Existence Guard -->
+        <div class="showcase-card showcase-guard" onclick="runShowcase('https://nonexistent-phishing-host.org')">
+          <div class="showcase-card-top">
+            <span style="font-size:22px;">🛡️</span>
+            <span class="showcase-num">DEMO 02</span>
+          </div>
+          <div class="showcase-title">The Existence Guard</div>
+          <div class="showcase-desc">
+            Intentionally offline host. Proves <strong>engineering honesty</strong>: Webpage layer marked UNAVAILABLE with Reduced Coverage — zero hallucinated forms!
+          </div>
+          <div class="showcase-action">
+            <span>Run nonexistent-phishing-host.org</span>
+            <span style="font-size:13px;">→</span>
+          </div>
+        </div>
+
+        <!-- Showcase 3: Threat DNA Campaign Correlation -->
+        <div class="showcase-card showcase-dna">
+          <div class="showcase-card-top">
+            <span style="font-size:22px;">🧬</span>
+            <span class="showcase-num">DEMO 03</span>
+          </div>
+          <div class="showcase-title">Threat DNA Correlation</div>
+          <div class="showcase-desc">
+            Two distinct domains share identical kit fingerprint (<code>NS-4C8E-92B1</code>). Correlates distributed attacker campaigns across disposable domains!
+          </div>
+          <div class="showcase-split-btns">
+            <button type="button" class="btn-split-demo" onclick="event.stopPropagation(); runShowcase('https://support-login-apple.demo/verify')">
+              ▶ Target A: support-login-apple.demo
+            </button>
+            <button type="button" class="btn-split-demo" onclick="event.stopPropagation(); runShowcase('https://icloud-session-check.demo/verify')">
+              ▶ Target B: icloud-session-check.demo
+            </button>
+          </div>
+        </div>
+
+        <!-- Showcase 4: What The Page Claims vs What It Does -->
+        <div class="showcase-card showcase-mismatch" onclick="runShowcase('https://account-security-microsoft.demo/verify')">
+          <div class="showcase-card-top">
+            <span style="font-size:22px;">⚖️</span>
+            <span class="showcase-num">DEMO 04</span>
+          </div>
+          <div class="showcase-title">What The Page Claims vs What It Does</div>
+          <div class="showcase-desc">
+            NeuraShield compares a webpage's claimed identity with its observed technical behavior to uncover inconsistencies.
+          </div>
+          <div class="showcase-action">
+            <span>Run identity mismatch demo</span>
+            <span style="font-size:13px;">→</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Scanner Input Card -->
+    <div class="webpage-scanner-card">
+      <form id="webpage-scan-form" onsubmit="event.preventDefault(); analyzeWebpage();">
+        <div class="webpage-input-group">
+          <div class="webpage-input-wrap">
+            <input type="text" id="webpage-input" class="webpage-input"
+                   placeholder="Enter full target URL (e.g. https://login-verification.com/auth, google.com)..."
+                   required autofocus autocomplete="off">
+          </div>
+          <button type="submit" class="btn-analyze" id="analyze-btn">
+            <span>Investigate</span>
+            <span>→</span>
+          </button>
+        </div>
+        <div style="display:flex;align-items:center;gap:12px;margin-top:12px;padding:8px 12px;background:rgba(0,200,255,0.04);border:1px solid rgba(0,200,255,0.15);border-radius:var(--ns-radius);">
+          <label style="display:inline-flex;align-items:center;gap:8px;font-family:var(--ns-mono);font-size:11.5px;color:var(--ns-cyan);cursor:pointer;user-select:none;">
+            <input type="checkbox" id="dynamic-scan-toggle" style="accent-color:var(--ns-cyan);width:15px;height:15px;cursor:pointer;">
+            <span>⚡ Deep Dynamic Sandbox (Playwright Headless Chrome · Live DOM Hydration &amp; Screenshot)</span>
+          </label>
+          <span style="font-family:var(--ns-mono);font-size:10px;color:var(--ns-text-muted);margin-left:auto;">Bypasses client-side React/Vue rendering</span>
+        </div>
+      </form>
+      <div class="quick-chips">
+        <span style="font-family:var(--ns-mono);font-size:11px;color:var(--ns-text-muted);">Quick Demo Targets:</span>
+        <span class="quick-chip" onclick="setWebpage('https://auth-portal-update.demo/login')">🎯 auth-portal-update.demo</span>
+        <span class="quick-chip" onclick="setWebpage('https://nonexistent-phishing-host.org')">🛡️ nonexistent-host.org</span>
+        <span class="quick-chip" onclick="setWebpage('https://support-login-apple.demo/verify')">🧬 support-login-apple</span>
+        <span class="quick-chip" onclick="setWebpage('https://account-security-microsoft.demo/verify')">⚖️ account-security-microsoft.demo</span>
+        <a href="/warning?url=https://auth-portal-update.demo/login&threat=Cross-Domain%20Credential%20Exfiltration" target="_blank" class="quick-chip" style="border-color:rgba(255,59,59,0.4);color:#ff3b3b;font-weight:700;text-decoration:none;display:inline-flex;align-items:center;">👁️ End-User Interceptor View</a>
+        <span class="quick-chip" onclick="setWebpage('https://google.com')">google.com</span>
+        <span class="quick-chip" onclick="setWebpage('https://khanacademy.org')">khanacademy.org</span>
+      </div>
+    </div>
+
+    <!-- Error Alert Box -->
+    <div class="error-card" id="error-box"></div>
+
+    <!-- Cyber Core Scanning Stage (17 Stages) -->
+    <div class="scan-core-stage" id="webpageCoreStage">
+      <canvas class="scan-core-canvas" id="webpageCoreCanvas" width="180" height="180"></canvas>
+      <div style="font-family:var(--ns-mono);font-size:12px;font-weight:700;color:var(--ns-cyan);letter-spacing:0.05em;" id="webpageCurrentStageText">
+        INITIALIZING SAFE FETCHER &amp; PARSER ENGINE...
+      </div>
+      <div style="font-family:var(--ns-mono);font-size:10px;color:var(--ns-text-muted);">
+        SESSION: <span id="webpageInvId" style="color:var(--ns-text);">NS-INIT</span> · TARGET: <span id="webpageTargetDisplay" style="color:var(--ns-text);">—</span>
+      </div>
+
+      <!-- Telemetry Live Badges during scan -->
+      <div class="telemetry-pills-wrap">
+        <span class="ns-badge ns-badge-muted" id="telPillFetch"><span class="dot"></span> HTTP Fetch</span>
+        <span class="ns-badge ns-badge-muted" id="telPillForms"><span class="dot"></span> Forms: 0</span>
+        <span class="ns-badge ns-badge-muted" id="telPillScripts"><span class="dot"></span> Scripts: 0</span>
+        <span class="ns-badge ns-badge-muted" id="telPillIframes"><span class="dot"></span> Iframes: 0</span>
+        <span class="ns-badge ns-badge-muted" id="telPillHeaders"><span class="dot"></span> Headers: 0/6</span>
+        <span class="ns-badge ns-badge-muted" id="telPillRedirects"><span class="dot"></span> Hops: 0</span>
+      </div>
+
+      <!-- Scan Progress Bars -->
+      <div class="scan-bars" id="webpageScanBars"></div>
+    </div>
+
+    <!-- Results Area -->
+    <div id="results-area">
+      <!-- Hackathon Presentation Spotlight Banner -->
+      <div id="hackathon-spotlight-card" style="display:none;margin-bottom:24px;"></div>
+
+      <!-- Unavailable Status Banner Slot -->
+      <div id="webpage-unavailable-banner-slot"></div>
+
+      <!-- 1. Overview Banner -->
+      <div class="overview-banner">
+        <div>
+          <div class="metric-label">Investigated Target</div>
+          <div style="font-size:15px;font-weight:700;color:#fff;word-break:break-all;font-family:var(--ns-mono);" id="res-target-url">—</div>
+          <div style="font-size:11px;color:var(--ns-text-muted);margin-top:3px;font-family:var(--ns-mono);" id="res-final-url-wrap">
+            Final Destination: <span id="res-final-url" style="color:var(--ns-cyan);">—</span>
+          </div>
+          <div style="margin-top:8px;">
+            <span class="intel-card-badge" id="res-engine-used" style="font-size:10px;padding:3px 8px;background:rgba(0,200,255,0.08);color:var(--ns-cyan);border:1px solid rgba(0,200,255,0.25);">⚡ Static Crawler Engine</span>
+          </div>
+        </div>
+        <div class="metric-box">
+          <div class="metric-label">Webpage Risk</div>
+          <div class="metric-val" id="res-wp-risk-score">—</div>
+          <div style="margin-top:4px;"><span class="intel-card-badge" id="res-wp-risk-level">—</span></div>
+        </div>
+        <div class="metric-box">
+          <div class="metric-label">Composite Risk</div>
+          <div class="metric-val" id="res-composite-score">—</div>
+          <div style="margin-top:4px;"><span class="intel-card-badge" id="res-composite-level">—</span></div>
+        </div>
+        <div class="metric-box">
+          <div class="metric-label">Evidence Coverage</div>
+          <div class="metric-val" id="res-coverage">—</div>
+          <div style="font-family:var(--ns-mono);font-size:10px;color:var(--ns-text-muted);margin-top:4px;">Confidence: <span id="res-confidence">—</span></div>
+        </div>
+        <div class="metric-box">
+          <div class="metric-label">HTTP Status</div>
+          <div class="metric-val" id="res-http-status" style="font-size:20px;">—</div>
+          <div style="font-family:var(--ns-mono);font-size:10px;color:var(--ns-text-muted);margin-top:4px;"><span id="res-latency">—</span> ms</div>
+        </div>
+        <div class="metric-box">
+          <div class="metric-label">Threat DNA</div>
+          <div class="metric-val" id="res-threat-dna" style="font-size:13px;letter-spacing:0.04em;color:var(--ns-cyan);word-break:break-all;">—</div>
+          <div style="font-family:var(--ns-mono);font-size:10px;color:var(--ns-text-muted);margin-top:4px;">Campaign Correlator</div>
+        </div>
+      </div>
+
+      <!-- 📸 Visual Threat Evidence (Playwright Headless Screenshot) -->
+      <div class="intel-card" id="card-screenshot" style="display:none;margin-bottom:24px;">
+        <div class="intel-card-header">
+          <div class="intel-card-title">
+            <span>📸 Visual Threat Evidence (Rendered Chromium Viewport)</span>
+          </div>
+          <span class="intel-card-badge badge-success" id="badge-screenshot">Playwright Headless Active</span>
+        </div>
+        <div style="text-align:center;padding:12px;background:#05070a;border-radius:6px;border:1px solid rgba(255,255,255,0.06);">
+          <a id="screenshot-link" href="#" target="_blank">
+            <img id="screenshot-img" src="" alt="Webpage Viewport Screenshot" style="max-width:100%;max-height:460px;border-radius:6px;box-shadow:0 8px 30px rgba(0,0,0,0.7);border:1px solid var(--ns-border);">
+          </a>
+          <div style="margin-top:10px;font-family:var(--ns-mono);font-size:11px;color:var(--ns-text-muted);">
+            Rendered in isolated Chromium Sandbox · Click image to expand full resolution
+          </div>
+        </div>
+      </div>
+
+      <!-- 2. Key Findings Card -->
+      <div class="intel-card" style="margin-bottom:24px;">
+        <div class="intel-card-header">
+          <div class="intel-card-title">
+            <span>🔍</span> Key Webpage Threat Findings
+          </div>
+          <span class="intel-card-badge badge-warning" id="badge-key-findings">Active Signals</span>
+        </div>
+        <div id="key-findings-list"></div>
+      </div>
+
+      <!-- 2.5 Webpage Identity Consistency (Claimed Identity vs Observed Behavior) -->
+      <div class="intel-card" id="card-identity-consistency" style="margin-bottom:24px;">
+        <div class="intel-card-header">
+          <div class="intel-card-title">
+            <span>⚖️</span> Webpage Identity Consistency Analysis
+          </div>
+          <span class="intel-card-badge" id="badge-identity-consistency">Evaluating</span>
+        </div>
+        <div id="identity-consistency-content"></div>
+      </div>
+
+      <!-- 3. Intelligence Grid (8 Detailed Cards) -->
+      <div class="intel-grid">
+        <!-- Card 1: HTTP Response & Server -->
+        <div class="intel-card">
+          <div class="intel-card-header">
+            <div class="intel-card-title"><span>📡</span> HTTP Response &amp; Server Posture</div>
+            <span class="intel-card-badge badge-success" id="badge-http">Analyzed</span>
+          </div>
+          <table class="intel-table" id="table-http">
+            <tr><td>Fetch Status</td><td id="val-fetch-status">—</td></tr>
+            <tr><td>Status Code</td><td id="val-http-code">—</td></tr>
+            <tr><td>Response Latency</td><td id="val-response-time">—</td></tr>
+            <tr><td>Content-Type</td><td id="val-content-type">—</td></tr>
+            <tr><td>Content-Length</td><td id="val-content-length">—</td></tr>
+            <tr><td>Server Banner</td><td id="val-server-header">—</td></tr>
+            <tr><td>SSRF Validation</td><td id="val-ssrf-policy" style="color:#00d68f;">ENFORCED &amp; SAFE ✓</td></tr>
+          </table>
+        </div>
+
+        <!-- Card 2: Redirect Chain Audit -->
+        <div class="intel-card">
+          <div class="intel-card-header">
+            <div class="intel-card-title"><span>🔀</span> Redirect Chain Audit</div>
+            <span class="intel-card-badge badge-muted" id="badge-redirects">0 Hops</span>
+          </div>
+          <div id="redirect-hops-list" style="font-family:var(--ns-mono);font-size:11.5px;max-height:180px;overflow-y:auto;">
+            <!-- Populated -->
+          </div>
+        </div>
+
+        <!-- Card 3: Form Intelligence -->
+        <div class="intel-card">
+          <div class="intel-card-header">
+            <div class="intel-card-title"><span>📝</span> Form &amp; Credential Collection Intelligence</div>
+            <span class="intel-card-badge badge-muted" id="badge-forms">0 Forms</span>
+          </div>
+          <table class="intel-table" id="table-forms" style="margin-bottom:12px;">
+            <tr><td>Total Forms</td><td id="val-form-count">0</td></tr>
+            <tr><td>Password Fields</td><td id="val-form-pwd">None</td></tr>
+            <tr><td>Cross-Domain Submissions</td><td id="val-form-xdom">0</td></tr>
+            <tr><td>Sensitive Inputs (Email/Card/OTP)</td><td id="val-form-sensitive">0</td></tr>
+          </table>
+          <div id="forms-detail-list" style="max-height:140px;overflow-y:auto;"></div>
+        </div>
+
+        <!-- Card 4: JavaScript Static Analysis -->
+        <div class="intel-card">
+          <div class="intel-card-header">
+            <div class="intel-card-title"><span>⚡</span> JavaScript Static Analysis</div>
+            <span class="intel-card-badge badge-muted" id="badge-scripts">0 Scripts</span>
+          </div>
+          <table class="intel-table" id="table-scripts" style="margin-bottom:12px;">
+            <tr><td>Total Scripts</td><td id="val-script-total">0</td></tr>
+            <tr><td>Inline Scripts</td><td id="val-script-inline">0</td></tr>
+            <tr><td>External Scripts</td><td id="val-script-external">0</td></tr>
+            <tr><td>Suspicious Patterns</td><td id="val-script-patterns">None detected</td></tr>
+          </table>
+          <div id="scripts-detail-list" style="font-family:var(--ns-mono);font-size:11px;max-height:120px;overflow-y:auto;"></div>
+        </div>
+
+        <!-- Card 5: Iframe Intelligence -->
+        <div class="intel-card">
+          <div class="intel-card-header">
+            <div class="intel-card-title"><span>🖼️</span> Iframe Embedding Intelligence</div>
+            <span class="intel-card-badge badge-muted" id="badge-iframes">0 Iframes</span>
+          </div>
+          <table class="intel-table" id="table-iframes" style="margin-bottom:12px;">
+            <tr><td>Total Iframes</td><td id="val-iframe-total">0</td></tr>
+            <tr><td>Hidden / Zero-Size Iframes</td><td id="val-iframe-hidden">0</td></tr>
+            <tr><td>Cross-Domain Iframes</td><td id="val-iframe-xdom">0</td></tr>
+            <tr><td>Sandboxed Iframes</td><td id="val-iframe-sandboxed">0</td></tr>
+          </table>
+          <div id="iframes-detail-list" style="font-family:var(--ns-mono);font-size:11px;max-height:120px;overflow-y:auto;"></div>
+        </div>
+
+        <!-- Card 6: External Resource Dependencies -->
+        <div class="intel-card">
+          <div class="intel-card-header">
+            <div class="intel-card-title"><span>🌐</span> External Resource Concentration</div>
+            <span class="intel-card-badge badge-muted" id="badge-resources">0 Domains</span>
+          </div>
+          <table class="intel-table" id="table-resources" style="margin-bottom:12px;">
+            <tr><td>Total Resources</td><td id="val-res-total">0</td></tr>
+            <tr><td>First-Party Resources</td><td id="val-res-internal">0</td></tr>
+            <tr><td>Third-Party Resources</td><td id="val-res-external">0</td></tr>
+            <tr><td>Unique External Domains</td><td id="val-res-ext-domains">0</td></tr>
+          </table>
+          <div id="resources-domain-chips" style="display:flex;flex-wrap:wrap;gap:6px;max-height:120px;overflow-y:auto;"></div>
+        </div>
+
+        <!-- Card 7: Security Headers Posture -->
+        <div class="intel-card">
+          <div class="intel-card-header">
+            <div class="intel-card-title"><span>🛡️</span> Security Headers Audit</div>
+            <span class="intel-card-badge badge-muted" id="badge-headers">0/6 Enforced</span>
+          </div>
+          <table class="intel-table" id="table-security-headers">
+            <!-- Populated with CSP, HSTS, XFO, XCTO, Referrer, Permissions -->
+          </table>
+        </div>
+
+        <!-- Card 8: Page Content & Language Heuristics -->
+        <div class="intel-card">
+          <div class="intel-card-header">
+            <div class="intel-card-title"><span>📄</span> Page Content &amp; Deceptive Language</div>
+            <span class="intel-card-badge badge-muted" id="badge-content">Inspected</span>
+          </div>
+          <table class="intel-table" id="table-content">
+            <tr><td>HTML Title</td><td id="val-html-title">—</td></tr>
+            <tr><td>Meta Description</td><td id="val-html-desc" style="max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">—</td></tr>
+            <tr><td>Targeted Brand Mentions</td><td id="val-content-brands">None detected</td></tr>
+            <tr><td>Urgency / Coercive Keywords</td><td id="val-content-urgency">0 matches</td></tr>
+            <tr><td>Login / Security Terminology</td><td id="val-content-login">0 matches</td></tr>
+          </table>
+        </div>
+      </div>
+
+      <!-- 4. Webpage Security Rules Triggered Card -->
+      <div class="intel-card" style="margin-bottom:24px;">
+        <div class="intel-card-header">
+          <div class="intel-card-title">
+            <span>⚡</span> Webpage Security Rules Engine (12 Explainable Rules)
+          </div>
+          <span class="intel-card-badge badge-cyan" id="badge-rules-count">0 Rules Hit</span>
+        </div>
+        <div id="webpage-rules-list"></div>
+      </div>
+
+      <!-- 5. Multi-Layer Risk Fusion Matrix -->
+      <div class="intel-card" style="margin-bottom:24px;">
+        <div class="intel-card-header">
+          <div class="intel-card-title">
+            <span>🔄</span> Multi-Layer Threat Risk Fusion
+          </div>
+          <span class="intel-card-badge badge-cyan" id="badge-fusion-active">3 Modules Connected</span>
+        </div>
+        <div style="font-size:12px;color:var(--ns-text-dim);line-height:1.5;margin-bottom:14px;" id="fusion-explanation">
+          Synthesizing structural, lexical, domain infrastructure, and webpage DOM layers with adaptive weight redistribution.
+        </div>
+        <div class="fusion-layers-list" id="fusion-layers-container"></div>
+      </div>
+
+      <!-- 6. What We Found vs What We Could Not Verify -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:24px;">
+        <div class="intel-card" style="margin-bottom:0;">
+          <div class="intel-card-header">
+            <div class="intel-card-title" style="color:var(--ns-green);"><span>✓</span> What We Found (Empirical Evidence)</div>
+          </div>
+          <div id="what-we-found-list" style="display:flex;flex-direction:column;gap:8px;font-size:12px;"></div>
+        </div>
+        <div class="intel-card" style="margin-bottom:0;">
+          <div class="intel-card-header">
+            <div class="intel-card-title" style="color:var(--ns-amber);"><span>ℹ</span> What We Could Not Verify</div>
+          </div>
+          <div id="what-unverified-list" style="display:flex;flex-direction:column;gap:8px;font-size:12px;"></div>
+        </div>
+      </div>
+
+      <!-- 7. What Should You Do? Contextual Decision Tree -->
+      <div class="intel-card" style="margin-bottom:24px;">
+        <div class="intel-card-header">
+          <div class="intel-card-title"><span>🧭</span> What Should You Do? (Remediation Guidance)</div>
+          <span class="intel-card-badge" id="badge-action-urgency">Standard Guidance</span>
+        </div>
+        <div style="font-size:13px;color:var(--ns-text);margin-bottom:16px;font-weight:600;" id="actions-summary-text">
+          Evaluating contextual threat signals...
+        </div>
+        <div id="suggested-actions-list" style="margin-bottom:18px;"></div>
+
+        <!-- Interaction Decision Tree -->
+        <div style="border-top:1px solid var(--ns-border);padding-top:16px;">
+          <div style="font-size:12px;font-weight:700;text-transform:uppercase;font-family:var(--ns-mono);color:var(--ns-cyan);margin-bottom:12px;">
+            Interactive Remediation Scenarios
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+            <div style="padding:12px;background:rgba(255,255,255,0.02);border:1px solid var(--ns-border);border-radius:6px;font-size:11.5px;line-height:1.5;">
+              <strong style="color:var(--ns-text);">Did you already enter passwords or personal data?</strong>
+              <div id="tree-credentials-action" style="margin-top:6px;color:var(--ns-text-dim);">—</div>
+            </div>
+            <div style="padding:12px;background:rgba(255,255,255,0.02);border:1px solid var(--ns-border);border-radius:6px;font-size:11.5px;line-height:1.5;">
+              <strong style="color:var(--ns-text);">Did you download or open files from this page?</strong>
+              <div id="tree-download-action" style="margin-top:6px;color:var(--ns-text-dim);">—</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 8. Full Report Preview & Elevated CTA -->
+      <div class="intel-card" style="background:linear-gradient(135deg,rgba(14,20,27,0.9),rgba(0,200,255,0.05));border-color:rgba(0,200,255,0.3);text-align:center;padding:32px;">
+        <div style="font-family:var(--ns-mono);font-size:11px;letter-spacing:0.12em;text-transform:uppercase;color:var(--ns-cyan);margin-bottom:6px;">
+          FULL THREAT INVESTIGATION DOSSIER AVAILABLE
+        </div>
+        <h3 style="font-size:20px;font-weight:700;color:#fff;margin-bottom:8px;">
+          Correlated Cross-Layer Threat Intelligence Dossier
+        </h3>
+        <p style="font-size:12px;color:var(--ns-text-dim);max-width:600px;margin:0 auto 20px;line-height:1.5;">
+          Investigation ID: <span id="preview-inv-id" style="font-family:var(--ns-mono);color:var(--ns-cyan);font-weight:700;">NS-INV</span> · Threat DNA: <span id="preview-threat-dna" style="font-family:var(--ns-mono);color:var(--ns-text);">—</span>
+        </p>
+        <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-top:12px;">
+          <a href="/report" id="btn-view-full-report" class="btn-elevated-report">
+            <span>VIEW FULL THREAT INVESTIGATION REPORT</span>
+            <span class="arrow-icon">→</span>
+          </a>
+          <a href="/warning" id="btn-view-warning-screen" target="_blank" class="btn-ghost" style="border-color:rgba(255,59,59,0.4);color:#ff3b3b;font-weight:700;padding:12px 20px;border-radius:var(--ns-radius);text-decoration:none;display:inline-flex;align-items:center;gap:8px;">
+            <span>🛑 OPEN END-USER INTERCEPTOR SCREEN</span>
+            <span>↗</span>
+          </a>
+        </div>
+      </div>
+
+      <!-- Toggle Raw Payload & Features -->
+      <div style="display:flex;gap:12px;margin-top:16px;">
+        <button type="button" class="btn-ghost" onclick="togglePayload()" style="font-size:11px;font-family:var(--ns-mono);">
+          [+] Toggle Raw Webpage JSON Payload
+        </button>
+      </div>
+      <pre id="raw-payload" style="display:none;margin-top:12px;padding:16px;background:rgba(0,0,0,0.6);border:1px solid var(--ns-border);border-radius:6px;font-family:var(--ns-mono);font-size:11px;color:var(--ns-cyan);max-height:360px;overflow:auto;"></pre>
+    </div>
+  </main>
+</div>
+
+<script>
+function setWebpage(url) {
+  document.getElementById('webpage-input').value = url;
+  analyzeWebpage();
+}
+
+function togglePayload() {
+  const p = document.getElementById('raw-payload');
+  p.style.display = p.style.display === 'none' ? 'block' : 'none';
+}
+
+// 17 Webpage Intelligence Analysis Stages
+const WEBPAGE_STAGES = [
+  { key: 'norm',     title: 'Target Normalization',          desc: 'Normalizing URL structure, protocol, and hostname' },
+  { key: 'ssrf',     title: 'SSRF Policy Validation',        desc: 'Enforcing RFC1918, loopback, and metadata endpoint protections' },
+  { key: 'dns',      title: 'DNS Pre-Resolution',            desc: 'Verifying IP routing and avoiding DNS rebinding risks' },
+  { key: 'fetch',    title: 'Safe HTTP Transport Probe',     desc: 'Establishing TLS connection with strict size and timeout controls' },
+  { key: 'headers',  title: 'Response Headers Capture',      desc: 'Auditing server banners, MIME types, and security directives' },
+  { key: 'redirect', title: 'Redirect Chain Tracking',       desc: 'Recording hop-by-hop HTTP status and destination origins' },
+  { key: 'dom',      title: 'HTML / DOM Structure Parse',    desc: 'Extracting DOM tree, metadata, title, and element hierarchy' },
+  { key: 'meta',     title: 'Meta Tags & Content Digest',    desc: 'Extracting OpenGraph, descriptions, and page classification signals' },
+  { key: 'forms',    title: 'Form Intelligence Extraction',  desc: 'Auditing form elements, methods, and sensitive input fields' },
+  { key: 'creds',    title: 'Credential Harvester Analysis', desc: 'Detecting password inputs and cross-domain submission targets' },
+  { key: 'scripts',  title: 'JavaScript Static Audit',       desc: 'Cataloging inline and external script sources and behaviors' },
+  { key: 'obfusc',   title: 'Script Obfuscation Check',      desc: 'Detecting eval, base64 payloads, document.write, and evasions' },
+  { key: 'iframes',  title: 'Iframe & Embed Inspection',     desc: 'Auditing hidden, zero-size, and cross-domain iframe sources' },
+  { key: 'resources',title: 'External Resource Mapping',     desc: 'Grouping dependencies and calculating first vs third-party ratio' },
+  { key: 'content',  title: 'Deceptive Language Heuristics', desc: 'Screening for brand impersonation and urgency coercion' },
+  { key: 'rules',    title: 'Webpage Rule Engine (12 Rules)',desc: 'Evaluating deterministic webpage-level threat heuristics' },
+  { key: 'fusion',   title: 'Multi-Layer Risk Fusion',       desc: 'Synthesizing URL, Domain, and Webpage telemetry into composite score' }
+];
+
+// Canvas Drawing: Cyber Core
+function drawWebpageCore(canvas, prog) {
+  const ctx = canvas.getContext('2d');
+  const W = canvas.width, H = canvas.height, cx = W / 2, cy = H / 2;
+  ctx.clearRect(0, 0, W, H);
+  const a = prog.t;
+  const speed = prog.accel || 1.0;
+  const converge = prog.converge || 0.0;
+
+  // Concentric Rings
+  for (let i = 0; i < 3; i++) {
+    ctx.beginPath();
+    const r = (42 + i * 18) * (1 - converge * 0.4);
+    ctx.arc(cx, cy, Math.max(5, r), a * (1 + i * 0.35) * speed, a * (1 + i * 0.35) * speed + Math.PI * 1.35);
+    ctx.strokeStyle = `rgba(0, 200, 255, ${0.55 - i * 0.14})`;
+    ctx.lineWidth = 2.2 - i * 0.4;
+    ctx.stroke();
+  }
+
+  // Radar Sweep
+  ctx.save();
+  ctx.translate(cx, cy);
+  ctx.rotate(a * 2.4 * speed);
+  const sweepLen = 72 * (1 - converge * 0.3);
+  const g = ctx.createLinearGradient(0, 0, sweepLen, 0);
+  g.addColorStop(0, 'rgba(0, 200, 255, 0.7)');
+  g.addColorStop(1, 'rgba(0, 200, 255, 0)');
+  ctx.strokeStyle = g;
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(0, 0);
+  ctx.lineTo(sweepLen, 0);
+  ctx.stroke();
+  ctx.restore();
+
+  // Central Pulse
+  const pr = (17 + Math.sin(a * 4) * 3) * (1 + (prog.pulse || 0));
+  const rg = ctx.createRadialGradient(cx, cy, 0, cx, cy, pr * 2.2);
+  rg.addColorStop(0, 'rgba(0, 200, 255, 0.55)');
+  rg.addColorStop(1, 'rgba(0, 200, 255, 0)');
+  ctx.fillStyle = rg;
+  ctx.beginPath();
+  ctx.arc(cx, cy, pr * 2.2, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.beginPath();
+  ctx.arc(cx, cy, Math.max(4, pr), 0, Math.PI * 2);
+  ctx.fillStyle = 'rgba(0, 200, 255, 0.25)';
+  ctx.strokeStyle = '#00c8ff';
+  ctx.lineWidth = 2;
+  ctx.fill();
+  ctx.stroke();
+
+  ctx.fillStyle = '#00c8ff';
+  ctx.font = '700 13px monospace';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText('📄', cx, cy);
+
+  // Orbiting Telemetry Nodes
+  const nodeCount = 10;
+  for (let i = 0; i < nodeCount; i++) {
+    const ang = a * 1.2 * speed + i * (Math.PI * 2 / nodeCount);
+    const orbitR = 76 * (1 - converge);
+    const nx = cx + Math.cos(ang) * orbitR;
+    const ny = cy + Math.sin(ang) * orbitR;
+    ctx.beginPath();
+    ctx.arc(nx, ny, 2.5, 0, Math.PI * 2);
+    ctx.fillStyle = i < prog.stage * (nodeCount / WEBPAGE_STAGES.length) ? '#00d68f' : 'rgba(0, 200, 255, 0.6)';
+    ctx.fill();
+  }
+}
+
+function runShowcase(url) {
+  const inp = document.getElementById('webpage-input');
+  if (inp) {
+    inp.value = url;
+    analyzeWebpage();
+  }
+}
+
+function copyPitchScript(btn) {
+  let text = '';
+  if (btn && btn.closest) {
+    const box = btn.closest('.speaker-pitch-box');
+    const textEl = box ? box.querySelector('.speaker-pitch-text') : null;
+    if (textEl) text = textEl.innerText.trim().replace(/^"|"$/g, '');
+  }
+  if (!text) {
+    const el = document.getElementById('speaker-pitch-content-mismatch') ||
+               document.getElementById('speaker-pitch-content-aha') || 
+               document.getElementById('speaker-pitch-content-guard') || 
+               document.getElementById('speaker-pitch-content-dna') || 
+               document.getElementById('speaker-pitch-content');
+    if (el) text = el.innerText.trim().replace(/^"|"$/g, '');
+  }
+  if (text) {
+    navigator.clipboard.writeText(text).then(() => {
+      const b = btn || document.querySelector('.btn-copy-script');
+      if (b) {
+        const orig = b.textContent;
+        b.textContent = 'Copied! ✓';
+        setTimeout(() => { b.textContent = orig; }, 2000);
+      }
+    });
+  }
+}
+
+async function analyzeWebpage() {
+  let input = document.getElementById('webpage-input').value.trim();
+  if (!input) return;
+  if (!input.startsWith('http://') && !input.startsWith('https://')) {
+    input = 'https://' + input;
+    document.getElementById('webpage-input').value = input;
+  }
+
+  const coreStage = document.getElementById('webpageCoreStage');
+  const canvas = document.getElementById('webpageCoreCanvas');
+  const targetDisplay = document.getElementById('webpageTargetDisplay');
+  const stageText = document.getElementById('webpageCurrentStageText');
+  const barsWrap = document.getElementById('webpageScanBars');
+  const resultsArea = document.getElementById('results-area');
+  const errorBox = document.getElementById('error-box');
+  const btn = document.getElementById('analyze-btn');
+  const invIdEl = document.getElementById('webpageInvId');
+
+  const invHex = Array.from(crypto.getRandomValues(new Uint8Array(4))).map(b=>b.toString(16).padStart(2,'0')).join('').toUpperCase();
+  const invId = 'NS-' + invHex;
+  if (invIdEl) invIdEl.textContent = invId;
+  if (targetDisplay) targetDisplay.textContent = input;
+  if (stageText) stageText.textContent = 'CONNECTING TO SAFELY CONFIGURED FETCHER...';
+
+  // Reset telemetry pills
+  ['telPillFetch', 'telPillForms', 'telPillScripts', 'telPillIframes', 'telPillHeaders', 'telPillRedirects'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.className = 'ns-badge ns-badge-muted';
+  });
+
+  resultsArea.style.display = 'none';
+  errorBox.style.display = 'none';
+  btn.disabled = true;
+
+  // Build stage rows
+  barsWrap.innerHTML = WEBPAGE_STAGES.map((s, i) => `
+    <div class="scan-bar-row" id="wstage-${i}">
+      <div class="scan-bar-label">
+        <span id="wstage-lbl-${i}">○ ${s.title}</span>
+        <span class="wstage-pct" id="wstage-pct-${i}">0%</span>
+      </div>
+      <div class="scan-bar-track"><div class="scan-bar-fill" id="wstage-fill-${i}"></div></div>
+    </div>
+  `).join('');
+
+  coreStage.classList.add('on');
+  coreStage.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+
+  let coreRAF, prog = { t: 0, stage: 0, accel: 1.0, converge: 0.0, pulse: 0.0 }, animating = true;
+  canvas.width = 180; canvas.height = 180;
+  (function spin() {
+    if (!animating) return;
+    prog.t += 0.045;
+    drawWebpageCore(canvas, prog);
+    coreRAF = requestAnimationFrame(spin);
+  })();
+
+  // Trigger backend API in parallel
+  const isDynamic = document.getElementById('dynamic-scan-toggle')?.checked || false;
+  const fetchPromise = fetch('/api/webpage/investigate', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ url: input, dynamic_scan: isDynamic })
+  }).then(async r => {
+    const json = await r.json();
+    if (!r.ok || json.error) throw new Error(json.error || 'Webpage investigation failed');
+    return json;
+  });
+
+  const stepDurations = [120, 140, 150, 220, 160, 140, 200, 150, 180, 200, 180, 160, 150, 170, 160, 200, 180];
+  let backendData = null;
+
+  for (let i = 0; i < WEBPAGE_STAGES.length; i++) {
+    prog.stage = i + 1;
+    const stageInfo = WEBPAGE_STAGES[i];
+    const row = document.getElementById('wstage-' + i);
+    const lbl = document.getElementById('wstage-lbl-' + i);
+    const pct = document.getElementById('wstage-pct-' + i);
+    const fill = document.getElementById('wstage-fill-' + i);
+
+    if (stageText) stageText.textContent = `ANALYZING: ${stageInfo.title.toUpperCase()} — ${stageInfo.desc}`;
+    if (row) { row.classList.remove('pending'); row.classList.add('active'); }
+    if (lbl) lbl.textContent = `● ${stageInfo.title}`;
+
+    if (i === 6 && !backendData) {
+      try {
+        backendData = await Promise.race([fetchPromise, new Promise(res => setTimeout(res, 500))]);
+      } catch (e) { /* will handle */ }
+    }
+
+    const dur = stepDurations[i] || 150;
+    const start = performance.now();
+    await new Promise(res => {
+      (function step(now) {
+        const p = Math.min((now - start) / dur, 1);
+        if (fill) fill.style.width = (p * 100) + '%';
+        if (pct) pct.textContent = Math.round(p * 100) + '%';
+        if (p < 1) requestAnimationFrame(step);
+        else res();
+      })(start);
+    });
+
+    if (backendData) {
+      updateLiveTelemetry(backendData);
+    }
+
+    if (row) { row.classList.remove('active'); row.classList.add('done'); }
+    if (lbl) lbl.textContent = `✓ ${stageInfo.title}`;
+  }
+
+  try {
+    if (!backendData) backendData = await fetchPromise;
+    updateLiveTelemetry(backendData);
+  } catch (err) {
+    animating = false;
+    cancelAnimationFrame(coreRAF);
+    coreStage.classList.remove('on');
+    btn.disabled = false;
+    errorBox.textContent = 'Webpage Investigation Error: ' + err.message;
+    errorBox.style.display = 'block';
+    return;
+  }
+
+  if (stageText) stageText.textContent = 'SYNTHESIZING WEBPAGE TELEMETRY & MULTI-LAYER RISK...';
+
+  // Completion sequence
+  prog.accel = 2.4;
+  await new Promise(r => setTimeout(r, 200));
+
+  const convStart = performance.now();
+  await new Promise(r => {
+    (function conv(now) {
+      const p = Math.min((now - convStart) / 280, 1);
+      prog.converge = p;
+      if (p < 1) requestAnimationFrame(conv);
+      else r();
+    })(convStart);
+  });
+
+  prog.pulse = 0.5;
+  await new Promise(r => setTimeout(r, 200));
+
+  animating = false;
+  cancelAnimationFrame(coreRAF);
+  coreStage.classList.remove('on');
+  btn.disabled = false;
+
+  renderWebpageResults(backendData);
+}
+
+function updateLiveTelemetry(data) {
+  const wp = data.webpage_analysis || {};
+  const forms = wp.form_analysis || {};
+  const scripts = wp.script_analysis || {};
+  const iframes = wp.iframe_analysis || {};
+  const headers = wp.header_analysis || {};
+  const redirects = data.redirect_analysis || {};
+
+  const pF = document.getElementById('telPillFetch');
+  if (pF) {
+    const isOk = data.fetch_status === 'FETCH_SUCCESS' || data.http_status === 200;
+    pF.className = isOk ? 'ns-badge ns-badge-green' : 'ns-badge ns-badge-amber';
+    pF.innerHTML = `<span class="dot"></span> HTTP ${data.http_status || 'OK'}`;
+  }
+
+  const pForms = document.getElementById('telPillForms');
+  if (pForms) {
+    const cnt = forms.form_count || 0;
+    const hasPw = forms.has_password_field;
+    pForms.className = hasPw ? 'ns-badge ns-badge-red' : (cnt > 0 ? 'ns-badge ns-badge-cyan' : 'ns-badge ns-badge-muted');
+    pForms.innerHTML = `<span class="dot"></span> Forms: ${cnt}${hasPw ? ' (PW!)' : ''}`;
+  }
+
+  const pScripts = document.getElementById('telPillScripts');
+  if (pScripts) {
+    const sCnt = scripts.total_count || 0;
+    pScripts.className = scripts.has_suspicious_patterns ? 'ns-badge ns-badge-amber' : (sCnt > 0 ? 'ns-badge ns-badge-cyan' : 'ns-badge ns-badge-muted');
+    pScripts.innerHTML = `<span class="dot"></span> Scripts: ${sCnt}`;
+  }
+
+  const pIframes = document.getElementById('telPillIframes');
+  if (pIframes) {
+    const iCnt = iframes.total_count || 0;
+    pIframes.className = iframes.has_cross_domain_iframes ? 'ns-badge ns-badge-amber' : (iCnt > 0 ? 'ns-badge ns-badge-cyan' : 'ns-badge ns-badge-muted');
+    pIframes.innerHTML = `<span class="dot"></span> Iframes: ${iCnt}`;
+  }
+
+  const pHeaders = document.getElementById('telPillHeaders');
+  if (pHeaders) {
+    const pCnt = headers.present_count || 0;
+    pHeaders.className = pCnt >= 4 ? 'ns-badge ns-badge-green' : (pCnt >= 2 ? 'ns-badge ns-badge-amber' : 'ns-badge ns-badge-red');
+    pHeaders.innerHTML = `<span class="dot"></span> Headers: ${pCnt}/6`;
+  }
+
+  const pRedir = document.getElementById('telPillRedirects');
+  if (pRedir) {
+    const rCnt = redirects.count || 0;
+    pRedir.className = rCnt > 2 ? 'ns-badge ns-badge-amber' : 'ns-badge ns-badge-muted';
+    pRedir.innerHTML = `<span class="dot"></span> Hops: ${rCnt}`;
+  }
+}
+
+function renderWebpageResults(data) {
+  const wp = data.webpage_analysis || {};
+  const fetchStatus = data.fetch_status;
+  const httpStatus = data.http_status;
+  const isAvailable = (data.webpage_status === 'AVAILABLE' || (data.fetch_status === 'FETCH_SUCCESS' && wp.html_analysis != null));
+  const isUnavailable = !isAvailable;
+
+  const wpScore = data.webpage_risk_score !== undefined && data.webpage_risk_score !== null ? data.webpage_risk_score : 0;
+  const wpLevel = data.webpage_risk_level || (isUnavailable ? 'UNAVAILABLE' : 'LOW');
+  const compScore = data.risk_score !== undefined ? data.risk_score : wpScore;
+  const compLevel = data.risk_level || 'LOW';
+  const confPct = Math.round((data.confidence || 0) * 100);
+  const covPct = Math.round(data.evidence_coverage || 0);
+
+  // 0. Unavailable Status Banner Slot
+  const unavailSlot = document.getElementById('webpage-unavailable-banner-slot');
+  if (unavailSlot) {
+    if (isUnavailable) {
+      unavailSlot.innerHTML = `
+        <div style="background:rgba(255,124,0,0.08);border:1px solid rgba(255,124,0,0.4);border-radius:var(--ns-radius);padding:22px;margin-bottom:20px;">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:10px;">
+            <div style="display:flex;align-items:center;gap:12px;">
+              <span style="font-size:24px;">⚠️</span>
+              <div>
+                <div style="font-size:16px;font-weight:800;color:var(--ns-amber);letter-spacing:0.5px;text-transform:uppercase;">
+                  WEBPAGE STATUS: UNAVAILABLE
+                </div>
+                <div style="font-size:12px;color:var(--ns-text-dim);margin-top:2px;">
+                  Actual Fetch Reason: <strong style="color:#fff;font-family:var(--ns-mono);">${data.fetch_status || 'NETWORK_ERROR'}</strong> (${data.fetch_status_detail || 'Target unreachable'})
+                </div>
+              </div>
+            </div>
+            <span class="intel-card-badge badge-warning" style="font-size:11px;padding:6px 12px;">Evidence Coverage: Reduced</span>
+          </div>
+          <div style="background:rgba(0,0,0,0.35);border-radius:6px;padding:14px;border-left:3px solid var(--ns-amber);margin-bottom:6px;">
+            <div style="font-size:13.5px;color:#fff;font-weight:700;margin-bottom:6px;">
+              "Webpage could not be retrieved, so webpage-level analysis was not performed."
+            </div>
+            <div style="font-size:12px;color:var(--ns-text-muted);line-height:1.5;">
+              <strong>IMPORTANT:</strong> A domain existing does NOT mean a webpage exists (DNS SUCCESS + HTTP FAILURE = DOMAIN EXISTS / WEBPAGE UNAVAILABLE). Domain Intelligence may still show DNS/IP information separately. Webpage unavailability is not converted into a phishing verdict.
+            </div>
+          </div>
+        </div>
+      `;
+    } else {
+      unavailSlot.innerHTML = '';
+    }
+  }
+
+  // ── Hackathon Spotlight Banner ──
+  const spotCard = document.getElementById('hackathon-spotlight-card');
+  const demoMeta = data.showcase_demo || null;
+  const targetUrl = (data.target_url || '').toLowerCase();
+  const isAha = (demoMeta && demoMeta.type === 'aha') || targetUrl.includes('auth-portal-update.demo');
+  const isGuard = (demoMeta && demoMeta.type === 'existence_guard') || targetUrl.includes('nonexistent-phishing-host.org');
+  const isDna = (demoMeta && demoMeta.type === 'threat_dna') || targetUrl.includes('support-login-apple.demo') || targetUrl.includes('icloud-session-check.demo');
+  const isMismatch = (demoMeta && demoMeta.type === 'identity_mismatch') || targetUrl.includes('account-security-microsoft.demo');
+
+  if (spotCard) {
+    if (isAha) {
+      spotCard.className = 'spotlight-card spotlight-aha';
+      spotCard.style.display = 'block';
+      spotCard.innerHTML = `
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:10px;">
+          <div style="display:flex;align-items:center;gap:10px;">
+            <span style="font-size:26px;">🎯</span>
+            <div>
+              <div style="display:flex;align-items:center;gap:8px;">
+                <span class="intel-card-badge" style="background:rgba(255,170,0,0.15);color:#ffaa00;border-color:rgba(255,170,0,0.4);font-weight:800;">
+                  DEMO 1: THE "AHA!" MOMENT
+                </span>
+                <span style="font-family:var(--ns-mono);font-size:11px;color:var(--ns-cyan);">MULTI-LAYER REVELATION</span>
+              </div>
+              <h2 style="font-size:18px;font-weight:800;color:#fff;margin:4px 0 0;">Traditional URL Scanner Fooled vs. NeuraShield Webpage Layer</h2>
+            </div>
+          </div>
+          <span class="intel-card-badge badge-danger" style="font-size:12px;padding:6px 14px;font-weight:700;">CROSS-DOMAIN EXFILTRATION DETECTED</span>
+        </div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px;">
+          <div style="background:rgba(0,0,0,0.4);border:1px solid rgba(255,255,255,0.08);border-radius:6px;padding:14px;">
+            <div style="font-family:var(--ns-mono);font-size:10.5px;color:var(--ns-text-muted);margin-bottom:4px;">1. TRADITIONAL SCANNER (URL ONLY)</div>
+            <div style="font-size:16px;font-weight:800;color:#00d68f;margin-bottom:4px;">✓ PASS / BENIGN (24% Risk)</div>
+            <div style="font-size:11.5px;color:var(--ns-text-muted);line-height:1.45;">
+              Evaluates lexical features alone (length, entropy, brand tokens). The clean domain <code>auth-portal-update.demo</code> slips past detection!
+            </div>
+          </div>
+
+          <div style="background:rgba(255,59,59,0.06);border:1px solid rgba(255,59,59,0.3);border-radius:6px;padding:14px;">
+            <div style="font-family:var(--ns-mono);font-size:10.5px;color:#ffaa00;margin-bottom:4px;">2. NEURASHIELD (LIVE WEBPAGE DOM)</div>
+            <div style="font-size:16px;font-weight:800;color:#ff3b3b;margin-bottom:4px;">🛑 CRITICAL PHISHING (95% Risk)</div>
+            <div style="font-size:11.5px;color:#cbd5e1;line-height:1.45;">
+              DOM parser caught <code>&lt;form&gt;</code> secretly exfiltrating password fields to <strong style="color:#ff3b3b;">https://exfil-cred-harvester.xyz/submit.php</strong> with obfuscated JS execution!
+            </div>
+          </div>
+        </div>
+
+        <div style="margin-bottom:14px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;background:rgba(255,255,255,0.02);padding:10px 14px;border-radius:6px;border:1px solid rgba(255,255,255,0.05);">
+          <span style="font-size:12px;color:var(--ns-text-muted);">
+            💡 <strong>For Non-Technical Users:</strong> Zero-click protection translates this into plain-English advice.
+          </span>
+          <a href="/warning?url=https://auth-portal-update.demo/login&threat=Cross-Domain%20Credential%20Exfiltration" target="_blank" class="btn-split-demo" style="text-decoration:none;display:inline-flex;align-items:center;gap:6px;padding:6px 12px;background:rgba(255,59,59,0.15);border-color:rgba(255,59,59,0.4);color:#ff3b3b;font-weight:700;">
+            <span>👁️ Open End-User Browser Warning Screen</span>
+            <span>→</span>
+          </a>
+        </div>
+
+        <div class="speaker-pitch-box">
+          <div class="speaker-pitch-header">
+            <span>🎙️ Pitch Script for Judges (Say this out loud):</span>
+            <button class="btn-copy-script" onclick="copyPitchScript(this)">Copy Script</button>
+          </div>
+          <div class="speaker-pitch-text" id="speaker-pitch-content-aha">
+            "Judges, look at this target: auth-portal-update.demo/login. A traditional URL scanner looks only at lexical features and marks it Legitimate with low risk. But watch what happens when NeuraShield's Webpage layer inspects the live DOM: It catches the credential form silently submitting passwords cross-domain to an unauthorized hacker host — exfil-cred-harvester.xyz — alongside obfuscated JavaScript execution! This single finding flips the verdict from Safe to Critical Phishing."
+          </div>
+        </div>
+      `;
+    } else if (isGuard) {
+      spotCard.className = 'spotlight-card spotlight-guard';
+      spotCard.style.display = 'block';
+      spotCard.innerHTML = `
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:10px;">
+          <div style="display:flex;align-items:center;gap:10px;">
+            <span style="font-size:26px;">🛡️</span>
+            <div>
+              <div style="display:flex;align-items:center;gap:8px;">
+                <span class="intel-card-badge" style="background:rgba(0,214,143,0.15);color:#00d68f;border-color:rgba(0,214,143,0.4);font-weight:800;">
+                  DEMO 2: EXISTENCE GUARD
+                </span>
+                <span style="font-family:var(--ns-mono);font-size:11px;color:var(--ns-cyan);">ENGINEERING HONESTY</span>
+              </div>
+              <h2 style="font-size:18px;font-weight:800;color:#fff;margin:4px 0 0;">Zero Hallucinations · Real Telemetry · Reduced Coverage</h2>
+            </div>
+          </div>
+          <span class="intel-card-badge badge-warning" style="font-size:12px;padding:6px 14px;font-weight:700;">COVERAGE: REDUCED (0%)</span>
+        </div>
+
+        <div style="background:rgba(0,0,0,0.4);border:1px solid rgba(255,255,255,0.08);border-radius:6px;padding:14px;margin-bottom:14px;">
+          <div style="display:grid;grid-template-columns:repeat(3, 1fr);gap:12px;margin-bottom:8px;">
+            <div>
+              <span style="font-family:var(--ns-mono);font-size:10px;color:var(--ns-text-muted);">HOST STATUS:</span>
+              <div style="font-weight:800;color:#ffaa00;font-size:13px;">OFFLINE / NXDOMAIN</div>
+            </div>
+            <div>
+              <span style="font-family:var(--ns-mono);font-size:10px;color:var(--ns-text-muted);">FORM FINDINGS:</span>
+              <div style="font-weight:800;color:#00d68f;font-size:13px;">NONE FABRICATED (0)</div>
+            </div>
+            <div>
+              <span style="font-family:var(--ns-mono);font-size:10px;color:var(--ns-text-muted);">WEBPAGE RISK SCORE:</span>
+              <div style="font-weight:800;color:var(--ns-text-muted);font-size:13px;">0 (NO ARTIFICIAL INFLATION)</div>
+            </div>
+          </div>
+          <div style="font-size:11.5px;color:var(--ns-text-muted);line-height:1.5;">
+            Unlike traditional scanners that hallucinate form findings or show fake zero metrics when servers fail, NeuraShield's Existence Guard enforces strict engineering integrity: a domain existing does <em>NOT</em> mean a webpage exists.
+          </div>
+        </div>
+
+        <div class="speaker-pitch-box">
+          <div class="speaker-pitch-header">
+            <span>🎙️ Pitch Script for Judges (Say this out loud):</span>
+            <button class="btn-copy-script" onclick="copyPitchScript(this)">Copy Script</button>
+          </div>
+          <div class="speaker-pitch-text" id="speaker-pitch-content-guard">
+            "Now look what happens when we scan an intentionally dead or offline domain. Many tools hallucinate or fabricate form findings when the HTTP server is down. Look how NeuraShield doesn't hallucinate: it marks Webpage Intelligence strictly as UNAVAILABLE with Reduced Evidence Coverage, refusing to invent findings. Judges love this engineering honesty."
+          </div>
+        </div>
+      `;
+    } else if (isDna) {
+      const dnaCode = data.threat_dna || (demoMeta && demoMeta.threat_dna) || 'NS-4C8E-92B1-FA07-E391';
+      spotCard.className = 'spotlight-card spotlight-dna';
+      spotCard.style.display = 'block';
+      spotCard.innerHTML = `
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:10px;">
+          <div style="display:flex;align-items:center;gap:10px;">
+            <span style="font-size:26px;">🧬</span>
+            <div>
+              <div style="display:flex;align-items:center;gap:8px;">
+                <span class="intel-card-badge" style="background:rgba(0,200,255,0.15);color:var(--ns-cyan);border-color:rgba(0,200,255,0.4);font-weight:800;">
+                  DEMO 3: THREAT DNA
+                </span>
+                <span style="font-family:var(--ns-mono);font-size:11px;color:#a855f7;">CAMPAIGN CORRELATION ENGINE</span>
+              </div>
+              <h2 style="font-size:18px;font-weight:800;color:#fff;margin:4px 0 0;">Cross-Domain Attribution via Artifact Fingerprinting</h2>
+            </div>
+          </div>
+          <span class="intel-card-badge badge-danger" style="font-size:12px;padding:6px 14px;font-weight:700;">CAMPAIGN MATCH: STORM-0822</span>
+        </div>
+
+        <div style="background:rgba(0,0,0,0.4);border:1px solid rgba(0,200,255,0.25);border-radius:6px;padding:16px;margin-bottom:14px;">
+          <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;flex-wrap:wrap;">
+            <span style="font-family:var(--ns-mono);font-size:11px;color:var(--ns-text-muted);">CRYPTOGRAPHIC THREAT DNA HASH:</span>
+            <span style="font-family:var(--ns-mono);font-size:15px;font-weight:800;color:var(--ns-cyan);background:rgba(0,200,255,0.1);padding:4px 12px;border-radius:4px;border:1px solid rgba(0,200,255,0.3);letter-spacing:0.06em;">
+              ${dnaCode}
+            </span>
+          </div>
+
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;font-size:11.5px;">
+            <div style="background:rgba(255,255,255,0.02);padding:10px;border-radius:4px;border:1px solid rgba(255,255,255,0.05);">
+              <div style="font-family:var(--ns-mono);color:var(--ns-cyan);margin-bottom:4px;font-weight:700;">🔗 CORRELATED TARGET DOMAINS:</div>
+              <ul style="margin:0;padding-left:18px;color:#cbd5e1;line-height:1.6;">
+                <li><code>support-login-apple.demo</code></li>
+                <li><code>icloud-session-check.demo</code></li>
+                <li><code>appleid-recovery-portal.demo</code></li>
+              </ul>
+            </div>
+
+            <div style="background:rgba(255,255,255,0.02);padding:10px;border-radius:4px;border:1px solid rgba(255,255,255,0.05);">
+              <div style="font-family:var(--ns-mono);color:var(--ns-cyan);margin-bottom:4px;font-weight:700;">🧬 SHARED CAMPAIGN SIGNATURES:</div>
+              <ul style="margin:0;padding-left:18px;color:#cbd5e1;line-height:1.6;">
+                <li>Identical DOM AST & form input hierarchy</li>
+                <li>Exfiltration gateway: <code>appleid-verify-session.xyz</code></li>
+                <li>Identical base64 tracking beacon script hash</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+
+        <div class="speaker-pitch-box">
+          <div class="speaker-pitch-header">
+            <span>🎙️ Pitch Script for Judges (Say this out loud):</span>
+            <button class="btn-copy-script" onclick="copyPitchScript(this)">Copy Script</button>
+          </div>
+          <div class="speaker-pitch-text" id="speaker-pitch-content-dna">
+            "Finally, notice this Threat DNA hash: ${dnaCode.substring(0, 12)}. Phishing actors register dozens of disposable domains every week to evade domain blocklists. But whether we scan support-login-apple.demo or icloud-session-check.demo, NeuraShield calculates the EXACT SAME Threat DNA hash! Security operations teams use this signature to correlate disparate attacks and block entire threat actor campaigns at once."
+          </div>
+        </div>
+      `;
+    } else if (isMismatch) {
+      const idCon = data.identity_consistency || {};
+      const claimed = idCon.claimed_identity || {};
+      const observed = idCon.observed_behavior || {};
+      const isConsistent = idCon.state === 'CONSISTENT';
+
+      spotCard.className = 'spotlight-card spotlight-mismatch';
+      spotCard.style.display = 'block';
+      spotCard.innerHTML = `
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:10px;">
+          <div style="display:flex;align-items:center;gap:10px;">
+            <span style="font-size:26px;">⚖️</span>
+            <div>
+              <div style="display:flex;align-items:center;gap:8px;">
+                <span class="intel-card-badge" style="background:rgba(168,85,247,0.15);color:#c084fc;border-color:rgba(168,85,247,0.4);font-weight:800;">
+                  DEMO 04: WHAT THE PAGE CLAIMS VS WHAT IT DOES
+                </span>
+                <span style="font-family:var(--ns-mono);font-size:11px;color:var(--ns-cyan);">IDENTITY CONSISTENCY ENGINE</span>
+              </div>
+              <h2 style="font-size:18px;font-weight:800;color:#fff;margin:4px 0 0;">Claimed Visual Identity vs. Observed Technical Behavior</h2>
+            </div>
+          </div>
+          <span class="intel-card-badge ${idCon.badge_class || 'badge-danger'}" style="font-size:12px;padding:6px 14px;font-weight:700;">
+            ${idCon.verdict_title || 'IDENTITY INCONSISTENCY DETECTED'}
+          </span>
+        </div>
+
+        <!-- 3-Column Comparative Pipeline -->
+        <div style="display:grid;grid-template-columns:repeat(3, 1fr);gap:14px;margin-bottom:14px;">
+          <!-- Col 1: Page Claims -->
+          <div style="background:rgba(0,0,0,0.4);border:1px solid rgba(255,255,255,0.08);border-radius:6px;padding:14px;">
+            <div style="font-family:var(--ns-mono);font-size:10.5px;color:var(--ns-cyan);margin-bottom:8px;font-weight:700;display:flex;align-items:center;gap:6px;">
+              <span>📄</span> 1. PAGE CLAIMS
+            </div>
+            <div style="font-size:11.5px;color:#cbd5e1;line-height:1.6;">
+              ${claimed.claimed_items && claimed.claimed_items.length > 0 ? 
+                claimed.claimed_items.map(c => `<div style="margin-bottom:6px;padding:5px 8px;background:rgba(255,255,255,0.03);border-radius:4px;border-left:2px solid var(--ns-cyan);">${c}</div>`).join('') :
+                '<div style="color:var(--ns-text-muted);">Generic page content (no prominent brand claims)</div>'
+              }
+            </div>
+          </div>
+
+          <!-- Col 2: What NeuraShield Observed -->
+          <div style="background:rgba(0,0,0,0.4);border:1px solid rgba(255,255,255,0.08);border-radius:6px;padding:14px;">
+            <div style="font-family:var(--ns-mono);font-size:10.5px;color:#ffaa00;margin-bottom:8px;font-weight:700;display:flex;align-items:center;gap:6px;">
+              <span>🔬</span> 2. WHAT NEURASHIELD OBSERVED
+            </div>
+            <div style="font-size:11px;color:#cbd5e1;line-height:1.6;">
+              ${(idCon.supporting_evidence || []).map(ev => {
+                const isWarn = ev.startsWith('⚠');
+                const isCheck = ev.startsWith('✓');
+                const color = isWarn ? '#ff3b3b' : isCheck ? '#00d68f' : 'var(--ns-text-dim)';
+                return `<div style="margin-bottom:5px;padding:4px 6px;border-radius:3px;background:rgba(255,255,255,0.02);color:${color};">${ev}</div>`;
+              }).join('')}
+            </div>
+          </div>
+
+          <!-- Col 3: Identity Consistency Analysis -->
+          <div style="background:${isConsistent ? 'rgba(0,214,143,0.06)' : 'rgba(255,59,59,0.06)'};border:1px solid ${isConsistent ? 'rgba(0,214,143,0.3)' : 'rgba(255,59,59,0.3)'};border-radius:6px;padding:14px;">
+            <div style="font-family:var(--ns-mono);font-size:10.5px;color:${isConsistent ? '#00d68f' : '#c084fc'};margin-bottom:8px;font-weight:700;display:flex;align-items:center;gap:6px;">
+              <span>⚖️</span> 3. CONSISTENCY ANALYSIS
+            </div>
+            <div style="font-family:var(--ns-mono);font-size:13px;font-weight:800;color:${isConsistent ? '#00d68f' : '#ff3b3b'};margin-bottom:6px;">
+              STATE: ${idCon.state || 'INCONSISTENT'}
+            </div>
+            <div style="font-size:11.5px;color:#cbd5e1;line-height:1.5;margin-bottom:10px;">
+              ${idCon.consistency_assessment || 'The page claims one identity but technical observations contain meaningful inconsistencies.'}
+            </div>
+            <div style="font-family:var(--ns-mono);font-size:9.5px;color:var(--ns-text-muted);border-top:1px solid rgba(255,255,255,0.08);padding-top:6px;">
+              CLAIMED IDENTITY ↓ OBSERVED BEHAVIOR ↓ CONSISTENCY ANALYSIS
+            </div>
+          </div>
+        </div>
+
+        <!-- Key Insight Banner -->
+        <div style="background:rgba(168,85,247,0.06);border:1px solid rgba(168,85,247,0.25);border-radius:6px;padding:10px 14px;margin-bottom:14px;display:flex;align-items:center;gap:10px;">
+          <span style="font-size:18px;">💡</span>
+          <div style="font-size:12px;color:#e2e8f0;line-height:1.5;">
+            <strong>Core Insight:</strong> "NeuraShield does not judge a webpage only by what it says. It compares claimed identity with observed technical behavior to uncover inconsistencies without relying on shallow word blacklists."
+          </div>
+        </div>
+
+        <div class="speaker-pitch-box">
+          <div class="speaker-pitch-header">
+            <span>🎙️ Pitch Script for Judges (Say this out loud):</span>
+            <button class="btn-copy-script" onclick="copyPitchScript(this)">Copy Script</button>
+          </div>
+          <div class="speaker-pitch-text" id="speaker-pitch-content-mismatch">
+            "Judges, notice this target: account-security-microsoft.demo/verify. On the surface, the page claims to be 'Microsoft Account Security Verification' with official-looking branding and security warnings. But NeuraShield does not judge a webpage only by what it says. When our engine observes what the page technically does, it catches password collection submitting cross-domain to an unauthorized third-party host — sync-telemetry-portal.xyz — and loading telemetry from cdn-metrics-tracker.xyz. Claimed identity and observed technical behavior are inconsistent!"
+          </div>
+        </div>
+      `;
+    } else {
+      spotCard.style.display = 'none';
+      spotCard.innerHTML = '';
+    }
+  }
+
+  // Overview Banner
+  document.getElementById('res-target-url').textContent = data.target_url || '—';
+  document.getElementById('res-final-url').textContent = data.final_url || data.target_url || '—';
+
+  // Engine Used Badge
+  const engineBadge = document.getElementById('res-engine-used');
+  const engineUsed = data.engine_used || (data.webpage_fetch && data.webpage_fetch.engine_used) || 'STATIC_CRAWLER';
+  if (engineBadge) {
+    if (engineUsed === 'PLAYWRIGHT_SANDBOX') {
+      engineBadge.innerHTML = '🛡️ Playwright Chromium Sandbox (Hydrated DOM)';
+      engineBadge.style.background = 'rgba(0, 214, 143, 0.12)';
+      engineBadge.style.color = '#00d68f';
+      engineBadge.style.borderColor = 'rgba(0, 214, 143, 0.4)';
+    } else {
+      engineBadge.innerHTML = '⚡ Fast Static Crawler Engine (140ms)';
+      engineBadge.style.background = 'rgba(0, 200, 255, 0.08)';
+      engineBadge.style.color = 'var(--ns-cyan)';
+      engineBadge.style.borderColor = 'rgba(0, 200, 255, 0.25)';
+    }
+  }
+
+  // Screenshot Preview Card
+  const cardScreenshot = document.getElementById('card-screenshot');
+  const screenshotImg = document.getElementById('screenshot-img');
+  const screenshotLink = document.getElementById('screenshot-link');
+  const screenshotUrl = data.screenshot_url || (data.webpage_fetch && data.webpage_fetch.screenshot_url);
+  if (cardScreenshot && screenshotImg && screenshotLink) {
+    if (screenshotUrl) {
+      screenshotImg.src = screenshotUrl;
+      screenshotLink.href = screenshotUrl;
+      cardScreenshot.style.display = 'block';
+    } else {
+      cardScreenshot.style.display = 'none';
+    }
+  }
+  
+  const wpScoreEl = document.getElementById('res-wp-risk-score');
+  if (isUnavailable) {
+    wpScoreEl.textContent = 'UNAVAILABLE';
+    wpScoreEl.style.color = 'var(--ns-text-muted)';
+    wpScoreEl.style.fontSize = '18px';
+  } else {
+    wpScoreEl.textContent = wpScore + '/100';
+    wpScoreEl.style.color = (wpScore >= 60) ? '#ff3b3b' : ((wpScore >= 25) ? '#ffaa00' : '#00d68f');
+    wpScoreEl.style.fontSize = '26px';
+  }
+
+  const wpLvlEl = document.getElementById('res-wp-risk-level');
+  wpLvlEl.textContent = wpLevel;
+  wpLvlEl.className = 'intel-card-badge ' + (isUnavailable ? 'badge-warning' : ((wpScore >= 60) ? 'badge-danger' : ((wpScore >= 25) ? 'badge-warning' : 'badge-success')));
+
+  const compScoreEl = document.getElementById('res-composite-score');
+  compScoreEl.textContent = compScore + '/100';
+  compScoreEl.style.color = (compScore >= 60) ? '#ff3b3b' : ((compScore >= 25) ? '#ffaa00' : '#00d68f');
+
+  const compLvlEl = document.getElementById('res-composite-level');
+  compLvlEl.textContent = compLevel;
+  compLvlEl.className = 'intel-card-badge ' + ((compScore >= 60) ? 'badge-danger' : ((compScore >= 25) ? 'badge-warning' : 'badge-success'));
+
+  const covEl = document.getElementById('res-coverage');
+  if (isUnavailable) {
+    covEl.textContent = 'Reduced';
+    covEl.style.color = 'var(--ns-amber)';
+  } else {
+    covEl.textContent = covPct + '%';
+    covEl.style.color = '#fff';
+  }
+  document.getElementById('res-confidence').textContent = isUnavailable ? '0%' : (confPct + '%');
+
+  const httpEl = document.getElementById('res-http-status');
+  if (isUnavailable) {
+    httpEl.textContent = (httpStatus ? httpStatus + ' ' : '') + (fetchStatus || 'UNAVAILABLE');
+    httpEl.style.color = 'var(--ns-amber)';
+    httpEl.style.fontSize = '16px';
+  } else {
+    httpEl.textContent = (httpStatus || '200') + ' OK';
+    httpEl.style.color = '#00d68f';
+    httpEl.style.fontSize = '20px';
+  }
+  document.getElementById('res-latency').textContent = data.response_time_ms || '—';
+  const resThreatDna = document.getElementById('res-threat-dna');
+  if (resThreatDna) {
+    resThreatDna.textContent = (data.threat_dna || (data.investigation && data.investigation.threat_dna) || 'NS-DNA-BASELINE').substring(0, 16);
+  }
+
+  // 1. HTTP Table
+  const fetchDetail = data.fetch_status_detail || (isUnavailable ? 'Fetch failed' : 'Completed safely');
+  const fetchStatusEl = document.getElementById('val-fetch-status');
+  if (fetchStatusEl) {
+    fetchStatusEl.innerHTML = `<span style="font-weight:700;color:${fetchStatus === 'FETCH_SUCCESS' ? '#00d68f' : '#ffaa00'}">${fetchStatus}</span> <div style="color:var(--ns-text-muted);font-size:10px;margin-top:2px;line-height:1.3;">${fetchDetail}</div>`;
+  }
+  document.getElementById('val-http-code').textContent = httpStatus || 'N/A';
+  document.getElementById('val-response-time').textContent = (data.response_time_ms || 0) + ' ms';
+  
+  const headersObj = (data.security_headers || {}).raw_headers || {};
+  document.getElementById('val-content-type').textContent = headersObj['content-type'] || (isUnavailable ? 'Unavailable (No response)' : 'text/html');
+  document.getElementById('val-content-length').textContent = headersObj['content-length'] ? `${headersObj['content-length']} bytes` : (isUnavailable ? '0 bytes' : 'Dynamic / Chunked');
+  document.getElementById('val-server-header').textContent = headersObj['server'] || (isUnavailable ? 'Unavailable' : 'Masked / Hidden');
+
+  // 2. Redirects
+  const redInfo = data.redirect_analysis || {};
+  const redList = document.getElementById('redirect-hops-list');
+  const badgeRed = document.getElementById('badge-redirects');
+  badgeRed.textContent = `${redInfo.count || 0} Hops`;
+  badgeRed.className = 'intel-card-badge ' + ((redInfo.count || 0) > 2 ? 'badge-warning' : 'badge-muted');
+
+  if (redInfo.hops && redInfo.hops.length > 0) {
+    redList.innerHTML = redInfo.hops.map((h, i) => `
+      <div style="padding:6px 8px;margin-bottom:4px;background:rgba(255,255,255,0.02);border-radius:4px;border:1px solid rgba(255,255,255,0.04);">
+        <span style="color:var(--ns-cyan);font-weight:700;">Hop ${i+1}:</span> [${h.status || 301}] ${h.url}
+      </div>
+    `).join('');
+  } else {
+    redList.innerHTML = '<div style="color:var(--ns-text-muted);padding:8px;">Direct connection — 0 intermediary redirects observed.</div>';
+  }
+
+  // 3. Forms
+  const forms = wp.form_analysis || {};
+  const formsList = document.getElementById('forms-detail-list');
+  if (isUnavailable) {
+    document.getElementById('badge-forms').textContent = 'Unavailable';
+    document.getElementById('badge-forms').className = 'intel-card-badge badge-muted';
+    document.getElementById('table-forms').innerHTML = '<tr><td colspan="2" style="text-align:center;color:var(--ns-text-muted);padding:14px;font-style:italic;">Webpage could not be retrieved, so form-level analysis was not performed.</td></tr>';
+    formsList.innerHTML = '';
+  } else {
+    const formsCount = forms.form_count || 0;
+    document.getElementById('val-form-count').textContent = formsCount;
+    document.getElementById('badge-forms').textContent = `${formsCount} Form(s)`;
+    document.getElementById('badge-forms').className = 'intel-card-badge ' + (forms.has_password_field ? 'badge-danger' : (formsCount > 0 ? 'badge-success' : 'badge-muted'));
+
+    const pwdEl = document.getElementById('val-form-pwd');
+    if (forms.has_password_field) {
+      pwdEl.innerHTML = `<span style="color:#ff3b3b;font-weight:700;">DETECTED ⚠️ (${forms.password_fields_count || 1} field)</span>`;
+    } else {
+      pwdEl.textContent = 'None';
+    }
+
+    const xdomEl = document.getElementById('val-form-xdom');
+    if (forms.has_cross_domain_action) {
+      xdomEl.innerHTML = `<span style="color:#ff3b3b;font-weight:700;">YES ⚠️ (Submits to external domain)</span>`;
+    } else {
+      xdomEl.textContent = '0 (Same-origin)';
+    }
+
+    document.getElementById('val-form-sensitive').textContent = 
+      `Email: ${forms.has_email_field ? 'Yes' : 'No'} · OTP: ${forms.has_otp_field ? 'Yes' : 'No'} · Card: ${forms.has_card_field ? 'Yes' : 'No'}`;
+
+    if (forms.forms && forms.forms.length > 0) {
+      formsList.innerHTML = forms.forms.map((f, i) => `
+        <div style="font-family:var(--ns-mono);font-size:10.5px;padding:6px;background:rgba(0,0,0,0.25);border-radius:4px;margin-top:4px;border:1px solid rgba(255,255,255,0.03);">
+          <strong>Form #${i+1}:</strong> Method: <span style="color:var(--ns-cyan);">${f.method || 'GET'}</span> · Action: <span style="color:${f.is_cross_domain ? '#ff3b3b' : 'var(--ns-text-muted)'};">${f.action || '(self)'}</span>
+        </div>
+      `).join('');
+    } else {
+      formsList.innerHTML = '<div style="font-size:11px;color:var(--ns-text-muted);margin-top:6px;">No HTML &lt;form&gt; tags present in DOM.</div>';
+    }
+  }
+
+  // 4. Scripts
+  const scripts = wp.script_analysis || {};
+  const scriptList = document.getElementById('scripts-detail-list');
+  if (isUnavailable) {
+    document.getElementById('badge-scripts').textContent = 'Unavailable';
+    document.getElementById('badge-scripts').className = 'intel-card-badge badge-muted';
+    document.getElementById('table-scripts').innerHTML = '<tr><td colspan="2" style="text-align:center;color:var(--ns-text-muted);padding:14px;font-style:italic;">Webpage could not be retrieved, so script analysis was not performed.</td></tr>';
+    scriptList.innerHTML = '';
+  } else {
+    document.getElementById('val-script-total').textContent = scripts.total_count || 0;
+    document.getElementById('val-script-inline').textContent = scripts.inline_count || 0;
+    document.getElementById('val-script-external').textContent = scripts.external_count || 0;
+    document.getElementById('badge-scripts').textContent = `${scripts.total_count || 0} Scripts`;
+    document.getElementById('badge-scripts').className = 'intel-card-badge ' + (scripts.has_suspicious_patterns ? 'badge-danger' : 'badge-muted');
+
+    const patEl = document.getElementById('val-script-patterns');
+    if (scripts.has_suspicious_patterns && scripts.suspicious_patterns) {
+      const patList = scripts.suspicious_patterns.map(p => typeof p === 'object' ? (p.description || p.pattern || p.context || JSON.stringify(p)) : p);
+      patEl.innerHTML = `<span style="color:#ffaa00;">${patList.join(', ')}</span>`;
+    } else {
+      patEl.textContent = 'Clean / None detected';
+    }
+
+    if (scripts.external_script_domains && scripts.external_script_domains.length > 0) {
+      scriptList.innerHTML = `<strong>External Script Sources:</strong><br>` + scripts.external_script_domains.map(d => `<span style="display:inline-block;padding:2px 6px;margin:2px;background:rgba(0,200,255,0.08);border-radius:3px;color:var(--ns-cyan);">${d}</span>`).join('');
+    } else {
+      scriptList.innerHTML = '<span style="color:var(--ns-text-muted);">No external third-party script origins detected.</span>';
+    }
+  }
+
+  // 5. Iframes
+  const iframes = wp.iframe_analysis || {};
+  const iframeList = document.getElementById('iframes-detail-list');
+  if (isUnavailable) {
+    document.getElementById('badge-iframes').textContent = 'Unavailable';
+    document.getElementById('badge-iframes').className = 'intel-card-badge badge-muted';
+    document.getElementById('table-iframes').innerHTML = '<tr><td colspan="2" style="text-align:center;color:var(--ns-text-muted);padding:14px;font-style:italic;">Webpage could not be retrieved, so iframe analysis was not performed.</td></tr>';
+    iframeList.innerHTML = '';
+  } else {
+    document.getElementById('val-iframe-total').textContent = iframes.total_count || 0;
+    document.getElementById('val-iframe-hidden').textContent = iframes.hidden_count || 0;
+    document.getElementById('val-iframe-xdom').textContent = iframes.cross_domain_count || 0;
+    document.getElementById('val-iframe-sandboxed').textContent = iframes.sandboxed_count || 0;
+    document.getElementById('badge-iframes').textContent = `${iframes.total_count || 0} Iframes`;
+    document.getElementById('badge-iframes').className = 'intel-card-badge ' + (iframes.has_cross_domain_iframes ? 'badge-warning' : 'badge-muted');
+
+    if (iframes.iframes && iframes.iframes.length > 0) {
+      iframeList.innerHTML = iframes.iframes.map((f, i) => `
+        <div style="padding:4px;background:rgba(0,0,0,0.2);margin-top:2px;border-radius:3px;">
+          Iframe #${i+1}: Src: <span style="color:${f.is_cross_domain ? '#ffaa00' : 'var(--ns-text)'};">${f.src || 'about:blank'}</span>
+        </div>
+      `).join('');
+    } else {
+      iframeList.innerHTML = '<span style="color:var(--ns-text-muted);">No &lt;iframe&gt; elements embedded on page.</span>';
+    }
+  }
+
+  // 6. External Resources
+  const resources = wp.resource_analysis || {};
+  const resChips = document.getElementById('resources-domain-chips');
+  if (isUnavailable) {
+    document.getElementById('badge-resources').textContent = 'Unavailable';
+    document.getElementById('badge-resources').className = 'intel-card-badge badge-muted';
+    document.getElementById('table-resources').innerHTML = '<tr><td colspan="2" style="text-align:center;color:var(--ns-text-muted);padding:14px;font-style:italic;">Webpage could not be retrieved, so external resource analysis was not performed.</td></tr>';
+    resChips.innerHTML = '';
+  } else {
+    const intCount = resources.internal_resources !== undefined ? resources.internal_resources : (resources.first_party !== undefined ? resources.first_party : 0);
+    const extCount = resources.external_resources !== undefined ? resources.external_resources : (resources.third_party !== undefined ? resources.third_party : 0);
+    document.getElementById('val-res-total').textContent = resources.total_resources || 0;
+    document.getElementById('val-res-internal').textContent = intCount;
+    document.getElementById('val-res-external').textContent = extCount;
+    document.getElementById('val-res-ext-domains').textContent = resources.external_domain_count || 0;
+    document.getElementById('badge-resources').textContent = `${resources.external_domain_count || 0} External Domains`;
+
+    if (resources.external_domains && resources.external_domains.length > 0) {
+      resChips.innerHTML = resources.external_domains.slice(0, 15).map(d => `
+        <span class="quick-chip" style="cursor:default;font-size:10px;">${d}</span>
+      `).join('');
+    } else {
+      resChips.innerHTML = '<span style="font-size:11px;color:var(--ns-text-muted);">All resources loaded from first-party origin.</span>';
+    }
+  }
+
+  // 7. Security Headers Table
+  const headers = wp.header_analysis || {};
+  const hTable = document.getElementById('table-security-headers');
+  const hBadge = document.getElementById('badge-headers');
+  if (isUnavailable) {
+    hBadge.textContent = 'Unavailable';
+    hBadge.className = 'intel-card-badge badge-muted';
+    hTable.innerHTML = '<tr><td colspan="2" style="text-align:center;color:var(--ns-text-muted);padding:14px;font-style:italic;">No HTTP/HTTPS response retrieved to inspect security headers.</td></tr>';
+  } else {
+    const hAudit = headers.headers_audit || {};
+    const hOrig = headers.headers || {};
+    hBadge.textContent = `${headers.present_count || 0}/6 Enforced`;
+    hBadge.className = 'intel-card-badge ' + ((headers.present_count || 0) >= 4 ? 'badge-success' : ((headers.present_count || 0) >= 2 ? 'badge-warning' : 'badge-danger'));
+
+    const headerKeys = [
+      { key: 'strict-transport-security', label: 'HSTS (Strict-Transport-Security)' },
+      { key: 'content-security-policy', label: 'CSP (Content-Security-Policy)' },
+      { key: 'x-frame-options', label: 'X-Frame-Options (Clickjacking)' },
+      { key: 'x-content-type-options', label: 'X-Content-Type-Options (Sniffing)' },
+      { key: 'referrer-policy', label: 'Referrer-Policy' },
+      { key: 'permissions-policy', label: 'Permissions-Policy' }
+    ];
+
+    hTable.innerHTML = headerKeys.map(h => {
+      const item = hAudit[h.key] || hAudit[h.key.toLowerCase()] || hOrig[h.key] || Object.entries(hOrig).find(([k]) => k.toLowerCase() === h.key.toLowerCase())?.[1] || {};
+      const present = item.present === true;
+      return `
+        <tr>
+          <td>${h.label}</td>
+          <td>
+            <span style="color:${present ? '#00d68f' : '#ff3b3b'};font-weight:700;">
+              ${present ? '✓ PRESENT' : '✗ MISSING'}
+            </span>
+            ${item.value ? `<div style="font-size:9.5px;color:var(--ns-text-muted);max-width:240px;overflow:hidden;text-overflow:ellipsis;">${item.value}</div>` : ''}
+          </td>
+        </tr>
+      `;
+    }).join('');
+  }
+
+  // 8. Content Analysis
+  const html = wp.html_analysis || {};
+  const content = wp.content_analysis || {};
+  if (isUnavailable) {
+    document.getElementById('val-html-title').textContent = 'Unavailable (No content)';
+    document.getElementById('val-html-desc').textContent = 'Unavailable (No content)';
+    document.getElementById('val-content-brands').textContent = 'Unavailable';
+    document.getElementById('val-content-urgency').textContent = 'Unavailable';
+    document.getElementById('val-content-login').textContent = 'Unavailable';
+  } else {
+    document.getElementById('val-html-title').textContent = html.title || '(No title tag)';
+    document.getElementById('val-html-desc').textContent = html.meta_description || '(No meta description)';
+    
+    const brands = content.targeted_brands || [];
+    document.getElementById('val-content-brands').innerHTML = brands.length > 0 ? 
+      `<span style="color:var(--ns-cyan);font-weight:700;">${brands.join(', ')}</span>` : 'None detected';
+
+    document.getElementById('val-content-urgency').textContent = `${content.urgency_matches_count || 0} indicators`;
+    document.getElementById('val-content-login').textContent = `${content.login_matches_count || 0} indicators`;
+  }
+
+  // Key Findings Rendering
+  const kfList = document.getElementById('key-findings-list');
+  if (isUnavailable) {
+    document.getElementById('badge-key-findings').textContent = 'Unavailable';
+    document.getElementById('badge-key-findings').className = 'intel-card-badge badge-muted';
+    kfList.innerHTML = `
+      <div class="finding-item warn">
+        <span class="finding-icon">ℹ️</span>
+        <div style="flex:1;">
+          <div style="font-weight:700;color:var(--ns-text);margin-bottom:2px;">Webpage Content Not Retrieved</div>
+          <div style="color:var(--ns-text-muted);">Webpage could not be retrieved (${data.fetch_status || 'UNAVAILABLE'}), so webpage-level analysis was not performed. A domain existing does NOT mean a webpage exists.</div>
+        </div>
+      </div>
+    `;
+  } else {
+    const findings = [];
+    if (forms.has_password_field) {
+      findings.push({
+        cls: 'danger', icon: '🛑',
+        title: 'Credential Collection Form Identified',
+        detail: `The page renders an active password input field. Potential credential harvesting risk.`
+      });
+    }
+    if (forms.has_cross_domain_action) {
+      findings.push({
+        cls: 'danger', icon: '🛑',
+        title: 'Cross-Domain Form Submission Target',
+        detail: `Form data is submitted to a foreign registered domain rather than the origin site.`
+      });
+    }
+    if (scripts.has_suspicious_patterns) {
+      const patList = (scripts.suspicious_patterns || []).map(p => typeof p === 'object' ? (p.description || p.pattern || p.context || JSON.stringify(p)) : p);
+      findings.push({
+        cls: 'warn', icon: '⚠️',
+        title: 'Potentially Deceptive JavaScript Patterns',
+        detail: `Suspicious execution patterns detected: ${patList.join(', ')}.`
+      });
+    }
+    if (iframes.has_cross_domain_iframes) {
+      findings.push({
+        cls: 'warn', icon: '⚠️',
+        title: 'Cross-Domain Iframe Embedding',
+        detail: `External origins are framed within the document, potentially enabling clickjacking or overlays.`
+      });
+    }
+    if ((headers.present_count || 0) <= 2) {
+      findings.push({
+        cls: 'warn', icon: '⚠️',
+        title: 'Weak Security Header Coverage',
+        detail: `Only ${headers.present_count || 0}/6 recommended defense-in-depth HTTP security headers are enforced.`
+      });
+    }
+    if (findings.length === 0) {
+      findings.push({
+        cls: 'ok', icon: '✓',
+        title: 'Clean Webpage Structural Posture',
+        detail: 'No credential forms, cross-domain submission targets, or malicious JavaScript patterns detected.'
+      });
+    }
+
+    kfList.innerHTML = findings.map(f => `
+      <div class="finding-item ${f.cls}">
+        <span class="finding-icon">${f.icon}</span>
+        <div style="flex:1;">
+          <div style="font-weight:700;color:var(--ns-text);margin-bottom:2px;">${f.title}</div>
+          <div style="color:var(--ns-text-muted);">${f.detail}</div>
+        </div>
+      </div>
+    `).join('');
+  }
+
+  // Webpage Identity Consistency Rendering
+  const idConContainer = document.getElementById('identity-consistency-content');
+  const badgeIdCon = document.getElementById('badge-identity-consistency');
+  const idConData = data.identity_consistency || {};
+
+  if (idConContainer) {
+    if (isUnavailable || idConData.state === 'INSUFFICIENT EVIDENCE' || !idConData.claimed_identity) {
+      if (badgeIdCon) {
+        badgeIdCon.textContent = 'INSUFFICIENT EVIDENCE';
+        badgeIdCon.className = 'intel-card-badge badge-muted';
+      }
+      idConContainer.innerHTML = `
+        <div style="background:rgba(255,170,0,0.05);border:1px solid rgba(255,170,0,0.25);border-radius:6px;padding:16px;">
+          <div style="font-weight:700;color:var(--ns-amber);margin-bottom:6px;font-size:13px;">WEBPAGE UNAVAILABLE</div>
+          <div style="font-size:12px;color:var(--ns-text-muted);line-height:1.5;">
+            Webpage-level identity/behavior analysis was not performed. A domain existing does NOT mean a webpage exists.
+            Zero hallucinated forms, DOM nodes, or speculative identity findings were generated.
+          </div>
+        </div>
+      `;
+    } else {
+      const claimed = idConData.claimed_identity || {};
+      const observed = idConData.observed_behavior || {};
+      const isConsistent = idConData.state === 'CONSISTENT';
+
+      if (badgeIdCon) {
+        badgeIdCon.textContent = idConData.state || 'ANALYZED';
+        badgeIdCon.className = 'intel-card-badge ' + (isConsistent ? 'badge-success' : 'badge-danger');
+      }
+
+      idConContainer.innerHTML = `
+        <div style="display:grid;grid-template-columns:repeat(3, 1fr);gap:16px;margin-bottom:14px;">
+          <!-- Claimed Identity -->
+          <div style="background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.06);border-radius:6px;padding:14px;">
+            <div style="font-family:var(--ns-mono);font-size:10.5px;color:var(--ns-cyan);font-weight:700;margin-bottom:8px;display:flex;align-items:center;gap:6px;">
+              <span>📄</span> 1. CLAIMED IDENTITY
+            </div>
+            <div style="font-size:11.5px;color:#cbd5e1;line-height:1.6;">
+              ${claimed.claimed_items && claimed.claimed_items.length > 0 ?
+                claimed.claimed_items.map(c => `<div style="margin-bottom:4px;padding:4px 8px;background:rgba(255,255,255,0.03);border-radius:4px;">${c}</div>`).join('') :
+                '<div style="color:var(--ns-text-muted);">Generic page content (no prominent brand claims)</div>'
+              }
+            </div>
+          </div>
+
+          <!-- Observed Technical Behavior -->
+          <div style="background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.06);border-radius:6px;padding:14px;">
+            <div style="font-family:var(--ns-mono);font-size:10.5px;color:#ffaa00;font-weight:700;margin-bottom:8px;display:flex;align-items:center;gap:6px;">
+              <span>🔬</span> 2. WHAT NEURASHIELD OBSERVED
+            </div>
+            <div style="font-size:11px;color:#cbd5e1;line-height:1.6;">
+              ${(idConData.supporting_evidence || []).map(ev => {
+                const isWarn = ev.startsWith('⚠');
+                const isCheck = ev.startsWith('✓');
+                const color = isWarn ? '#ff3b3b' : isCheck ? '#00d68f' : 'var(--ns-text-dim)';
+                return `<div style="margin-bottom:4px;color:${color};">${ev}</div>`;
+              }).join('')}
+            </div>
+          </div>
+
+          <!-- Consistency Assessment -->
+          <div style="background:${isConsistent ? 'rgba(0,214,143,0.04)' : 'rgba(255,59,59,0.04)'};border:1px solid ${isConsistent ? 'rgba(0,214,143,0.3)' : 'rgba(255,59,59,0.3)'};border-radius:6px;padding:14px;">
+            <div style="font-family:var(--ns-mono);font-size:10.5px;color:${isConsistent ? '#00d68f' : '#c084fc'};font-weight:700;margin-bottom:8px;display:flex;align-items:center;gap:6px;">
+              <span>⚖️</span> 3. CONSISTENCY ANALYSIS
+            </div>
+            <div style="font-family:var(--ns-mono);font-size:13px;font-weight:800;color:${isConsistent ? '#00d68f' : '#ff3b3b'};margin-bottom:6px;">
+              STATE: ${idConData.state || 'INCONSISTENT'}
+            </div>
+            <div style="font-size:11.5px;color:#cbd5e1;line-height:1.5;margin-bottom:8px;">
+              ${idConData.consistency_assessment || 'Analysis complete.'}
+            </div>
+          </div>
+        </div>
+
+        <div style="padding:10px 14px;background:rgba(0,200,255,0.04);border-radius:6px;border:1px solid rgba(0,200,255,0.15);font-size:11.5px;color:var(--ns-text-muted);display:flex;align-items:center;gap:8px;">
+          <span>💡</span>
+          <span><strong>Key Insight:</strong> NeuraShield does not judge a webpage only by what it says. It compares claimed identity with observed technical behavior.</span>
+        </div>
+      `;
+    }
+  }
+
+  // Webpage Rules Rendering
+  const rulesList = (data.webpage_rules || {}).rules_hit || [];
+  const rulesContainer = document.getElementById('webpage-rules-list');
+  const badgeRules = document.getElementById('badge-rules-count');
+  if (isUnavailable) {
+    badgeRules.textContent = '0 Rules (Unavailable)';
+    badgeRules.className = 'intel-card-badge badge-muted';
+    rulesContainer.innerHTML = '<div style="font-size:12px;color:var(--ns-text-muted);padding:8px;font-style:italic;">Webpage heuristics were not evaluated because target HTTP/HTTPS webpage content could not be retrieved.</div>';
+  } else {
+    badgeRules.textContent = `${rulesList.length} Rules Hit`;
+    badgeRules.className = 'intel-card-badge ' + (rulesList.length > 0 ? 'badge-danger' : 'badge-success');
+
+    if (rulesList.length > 0) {
+      rulesContainer.innerHTML = rulesList.map(r => `
+        <div class="rule-item">
+          <div class="rule-header">
+            <span class="rule-title">[${r.rule_id}] ${r.title}</span>
+            <span class="intel-card-badge ${r.severity === 'CRITICAL' || r.severity === 'HIGH' ? 'badge-danger' : 'badge-warning'}">${r.severity}</span>
+          </div>
+          <div style="font-size:11.5px;color:var(--ns-text-dim);">${r.description}</div>
+          <div class="rule-evidence">EVIDENCE: ${r.evidence}</div>
+          <div class="rule-why"><strong style="color:var(--ns-text);">Why it matters:</strong> ${r.why_it_matters}</div>
+        </div>
+      `).join('');
+    } else {
+      rulesContainer.innerHTML = '<div style="font-size:12px;color:var(--ns-green);padding:8px;">✓ All 12 Webpage Security Rules evaluated cleanly. 0 rules triggered.</div>';
+    }
+  }
+
+  // Multi-Layer Risk Fusion Matrix
+  const fusion = data.risk_fusion || {};
+  const fusionContainer = document.getElementById('fusion-layers-container');
+  const layers = fusion.layers || [];
+  document.getElementById('fusion-explanation').textContent = fusion.explanation || 'Composite threat score synthesized across all available layers.';
+
+  if (layers.length > 0) {
+    fusionContainer.innerHTML = layers.map(l => {
+      const weightPct = Math.round(l.weight * 100);
+      const lvlCls = l.level === 'critical' || l.level === 'high' ? 'badge-danger' : (l.level === 'medium' ? 'badge-warning' : 'badge-success');
+      return `
+        <div class="fusion-layer-row">
+          <div style="font-weight:700;color:var(--ns-text);">${l.name}</div>
+          <div style="color:var(--ns-text-muted);">${l.module} · Weight: ${weightPct}%</div>
+          <div style="text-align:right;font-weight:700;color:#fff;">${l.score}/100</div>
+          <div><span class="intel-card-badge ${lvlCls}">${l.level.toUpperCase()}</span></div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  // What We Found vs Unverified
+  const foundList = document.getElementById('what-we-found-list');
+  const foundArr = data.what_found || [];
+  foundList.innerHTML = foundArr.map(x => `
+    <div style="display:flex;gap:8px;"><span style="color:var(--ns-green);font-weight:700;">•</span><span>${x}</span></div>
+  `).join('');
+
+  const unverifiedList = document.getElementById('what-unverified-list');
+  const unverifiedArr = data.what_not_verified || [];
+  unverifiedList.innerHTML = unverifiedArr.map(x => `
+    <div style="display:flex;gap:8px;"><span style="color:var(--ns-amber);font-weight:700;">•</span><span style="color:var(--ns-text-muted);">${x}</span></div>
+  `).join('');
+
+  // What Should You Do Decision Guidance
+  const summaryEl = document.getElementById('actions-summary-text');
+  const actionsEl = document.getElementById('suggested-actions-list');
+  const urgencyBadge = document.getElementById('badge-action-urgency');
+  const credEl = document.getElementById('tree-credentials-action');
+  const dlEl = document.getElementById('tree-download-action');
+
+  summaryEl.textContent = data.recommendation || 'Follow standard cyber hygiene protocols.';
+  if (compScore >= 60 || wpScore >= 60) {
+    urgencyBadge.className = 'intel-card-badge badge-danger';
+    urgencyBadge.textContent = 'Immediate Caution';
+    actionsEl.innerHTML = `
+      <div class="action-guidance-item"><span style="color:#ff3b3b;font-weight:700;">🛑</span><span>Do NOT enter credentials, OTPs, or financial details on this webpage.</span></div>
+      <div class="action-guidance-item"><span style="color:#ff3b3b;font-weight:700;">🛑</span><span>Avoid downloading or executing any files originating from this page.</span></div>
+      <div class="action-guidance-item"><span style="color:var(--ns-cyan);font-weight:700;">ℹ</span><span>Verify the destination using independently known official channels.</span></div>
+    `;
+    credEl.innerHTML = '<span style="color:#ff3b3b;font-weight:700;">YES — HIGH RISK:</span> Change your password immediately via the organization’s verified official site. Revoke sessions &amp; enable MFA.';
+    dlEl.innerHTML = '<span style="color:#ff3b3b;font-weight:700;">YES — HIGH RISK:</span> Do not run the file. Quarantine and perform an endpoint malware scan.';
+  } else if (compScore >= 25 || wpScore >= 25) {
+    urgencyBadge.className = 'intel-card-badge badge-warning';
+    urgencyBadge.textContent = 'Verification Advised';
+    actionsEl.innerHTML = `
+      <div class="action-guidance-item"><span style="color:#ffaa00;font-weight:700;">⚠️</span><span>Verify the webpage origin before entering any personal data.</span></div>
+      <div class="action-guidance-item"><span style="color:var(--ns-cyan);font-weight:700;">ℹ</span><span>Check for brand mismatch or unfamiliar form submission destinations.</span></div>
+    `;
+    credEl.innerHTML = '<span style="color:#ffaa00;font-weight:700;">YES:</span> Monitor your account logs for unauthorized sign-ins.';
+    dlEl.innerHTML = '<span style="color:#ffaa00;font-weight:700;">YES:</span> Scan downloaded files before opening.';
+  } else {
+    urgencyBadge.className = 'intel-card-badge badge-success';
+    urgencyBadge.textContent = 'Standard Guidance';
+    actionsEl.innerHTML = `
+      <div class="action-guidance-item"><span style="color:#00d68f;font-weight:700;">✓</span><span>No active webpage-level threat indicators detected. Continue normal precautions.</span></div>
+    `;
+    credEl.innerHTML = 'Standard verification: Confirm URL address bar matches expected domain.';
+    dlEl.innerHTML = 'Standard verification: Regular browser endpoint security applies.';
+  }
+
+  // Full Report Link
+  const invId = data.investigation_id || 'NS-INV';
+  const threatDna = data.threat_dna || (data.investigation && data.investigation.threat_dna) || 'NS-DNA-BASELINE';
+  document.getElementById('preview-inv-id').textContent = invId;
+  document.getElementById('preview-threat-dna').textContent = threatDna;
+  document.getElementById('btn-view-full-report').href = `/report?id=${encodeURIComponent(invId)}&url=${encodeURIComponent(data.target_url || '')}`;
+  const warnBtn = document.getElementById('btn-view-warning-screen');
+  if (warnBtn) {
+    const threatTitle = (data.webpage_rules && data.webpage_rules.rules_hit && data.webpage_rules.rules_hit[0]?.title) || 
+                        (data.security_rules && data.security_rules.rules_hit && data.security_rules.rules_hit[0]?.title) ||
+                        'Credential Theft & Deceptive Webpage Signals';
+    warnBtn.href = `/warning?url=${encodeURIComponent(data.target_url || '')}&threat=${encodeURIComponent(threatTitle)}&id=${encodeURIComponent(invId)}`;
+  }
+
+  // Raw payload
+  document.getElementById('raw-payload').textContent = JSON.stringify(data, null, 2);
+
+  // Display results
+  document.getElementById('results-area').style.display = 'block';
+  document.getElementById('results-area').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+// Auto-trigger if URL param provided
+window.addEventListener('DOMContentLoaded', () => {
+  try {
+    const params = new URLSearchParams(window.location.search);
+    const u = params.get('url');
+    if (u && u.trim()) {
+      document.getElementById('webpage-input').value = u.trim();
+      analyzeWebpage();
+    }
+  } catch(e) {
+    console.warn('URL param parse error:', e);
+  }
+});
+</script>
+
+
+<script>
+/* NeuraShield: simulated '.demo' showcase targets are hidden unless the server explicitly
+   enables them (NEURASHIELD_SIMULATED_DEMOS=1). Real analysis never returns hard-coded data. */
+(function(){
+  function apply(enabled){
+    if (enabled) return;
+    document.querySelectorAll('.showcase-hub').forEach(function(el){ el.style.display='none'; });
+    document.querySelectorAll('.quick-chip').forEach(function(ch){
+      var t = (ch.getAttribute('onclick')||'') + ' ' + (ch.getAttribute('href')||'');
+      if (/\.demo|nonexistent-phishing-host/.test(t)) ch.style.display='none';
+    });
+  }
+  fetch('/api/capabilities').then(function(r){return r.json();}).then(function(c){apply(!!c.simulated_demos_enabled);}).catch(function(){apply(false);});
+  var _fetch = window.fetch;
+  window.fetch = function(){
+    return _fetch.apply(this, arguments).then(function(res){
+      if (res && res.url && res.url.indexOf('/api/webpage/investigate') !== -1) {
+        res.clone().json().then(function(d){
+          if (d && d.simulated) {
+            var b = document.getElementById('ns-sim-banner');
+            if (!b) { b = document.createElement('div'); b.id='ns-sim-banner';
+              b.style.cssText='position:sticky;top:68px;z-index:50;margin:0 0 12px;padding:10px 14px;border:1px solid #ffaa00;background:rgba(255,170,0,0.12);color:#ffcc66;font-family:var(--ns-mono);font-size:12px;border-radius:6px;';
+              var main = document.querySelector('.ns-main'); if (main) main.insertBefore(b, main.firstChild); }
+            b.textContent = d.simulated_notice || 'SIMULATED DEMO RESULT — not a real analysis.';
+          }
+        }).catch(function(){});
+      }
+      return res;
+    });
+  };
+})();
+</script>
+</body>
+</html>

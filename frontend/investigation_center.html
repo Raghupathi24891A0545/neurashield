@@ -1,0 +1,587 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Investigation Center — NeuraShield AI Threat Platform</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='neurashield.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='ns_investigation.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='investigation_center.css') }}">
+</head>
+<body>
+
+<!-- Navigation Header -->
+<nav class="ns-nav scrolled" style="background:rgba(6, 9, 14, 0.96); border-bottom: 1px solid rgba(0, 200, 255, 0.16);">
+  <div class="ns-nav-inner">
+    <a href="/" class="ns-logo">
+      <img src="{{ url_for('static', filename='static/ns_logo.png') }}" class="ns-logo-icon" alt="NS" onerror="this.style.display='none';">
+      <div class="ns-logo-text">
+        <span class="ns-logo-name">NeuraShield</span>
+        <span class="ns-logo-sub">Cybersecurity Investigation Platform</span>
+      </div>
+    </a>
+    <div class="ns-nav-actions">
+      <div class="ic-agent-badge">
+        <div class="ic-agent-pulse-dot"></div>
+        <span>AI Agent Active</span>
+      </div>
+      {% if session.get('user_id') %}
+        <span style="font-family:var(--ns-mono);font-size:11px;color:var(--ic-text-dim);margin-left:14px;">{{ username }}</span>
+        <a href="/logout" class="btn-ghost" style="margin-left:8px;">Logout</a>
+      {% else %}
+        <span style="font-family:var(--ns-mono);font-size:11px;color:var(--ic-cyan);margin-left:14px;">● Guest Mode</span>
+        <a href="/login" class="btn-ghost" style="margin-left:8px;">Login</a>
+        <a href="/register" class="btn-ghost" style="margin-left:6px;border-color:var(--ic-cyan);color:var(--ic-cyan);">Register</a>
+      {% endif %}
+    </div>
+  </div>
+</nav>
+
+<!-- Layout Wrapper -->
+<div class="inv-layout">
+  <!-- Dynamic Sidebar -->
+  <aside class="inv-sidebar">
+    <div class="who">
+      <small>Security Analyst</small>
+      <b>{{ username or 'Guest Analyst' }}</b>
+    </div>
+    <ul class="inv-nav" id="sidebar-nav"></ul>
+  </aside>
+
+  <!-- Main Investigation Workspace -->
+  <main class="inv-main">
+    <div class="ic-container">
+
+      <!-- Header Bar -->
+      <div class="ic-header-bar">
+        <div class="ic-title-group">
+          <h1>
+            Investigation Center
+          </h1>
+          <p>
+            Unified AI orchestration layer connecting URL, domain, webpage, email, QR, and external security intelligence.
+          </p>
+        </div>
+        <div>
+          <a href="/investigations" class="ic-btn-secondary">
+            <span>Investigation History →</span>
+          </a>
+        </div>
+      </div>
+
+      <!-- ══════════════════════════════════════════════════════════════════════
+           STAGE 1: START NEW INVESTIGATION (ONE UNIFIED INPUT EXPERIENCE)
+           ══════════════════════════════════════════════════════════════════════ -->
+      <section class="ic-card ic-input-section" id="section-input">
+        <div class="ic-selector-label">1. Select Target Input Type</div>
+
+        <!-- Input Type Selector Tabs -->
+        <div class="ic-type-tabs" id="type-tabs">
+          <button type="button" class="ic-type-btn active" data-type="URL">
+            <span>🔗 URL</span>
+          </button>
+          <button type="button" class="ic-type-btn" data-type="DOMAIN">
+            <span>🌐 DOMAIN</span>
+          </button>
+          <button type="button" class="ic-type-btn" data-type="QR_IMAGE">
+            <span>📱 QR CODE</span>
+          </button>
+          <button type="button" class="ic-type-btn" data-type="EMAIL">
+            <span>✉️ EMAIL (.EML)</span>
+          </button>
+          <button type="button" class="ic-type-btn" data-type="WEBPAGE">
+            <span>🖥️ WEBPAGE</span>
+          </button>
+        </div>
+
+        <!-- Contextual Input Fields -->
+        <form id="investigation-form" onsubmit="return false;">
+          <!-- URL / Domain / Webpage Text Input -->
+          <div id="field-text-group" class="ic-input-box">
+            <input type="text" id="target-input" class="ic-text-input" placeholder="Paste suspicious URL (e.g. https://auth-secure-verify.com/login)..." autocomplete="off" spellcheck="false">
+            <button type="button" class="ic-btn-secondary" id="btn-paste" title="Paste from clipboard">Paste</button>
+            <button type="submit" class="ic-start-btn" id="btn-start">
+              <span>START INVESTIGATION</span>
+              <span>⚡</span>
+            </button>
+          </div>
+
+          <!-- QR Image File Dropzone -->
+          <div id="field-qr-group" style="display: none;">
+            <div class="ic-dropzone" id="qr-dropzone">
+              <input type="file" id="qr-file-input" accept="image/*" style="display: none;">
+              <div id="qr-preview-wrap" style="display: none; margin-bottom: 12px;">
+                <img id="qr-preview-img" src="" alt="QR Preview" style="max-height: 140px; border-radius: 6px; border: 1px solid var(--ic-cyan); box-shadow: 0 0 14px var(--ic-cyan-glow);">
+              </div>
+              <div class="ic-drop-icon" id="qr-default-icon">📷</div>
+              <div class="ic-drop-text" id="qr-drop-text">Click to choose, drag & drop a QR code image here, or press <b>Ctrl+V</b> to paste</div>
+              <div class="ic-drop-hint">Supports PNG, JPEG, WebP, GIF, BMP (Max 10 MB). The AI agent will decode payload and adaptively investigate.</div>
+            </div>
+            <div style="margin-top: 14px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+              <div style="display: flex; gap: 8px;">
+                <button type="button" class="ic-btn-secondary" id="btn-load-sample-qr" title="Load sample phishing QR code for instant testing">
+                  <span>⚡ Load Test Sample QR</span>
+                </button>
+              </div>
+              <button type="button" class="ic-start-btn" id="btn-start-qr" disabled>
+                <span>ANALYZE QR CODE</span>
+                <span>⚡</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Email Artifact File Dropzone -->
+          <div id="field-email-group" style="display: none;">
+            <div class="ic-dropzone" id="email-dropzone">
+              <input type="file" id="email-file-input" accept=".eml,.msg,message/rfc822" style="display: none;">
+              <div class="ic-drop-icon">📧</div>
+              <div class="ic-drop-text" id="email-drop-text">Click or drag & drop an .eml email file here</div>
+              <div class="ic-drop-hint">Headers, SPF/DKIM/DMARC, claimed identity, attachments and embedded links will be extracted and analyzed.</div>
+            </div>
+            <div style="margin-top: 10px; display: flex; justify-content: space-between; align-items: center;">
+              <button type="button" class="btn-ghost" id="btn-toggle-raw-email" style="font-size:11px;">Or paste raw email headers / source</button>
+              <button type="button" class="ic-start-btn" id="btn-start-email" disabled>
+                <span>INVESTIGATE EMAIL</span>
+                <span>⚡</span>
+              </button>
+            </div>
+            <div id="raw-email-wrap" style="display: none; margin-top: 12px;">
+              <textarea id="raw-email-input" class="ic-text-input" style="width: 100%; height: 140px; resize: vertical;" placeholder="Paste raw RFC822 email source including headers..."></textarea>
+            </div>
+          </div>
+        </form>
+
+        <!-- Provider Status & Intelligence Adapter Bar -->
+        <div class="ic-provider-row">
+          <div class="ic-selector-label" style="margin: 0; margin-right: 8px;">Intelligence Adapters:</div>
+          <div class="ic-provider-chip" title="VirusTotal API v3 external vendor detections">
+            <span class="ic-chip-status {% if provider_status.virustotal.configured %}active{% endif %}"></span>
+            <span>VirusTotal v3</span>
+          </div>
+          <div class="ic-provider-chip" title="urlscan.io page and DOM telemetry">
+            <span class="ic-chip-status {% if provider_status.urlscan.configured %}active{% endif %}"></span>
+            <span>urlscan.io</span>
+          </div>
+          <div class="ic-provider-chip" title="Google Safe Browsing threat match lists">
+            <span class="ic-chip-status {% if provider_status.google_safe_browsing.configured %}active{% endif %}"></span>
+            <span>Google Safe Browsing</span>
+          </div>
+          <div class="ic-provider-chip" title="Gemini AI reasoning & threat synthesis">
+            <span class="ic-chip-status {% if gemini_configured %}active{% endif %}"></span>
+            <span>Gemini Reasoning Core</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- ══════════════════════════════════════════════════════════════════════
+           STAGE 2: ACTIVE INVESTIGATION COCKPIT (DYNAMIC 3-COLUMN COCKPIT)
+           ══════════════════════════════════════════════════════════════════════ -->
+      <section class="ic-cockpit" id="section-cockpit" style="display: none;">
+        <!-- Left: Investigation Timeline -->
+        <div class="ic-card ic-timeline-panel">
+          <div class="ic-panel-head">
+            <span>Investigation Timeline</span>
+            <span id="investigation-timer" style="color: var(--ic-cyan);">00:00</span>
+          </div>
+          <div class="ic-timeline" id="timeline-list">
+            <!-- Dynamic timeline steps -->
+          </div>
+        </div>
+
+        <!-- Center: Investigation Agent Visual & Neural Core -->
+        <div class="ic-card ic-agent-panel">
+          <div class="ic-core-canvas-wrap">
+            <canvas id="agent-core-canvas" class="ic-core-canvas" width="440" height="440"></canvas>
+            <div class="ic-core-pulse-ring"></div>
+          </div>
+          <div class="ic-core-status" id="agent-stage-title">INVESTIGATION AGENT ACTIVE</div>
+          <p class="ic-core-sub" id="agent-stage-sub">Coordinating evidence collection across intelligence specialists...</p>
+          <div class="ic-decision-feed" id="agent-decision-feed">
+            <div>[00:00] Initialized adaptive investigation engine.</div>
+          </div>
+        </div>
+
+        <!-- Right: Live Evidence Stream -->
+        <div class="ic-card ic-evidence-panel">
+          <div class="ic-panel-head">
+            <span>Verified Evidence Stream</span>
+            <span id="evidence-count-badge" style="color: var(--ic-cyan);">0 items</span>
+          </div>
+          <div class="ic-evidence-stream" id="evidence-stream">
+            <div style="font-size:12px; color:var(--ic-text-muted); text-align:center; padding: 20px;">
+              Awaiting module evidence output...
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ══════════════════════════════════════════════════════════════════════
+           STAGE 3: SYNTHESIS, THREAT DNA, GRAPH & FULL REPORT (SECTION 20 ARCHITECTURE)
+           ══════════════════════════════════════════════════════════════════════ -->
+      <section class="ic-results-container" id="section-results" style="display: none;">
+
+        <!-- 1. Investigation Header Bar -->
+        <div class="ic-card ic-header-status-card">
+          <div class="ic-header-left">
+            <div class="ic-inv-id-badge" id="res-inv-id-badge">INVESTIGATION: NS-INV-0000-00000000</div>
+            <div class="ic-header-target-row">
+              <span class="ic-type-pill" id="res-type-pill">EMAIL INVESTIGATION</span>
+              <span class="ic-target-text" id="res-target-text">—</span>
+            </div>
+          </div>
+          <div class="ic-header-right">
+            <div class="ic-status-pill completed" id="res-status-pill">
+              <span class="ic-status-dot"></span>
+              <span id="res-status-text">STATUS: COMPLETED</span>
+            </div>
+            <div class="ic-elapsed-pill" id="res-duration-pill">DURATION: 0.0s</div>
+          </div>
+        </div>
+
+        <!-- 2. Executive Threat Assessment -->
+        <div class="ic-card ic-exec-card">
+          <div class="ic-risk-gauge-box">
+            <div class="ic-selector-label">Composite Risk</div>
+            <div class="ic-gauge-score LOW" id="res-risk-score">0</div>
+            <div class="ic-gauge-badge LOW" id="res-risk-level">LOW</div>
+            <div class="ic-conf-sub" id="res-confidence">Assessment Confidence: 0%</div>
+          </div>
+          <div class="ic-exec-text">
+            <div class="ic-exec-top-row">
+              <div class="ic-selector-label" style="margin-bottom:0;">Executive Threat Assessment</div>
+              <button type="button" class="ic-btn-why" id="btn-toggle-why-summary">
+                <span>[ VIEW WHY ]</span>
+              </button>
+            </div>
+            <h2 id="res-headline">Investigation Analysis Summary</h2>
+            <p id="res-exec-summary">Synthesizing verified multi-layer threat telemetry...</p>
+            <div class="ic-confidence-note" id="res-confidence-note">
+              Confidence is evidence-derived based on verified data availability.
+            </div>
+            <div class="ic-module-pills-row" id="res-quick-tags"></div>
+          </div>
+        </div>
+
+        <!-- 3. Analyst Guidance (Prominent SOC Action Banner) -->
+        <div class="ic-card ic-guidance-card" id="guidance-panel">
+          <div class="ic-panel-head" style="border-bottom-color: rgba(255, 51, 85, 0.3);">
+            <div style="display:flex; align-items:center; gap:8px;">
+              <span class="ic-guidance-icon">🛡️</span>
+              <span style="color:var(--ic-text); font-weight:700;">ANALYST OPERATIONAL GUIDANCE</span>
+            </div>
+            <span class="ic-guidance-badge" id="guidance-severity-badge">HIGH PRIORITY ACTION</span>
+          </div>
+
+          <!-- Immediate Action Alert -->
+          <div class="ic-immediate-action-banner" id="guidance-action-banner">
+            <div class="ic-action-alert-title" id="guidance-immediate-title">IMMEDIATE ACTION: DO NOT INTERACT WITH THIS TARGET</div>
+            <div class="ic-action-alert-sub" id="guidance-immediate-detail">Multiple verified high-risk threat indicators confirm malicious intent.</div>
+          </div>
+
+          <!-- Guidance Grid: Why, Do Not, and Recommended Steps -->
+          <div class="ic-guidance-grid">
+            <!-- Why (Strongest Evidence) -->
+            <div class="ic-guidance-box">
+              <div class="ic-guidance-box-title" style="color:var(--ic-amber);">
+                <span>🔍 WHY IT MATTERS (STRONGEST EVIDENCE)</span>
+              </div>
+              <ul class="ic-guidance-list" id="guidance-why-list">
+                <li>Evaluating verified signals...</li>
+              </ul>
+            </div>
+
+            <!-- Do Not (Prohibitions Checklist) -->
+            <div class="ic-guidance-box">
+              <div class="ic-guidance-box-title" style="color:var(--ic-red);">
+                <span>🚫 DO NOT (PROHIBITIONS CHECKLIST)</span>
+              </div>
+              <ul class="ic-guidance-list ic-prohibit-list" id="guidance-donot-list">
+                <li>Click unverified links or enter user credentials.</li>
+              </ul>
+            </div>
+
+            <!-- Recommended Next Steps (SOC Playbook) -->
+            <div class="ic-guidance-box" style="grid-column: 1 / -1;">
+              <div class="ic-guidance-box-title" style="color:var(--ic-cyan);">
+                <span>📋 RECOMMENDED SOC NEXT STEPS</span>
+              </div>
+              <ol class="ic-guidance-steps" id="guidance-steps-list">
+                <li>Conduct sender verification and telemetry triage.</li>
+              </ol>
+            </div>
+          </div>
+        </div>
+
+        <!-- 4. AI Investigation Agent (Operational Decisions) -->
+        <div class="ic-card">
+          <div class="ic-panel-head">
+            <div style="display:flex; align-items:center; gap:8px;">
+              <span class="ic-agent-pulse-dot" style="width:6px; height:6px;"></span>
+              <span>AI Investigation Agent (Operational Decisions)</span>
+            </div>
+            <span class="ic-badge-pill" id="agent-status-tag">STATUS: COMPLETED</span>
+          </div>
+          <div class="ic-agent-summary-row" id="agent-termination-bar">
+            <b>TERMINATION:</b> <span id="agent-termination-reason">Sufficient evidence collected for high-confidence assessment.</span>
+          </div>
+          <div class="ic-decisions-grid" id="agent-decisions-container">
+            <!-- Dynamic DEC cards rendered via JS -->
+          </div>
+        </div>
+
+        <!-- 5. Investigation Timeline -->
+        <div class="ic-card">
+          <div class="ic-panel-head">
+            <span>Intelligent Investigation Timeline</span>
+            <span style="font-size:11px; color:var(--ic-text-dim);">Execution Sequence & Rationale</span>
+          </div>
+          <div class="ic-structured-timeline" id="res-timeline-detailed">
+            <!-- Dynamic timeline steps with Why, Result, Next -->
+          </div>
+        </div>
+
+        <!-- 6. Verified Technical Evidence -->
+        <div class="ic-card">
+          <div class="ic-panel-head">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span>Verified Technical Evidence</span>
+              <span class="ic-dna-badge" id="res-evidence-count-badge">0 Items</span>
+            </div>
+            <!-- Evidence Filter Tabs -->
+            <div class="ic-evidence-filter-group" id="evidence-filter-buttons">
+              <button type="button" class="ic-filter-btn active" data-filter="ALL">ALL</button>
+              <button type="button" class="ic-filter-btn" data-filter="VERIFIED">VERIFIED</button>
+              <button type="button" class="ic-filter-btn" data-filter="INFERRED">INFERRED</button>
+              <button type="button" class="ic-filter-btn" data-filter="UNAVAILABLE">UNAVAILABLE</button>
+            </div>
+          </div>
+          <div class="ic-evidence-grid" id="res-evidence-cards-container">
+            <!-- Rich Evidence Cards with Why It Matters and What Should I Do -->
+          </div>
+        </div>
+
+        <!-- 6. MODULE 6: THREAT INTELLIGENCE & INCIDENT RESPONSE -->
+        <div class="ic-card ic-m6-card" id="res-m6-container">
+          <div class="ic-panel-head">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="ic-tag-pill" style="background:rgba(0,229,255,0.15); color:var(--ic-cyan); border:1px solid rgba(0,229,255,0.3); font-weight:700; padding:2px 8px; border-radius:4px; font-size:11px;">MODULE 6</span>
+              <span style="font-weight:700; letter-spacing:0.5px;">Threat Intelligence &amp; Incident Response</span>
+            </div>
+            <div class="ic-m6-actions" style="display:flex; gap:8px;">
+              <button type="button" class="ic-btn-secondary" id="btn-toggle-threat-intel" style="padding:4px 10px; font-size:11px;">
+                <span>View Threat Intelligence</span>
+              </button>
+              <button type="button" class="ic-btn-secondary" id="btn-toggle-campaign" style="padding:4px 10px; font-size:11px;">
+                <span>View Related Investigations</span>
+              </button>
+              <button type="button" class="ic-btn-action-primary" id="btn-create-incident" style="padding:4px 12px; font-size:11px; background:var(--ic-cyan); color:#050b14; font-weight:700; border-radius:4px; cursor:pointer;">
+                <span>[ CREATE INCIDENT ]</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Module 6 Status Ribbon -->
+          <div class="ic-m6-summary-bar" id="res-m6-summary-bar">
+            <div class="ic-m6-stat-item">
+              <span class="ic-m6-stat-label">Threat Intelligence</span>
+              <span class="ic-m6-stat-val" id="m6-stat-intel-status">COMPLETED</span>
+            </div>
+            <div class="ic-m6-stat-item">
+              <span class="ic-m6-stat-label">Indicators Checked</span>
+              <span class="ic-m6-stat-val" id="m6-stat-indicators">0</span>
+            </div>
+            <div class="ic-m6-stat-item">
+              <span class="ic-m6-stat-label">Related Activity</span>
+              <span class="ic-m6-stat-val" id="m6-stat-related">0 matches</span>
+            </div>
+            <div class="ic-m6-stat-item">
+              <span class="ic-m6-stat-label">Incident Assessment</span>
+              <span class="ic-m6-stat-val" id="m6-stat-assessment">EVALUATING</span>
+            </div>
+            <div class="ic-m6-stat-item">
+              <span class="ic-m6-stat-label">Severity</span>
+              <span class="ic-m6-stat-val" id="m6-stat-severity">MEDIUM</span>
+            </div>
+          </div>
+
+          <!-- Active Incident Card (Displayed when incident created) -->
+          <div class="ic-m6-incident-dossier" id="m6-created-incident-card" style="display:none;">
+            <div class="ic-incident-header">
+              <div style="display:flex; align-items:center; gap:8px;">
+                <span class="ic-status-pill triaged" id="inc-badge-status">STATUS: TRIAGED</span>
+                <span style="font-family:var(--ns-mono); font-weight:700; color:var(--ic-cyan); font-size:13px;" id="inc-badge-id">NS-INC-2026-0000</span>
+              </div>
+              <span style="font-size:11px; color:var(--ic-text-muted);" id="inc-badge-created">Created: Just now</span>
+            </div>
+            <div class="ic-incident-body" id="inc-badge-details">
+              <!-- Dynamic incident info -->
+            </div>
+          </div>
+
+          <!-- Section 6A: Threat Intelligence Indicators Panel -->
+          <div class="ic-m6-section" id="m6-threat-intel-section">
+            <div class="ic-m6-section-title">
+              <span>Discovered Indicator Threat Intelligence</span>
+              <small style="color:var(--ic-text-muted); font-size:11px;">External Reputations &amp; Feeds (Never Fabricated)</small>
+            </div>
+            <div class="ic-indicator-list" id="res-threat-intel-indicators">
+              <!-- Dynamic indicator cards -->
+            </div>
+          </div>
+
+          <!-- Section 6B: Campaign & Shared Infrastructure Panel -->
+          <div class="ic-m6-section" id="m6-campaign-section">
+            <div class="ic-m6-section-title">
+              <span>Campaign &amp; Historical Infrastructure Context</span>
+              <small style="color:var(--ic-text-muted); font-size:11px;">Cross-Investigation Telemetry (Attacker identity not inferred)</small>
+            </div>
+            <div id="res-campaign-correlation-body">
+              <!-- Dynamic campaign relationships -->
+            </div>
+          </div>
+
+          <!-- Section 6C: Incident Response Guidance & Action Items Panel -->
+          <div class="ic-m6-section" id="m6-response-section">
+            <div class="ic-m6-section-title">
+              <span>Incident Response Guidance</span>
+              <small style="color:var(--ic-text-muted); font-size:11px;">Evidence-Backed Actions (RECOMMENDED ACTION)</small>
+            </div>
+            <div id="res-response-guidance-body">
+              <!-- Dynamic recommendations -->
+            </div>
+          </div>
+        </div>
+
+        <!-- 7. Threat DNA Profile -->
+        <div class="ic-card">
+          <div class="ic-panel-head">
+            <span>Threat DNA Profile</span>
+            <span class="ic-dna-badge" id="res-dna-fingerprint">NS-DNA-0000-0000-0000-0000</span>
+          </div>
+          <div class="ic-dna-grid">
+            <div class="ic-dna-box">
+              <h3>Archetype / Threat Identity</h3>
+              <div id="res-dna-identity" style="font-weight:600; color:var(--ic-text);">Evaluating...</div>
+              <div style="font-size:12px; color:var(--ic-text-dim); margin-top:4px;" id="res-dna-delivery">Vector: —</div>
+              <div style="font-size:12px; color:var(--ic-cyan); margin-top:4px;" id="res-dna-target">Target: Potential account credentials</div>
+            </div>
+            <div class="ic-dna-box">
+              <h3>Social Engineering Traits</h3>
+              <div id="res-dna-social-traits">None detected</div>
+            </div>
+            <div class="ic-dna-box">
+              <h3>URL & Lexical Traits</h3>
+              <div id="res-dna-url-traits">None detected</div>
+            </div>
+            <div class="ic-dna-box">
+              <h3>Domain & Identity Signals</h3>
+              <div id="res-dna-domain-traits">Evaluating...</div>
+            </div>
+            <div class="ic-dna-box">
+              <h3>Infrastructure Telemetry</h3>
+              <div id="res-dna-infra-traits">Insufficient infrastructure evidence</div>
+            </div>
+            <div class="ic-dna-box">
+              <h3>External Reputation Feeds</h3>
+              <div id="res-dna-reputation-traits">NOT CONFIGURED</div>
+            </div>
+            <div class="ic-dna-box">
+              <h3>Threat Intelligence (Module 6)</h3>
+              <div id="res-dna-threat-intel">Awaiting intelligence enrichment...</div>
+            </div>
+            <div class="ic-dna-box">
+              <h3>Campaign & Incident Context</h3>
+              <div id="res-dna-campaign-context">No related campaigns identified</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 8. Interactive Threat Relationship Graph -->
+        <div class="ic-card ic-graph-card">
+          <div class="ic-panel-head">
+            <span>Threat Relationship Graph (Evidence-Derived)</span>
+            <div class="ic-graph-controls">
+              <button type="button" class="ic-graph-btn" id="graph-btn-reset">Reset View</button>
+              <button type="button" class="ic-graph-btn" id="graph-btn-zoom-in">+</button>
+              <button type="button" class="ic-graph-btn" id="graph-btn-zoom-out">-</button>
+            </div>
+          </div>
+          <div class="ic-graph-canvas-wrap">
+            <canvas id="graph-canvas" class="ic-graph-canvas"></canvas>
+            <div class="ic-graph-modal" id="graph-node-modal">
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+                <b id="modal-node-title" style="color:var(--ic-cyan);">Node Details</b>
+                <button type="button" id="modal-node-close" class="btn-ghost" style="padding:2px 6px;">✕</button>
+              </div>
+              <div id="modal-node-content" style="font-size:12px; color:var(--ic-text-dim);"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 9 & 10: Cross-Source Correlations & Risk Contributors -->
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+          <!-- Correlated Findings -->
+          <div class="ic-card">
+            <div class="ic-panel-head">
+              <span>Cross-Source Threat Correlations</span>
+            </div>
+            <div id="res-correlations-list" style="display: flex; flex-direction: column; gap: 10px;">
+              <div style="font-size:12px; color:var(--ic-text-dim);">No cross-source correlations observed.</div>
+            </div>
+          </div>
+
+          <!-- Risk Assessment Factors & Contributor Points -->
+          <div class="ic-card">
+            <div class="ic-panel-head">
+              <span>Risk Contributors & Point Calculation</span>
+            </div>
+            <div id="res-contributors-list" style="display: flex; flex-direction: column; gap: 8px;">
+              <!-- Dynamic Contributor rows with +points -->
+            </div>
+            <div class="ic-formula-caption">
+              Composite Risk = Bounded sum of verified threat indicators (Max 100).
+            </div>
+          </div>
+        </div>
+
+        <!-- 11. Investigation Limitations & Disclosures -->
+        <div class="ic-card">
+          <div class="ic-panel-head">
+            <span>Investigation Limitations & Integrity Disclosures</span>
+            <span style="font-size:11px; color:var(--ic-text-muted);">Strict Evidence Integrity Rule</span>
+          </div>
+          <div class="ic-limitations-grid" id="res-limitations-container">
+            <!-- Dynamic disclosure cards: Webpage, External APIs, DNS, etc. -->
+          </div>
+        </div>
+
+        <!-- 12. Action / Formal Report Footer -->
+        <div class="ic-card" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 14px;">
+          <div>
+            <div style="font-size: 11px; font-family: var(--ns-mono); color: var(--ic-text-muted);">INVESTIGATION ID</div>
+            <div style="font-family: var(--ns-mono); color: var(--ic-cyan); font-weight: 700;" id="res-inv-id">—</div>
+          </div>
+          <div class="ic-report-actions">
+            <a href="#" class="ic-btn-secondary" id="btn-view-report" target="_blank">
+              <span>📄 View Formal Threat Report</span>
+            </a>
+            <button type="button" class="ic-btn-secondary" id="btn-export-json">
+              <span>💾 Export Evidence JSON</span>
+            </button>
+            <button type="button" class="ic-start-btn" id="btn-new-investigation">
+              <span>Start Another Investigation</span>
+            </button>
+          </div>
+        </div>
+
+      </section>
+
+    </div>
+  </main>
+</div>
+
+<!-- Shared UI Scripts -->
+<script src="{{ url_for('static', filename='ns_investigation.js') }}"></script>
+<script src="{{ url_for('static', filename='investigation_center.js') }}"></script>
+</body>
+</html>

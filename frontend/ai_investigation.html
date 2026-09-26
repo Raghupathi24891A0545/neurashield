@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="NeuraShield Module 5 — AI Investigation Agent with QR Intelligence and Threat Correlation.">
+  <title>NeuraShield — AI Investigation Agent</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='neurashield.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='ns_investigation.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='ai_investigation.css') }}">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+
+<div class="m5-page">
+  <!-- Sidebar -->
+  <aside class="ns-sidebar m5-sidebar">
+    <div class="ns-sidebar-header">
+      <a href="/" class="ns-logo-link">
+        <img src="{{ url_for('static', filename='static/ns_logo.png') }}" alt="NeuraShield" style="height:32px;margin-right:8px;vertical-align:middle" onerror="this.style.display='none'">
+        <span style="font-weight:700;font-size:15px;letter-spacing:-0.02em">NeuraShield</span>
+      </a>
+    </div>
+    <nav><ul id="sidebarNav"></ul></nav>
+    <div class="ns-sidebar-footer" style="padding:16px;font-size:11px;color:var(--ns-text-muted)">
+      {% if username %}<div>Agent: <strong>{{ username }}</strong></div>
+      <a href="/logout" style="color:var(--ns-cyan);font-size:10px;text-decoration:none">Sign out</a>{% endif %}
+    </div>
+  </aside>
+
+  <!-- Main Content -->
+  <main class="m5-main">
+    <!-- Header -->
+    <div class="m5-header">
+      <h1>AI <span class="accent">Investigation Agent</span></h1>
+      <div style="font:10px var(--ns-mono);letter-spacing:0.12em;text-transform:uppercase;color:var(--ns-text-muted)">
+        Module 5 — Threat Orchestration
+      </div>
+    </div>
+
+    <!-- Input Section -->
+    <section class="m5-input-section" id="inputSection">
+      <div class="m5-input-tabs">
+        <button class="m5-tab active" data-tab="url" id="tabUrl">🔗 URL</button>
+        <button class="m5-tab" data-tab="domain" id="tabDomain">🌐 Domain</button>
+        <button class="m5-tab" data-tab="qr" id="tabQr">📱 QR Code</button>
+      </div>
+
+      <!-- URL Input -->
+      <div class="m5-input-panel active" id="panelUrl">
+        <div class="m5-url-row">
+          <input type="text" class="m5-url-input" id="urlInput" placeholder="Enter suspicious URL (e.g., https://example-phishing.com/login)" autocomplete="off">
+          <button class="m5-btn-investigate" id="btnInvestigateUrl" onclick="M5.startUrlInvestigation()">
+            Investigate
+          </button>
+        </div>
+      </div>
+
+      <!-- Domain Input -->
+      <div class="m5-input-panel" id="panelDomain">
+        <div class="m5-url-row">
+          <input type="text" class="m5-url-input" id="domainInput" placeholder="Enter domain (e.g., suspicious-site.com)" autocomplete="off">
+          <button class="m5-btn-investigate" id="btnInvestigateDomain" onclick="M5.startDomainInvestigation()">
+            Investigate
+          </button>
+        </div>
+      </div>
+
+      <!-- QR Upload -->
+      <div class="m5-input-panel" id="panelQr">
+        <div class="m5-qr-upload-zone" id="qrDropZone">
+          <input type="file" id="qrFileInput" accept="image/png,image/jpeg,image/gif,image/bmp,image/webp">
+          <div class="icon">📱</div>
+          <div class="title">Drop QR Code Image Here</div>
+          <div class="subtitle">or click to upload · PNG, JPEG, GIF, BMP, WEBP · Max 10MB</div>
+          <div class="m5-qr-filename" id="qrFilename"></div>
+        </div>
+        <div style="text-align:center;margin-top:16px">
+          <button class="m5-btn-investigate" id="btnInvestigateQr" onclick="M5.startQrInvestigation()" disabled>
+            Investigate QR Code
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Error -->
+    <div class="m5-error" id="errorSection">
+      <div class="m5-error-title" id="errorTitle">Investigation Error</div>
+      <div class="m5-error-msg" id="errorMsg"></div>
+    </div>
+
+    <!-- Agent Core Visual -->
+    <section class="m5-agent-section" id="agentSection">
+      <div class="m5-agent-core" id="agentCore">
+        <div class="m5-agent-visual">
+          <canvas class="m5-agent-canvas" id="agentCanvas" width="200" height="200"></canvas>
+        </div>
+        <div class="m5-agent-status">
+          <div class="label">Investigation Agent</div>
+          <div class="stage" id="agentStage">Initializing…</div>
+          <div class="detail" id="agentDetail">Preparing investigation pipeline</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Live Timeline -->
+    <section class="m5-timeline" id="timelineSection">
+      <div class="m5-timeline-title">Investigation Timeline</div>
+      <div class="m5-timeline-list" id="timelineList"></div>
+    </section>
+
+    <!-- Module Status Chips -->
+    <div class="m5-modules-row" id="moduleChips" style="display:none"></div>
+
+    <!-- Results -->
+    <section class="m5-results" id="resultsSection">
+      <!-- Executive Summary -->
+      <div class="m5-exec-summary" id="execSummary"></div>
+
+      <!-- Risk Assessment -->
+      <div class="m5-risk-card" id="riskCard">
+        <div class="m5-risk-score" id="riskScore">—</div>
+        <div class="m5-risk-level" id="riskLevel">—</div>
+        <div class="m5-risk-bar"><div class="m5-risk-bar-fill" id="riskBarFill"></div></div>
+        <div class="m5-risk-explanation" id="riskExplanation"></div>
+      </div>
+
+      <!-- Risk Factors -->
+      <div class="m5-panel" id="factorsPanel">
+        <div class="m5-panel-header">
+          <div class="m5-panel-title">Risk Contributing Factors</div>
+        </div>
+        <div class="m5-factors-grid" id="factorsGrid"></div>
+      </div>
+
+      <!-- QR Analysis (conditional) -->
+      <div class="m5-panel" id="qrPanel" style="display:none">
+        <div class="m5-panel-header">
+          <div class="m5-panel-title">QR Intelligence</div>
+        </div>
+        <div id="qrResults"></div>
+      </div>
+
+      <!-- Threat DNA -->
+      <div class="m5-panel" id="dnaPanel">
+        <div class="m5-panel-header">
+          <div class="m5-panel-title">Threat DNA</div>
+        </div>
+        <div class="m5-dna-fingerprint" id="dnaFingerprint">—</div>
+        <div id="dnaIndicators"></div>
+      </div>
+
+      <!-- Evidence Ledger -->
+      <div class="m5-panel" id="evidencePanel">
+        <div class="m5-panel-header">
+          <div class="m5-panel-title">Evidence Ledger</div>
+          <span style="font:10px var(--ns-mono);color:var(--ns-text-muted)" id="evidenceCount"></span>
+        </div>
+        <div id="evidenceList"></div>
+      </div>
+
+      <!-- Threat Relationship Graph -->
+      <div class="m5-panel" id="graphPanel">
+        <div class="m5-panel-header">
+          <div class="m5-panel-title">Threat Relationship Graph</div>
+        </div>
+        <div class="m5-graph-container">
+          <canvas class="m5-graph-canvas" id="graphCanvas"></canvas>
+        </div>
+      </div>
+
+      <!-- Agent Decision Log -->
+      <div class="m5-panel" id="decisionPanel">
+        <div class="m5-panel-header">
+          <div class="m5-panel-title">Agent Reasoning</div>
+          <button class="m5-panel-toggle" onclick="M5.togglePanel('decisionBody')">▼</button>
+        </div>
+        <div id="decisionBody" class="m5-panel-body">
+          <div id="decisionList"></div>
+        </div>
+      </div>
+
+      <!-- Recommendations -->
+      <div class="m5-panel" id="recsPanel">
+        <div class="m5-panel-header">
+          <div class="m5-panel-title">Recommendations</div>
+        </div>
+        <div id="recsList"></div>
+      </div>
+
+      <!-- Limitations -->
+      <div class="m5-panel" id="limitationsPanel">
+        <div class="m5-panel-header">
+          <div class="m5-panel-title">Limitations</div>
+        </div>
+        <div class="m5-limitations" id="limitationsList"></div>
+      </div>
+
+      <!-- Actions -->
+      <div class="m5-report-actions">
+        <button class="m5-btn-secondary" onclick="M5.exportJSON()">📋 Export JSON</button>
+        <button class="m5-btn-secondary" onclick="M5.newInvestigation()">🔄 New Investigation</button>
+      </div>
+    </section>
+  </main>
+</div>
+
+<script src="{{ url_for('static', filename='ns_investigation.js') }}"></script>
+<script src="{{ url_for('static', filename='ns_capabilities.js') }}"></script>
+<script src="{{ url_for('static', filename='ai_investigation.js') }}"></script>
+<script>
+  // Initialize sidebar navigation
+  const nav = document.getElementById('sidebarNav');
+  if (nav && window.NS && NS.renderNav) NS.renderNav(nav, 'ai_investigation');
+</script>
+
+</body>
+</html>

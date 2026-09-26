@@ -1,0 +1,7 @@
+From: news@example.org
+To: user@recipient.test
+Subject: Links
+Date: Wed, 23 Sep 2026 06:00:00 +0000
+Message-ID: <m@example.org>
+
+See https://www.example.org/a , http://192.0.2.10/login , https://bit.ly/abc123 and www.example.com/b.

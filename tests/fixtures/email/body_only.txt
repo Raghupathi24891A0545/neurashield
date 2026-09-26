@@ -1,0 +1,1 @@
+Dear customer, your account will be suspended. Verify your password immediately at http://secure-login.example.xyz/verify

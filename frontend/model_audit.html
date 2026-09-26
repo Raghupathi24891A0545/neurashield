@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Model Self-Audit — NeuraShield SOC</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='neurashield.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='ns_investigation.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='investigation_center.css') }}">
+  <style>
+    .audit-layout { max-width: 1400px; margin: 0 auto; padding: 24px 20px 80px 20px; display: flex; flex-direction: column; gap: 24px; }
+    .audit-hero {
+      background: linear-gradient(135deg, rgba(6,16,28,0.95), rgba(4,10,18,0.98));
+      border: 1px solid rgba(0, 229, 255, 0.25); border-left: 4px solid #00e5ff;
+      border-radius: 8px; padding: 22px 24px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;
+    }
+    .audit-hero h1 { margin: 0; font-size: 22px; font-weight: 700; color: #fff; display: flex; align-items: center; gap: 10px; }
+    .audit-hero p { margin: 6px 0 0 0; font-size: 13px; color: #94a3b8; }
+
+    .card { background: rgba(10, 18, 28, 0.85); border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 22px; }
+    .card h2 { font-size: 16px; color: #e2e8f0; margin: 0 0 16px 0; display: flex; align-items: center; gap: 8px; border-bottom: 1px solid rgba(255,255,255,0.06); padding-bottom: 10px; }
+
+    .models-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(360px, 1fr)); gap: 20px; }
+    .model-card { background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 18px; }
+    .model-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; }
+    .model-title { font-size: 15px; font-weight: 700; color: #fff; }
+    .model-version { font-family: var(--ns-mono, monospace); font-size: 11px; color: #00e5ff; background: rgba(0,229,255,0.1); padding: 2px 6px; border-radius: 4px; }
+
+    .metrics-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin: 16px 0; }
+    .metric-box { background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05); border-radius: 6px; padding: 10px; text-align: center; }
+    .metric-val { font-size: 18px; font-weight: 800; font-family: var(--ns-mono, monospace); color: #38bdf8; }
+    .metric-lbl { font-size: 10px; text-transform: uppercase; color: #64748b; margin-top: 2px; }
+
+    .conf-matrix { width: 100%; border-collapse: collapse; font-family: var(--ns-mono, monospace); font-size: 11px; margin-top: 10px; }
+    .conf-matrix th, .conf-matrix td { border: 1px solid rgba(255,255,255,0.08); padding: 6px; text-align: center; }
+    .conf-matrix th { background: rgba(0,0,0,0.5); color: #64748b; }
+    .conf-highlight { background: rgba(0,229,255,0.05); font-weight: bold; color: #fff; }
+  </style>
+</head>
+<body>
+
+<nav class="ns-nav scrolled" style="background:rgba(6, 9, 14, 0.96); border-bottom: 1px solid rgba(0, 200, 255, 0.16);">
+  <div class="ns-nav-inner">
+    <a href="/" class="ns-logo">
+      <img src="{{ url_for('static', filename='static/ns_logo.png') }}" class="ns-logo-icon" alt="NS" onerror="this.style.display='none';">
+      <div class="ns-logo-text">
+        <span class="ns-logo-name">NeuraShield</span>
+        <span class="ns-logo-sub">Cybersecurity Investigation Platform</span>
+      </div>
+    </a>
+    <div class="ns-nav-actions">
+      <span style="font-family:var(--ns-mono);font-size:11px;color:#94a3b8;margin-left:14px;">{{ username }}</span>
+      <a href="/logout" class="btn-ghost" style="margin-left:8px;">Logout</a>
+    </div>
+  </div>
+</nav>
+
+<div class="inv-layout">
+  <aside class="inv-sidebar">
+    <div class="who">
+      <small>Model & Security</small>
+      <b>{{ username }}</b>
+    </div>
+    <ul class="inv-nav" id="sidebar-nav"></ul>
+  </aside>
+
+  <main class="inv-main">
+    <div class="audit-layout">
+      <!-- Hero -->
+      <div class="audit-hero">
+        <div>
+          <h1><span>⚖️</span> Module 17 — Model Self-Audit & Integrity</h1>
+          <p>Auditing machine learning pipelines across production datasets. Metrics reflect verified evaluations without synthetic interpolation.</p>
+        </div>
+        <div style="font-family:var(--ns-mono); font-size:12px; color:#34d399; background:rgba(52,211,153,0.1); border:1px solid rgba(52,211,153,0.25); padding:8px 14px; border-radius:6px;">
+          Zero-Fake Metric Policy: Enforced
+        </div>
+      </div>
+
+      <!-- Models Registry List -->
+      <div class="card">
+        <h2><span>🧠</span> Production Model Evaluations</h2>
+        <div id="modelsContainer" class="models-grid">
+          <div style="color:#64748b; font-size:13px; padding:20px;">Loading authenticated model metrics from database & artifacts...</div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script src="{{ url_for('static', filename='ns_investigation.js') }}"></script>
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    NS.renderNav(document.getElementById('sidebar-nav'), 'model_self_audit');
+    loadAuditMetrics();
+  });
+
+  async function loadAuditMetrics() {
+    try {
+      const res = await fetch('/api/model-audit/metrics');
+      const data = await res.json();
+      const models = data.models || [];
+      const container = document.getElementById('modelsContainer');
+
+      if (!models.length) {
+        container.innerHTML = '<div style="color:#64748b; font-size:13px; padding:20px;">No model evaluation records available.</div>';
+        return;
+      }
+
+      container.innerHTML = models.map(m => {
+        const met = m.metrics || {};
+        const cm = met.confusion_matrix;
+        return `
+          <div class="model-card">
+            <div class="model-header">
+              <div>
+                <div class="model-title">${NS.esc(m.model_name)}</div>
+                <div style="font-size:11px; color:#94a3b8; margin-top:2px;">Architecture: ${NS.esc(m.architecture || 'Supervised Ensemble')}</div>
+              </div>
+              <span class="model-version">${NS.esc(m.version || 'v1.0.0')}</span>
+            </div>
+
+            <div style="font-size:11px; color:#cbd5e1; font-family:var(--ns-mono); margin-bottom:8px;">
+              Evaluation Dataset: <strong style="color:#00e5ff;">${NS.esc(m.dataset_name || 'Production Sample')}</strong>
+              ${m.sample_count ? ` (${m.sample_count.toLocaleString()} samples)` : ''}
+            </div>
+
+            <div class="metrics-grid">
+              <div class="metric-box">
+                <div class="metric-val">${met.accuracy !== undefined ? (met.accuracy * 100).toFixed(1) + '%' : 'N/A'}</div>
+                <div class="metric-lbl">Accuracy</div>
+              </div>
+              <div class="metric-box">
+                <div class="metric-val">${met.f1_score !== undefined ? (met.f1_score * 100).toFixed(1) + '%' : (met.f1 ? (met.f1 * 100).toFixed(1) + '%' : 'N/A')}</div>
+                <div class="metric-lbl">F1-Score</div>
+              </div>
+              <div class="metric-box">
+                <div class="metric-val">${met.roc_auc !== undefined ? (met.roc_auc * 100).toFixed(1) + '%' : 'N/A'}</div>
+                <div class="metric-lbl">ROC-AUC</div>
+              </div>
+              <div class="metric-box">
+                <div class="metric-val">${met.precision !== undefined ? (met.precision * 100).toFixed(1) + '%' : 'N/A'}</div>
+                <div class="metric-lbl">Precision</div>
+              </div>
+              <div class="metric-box">
+                <div class="metric-val">${met.recall !== undefined ? (met.recall * 100).toFixed(1) + '%' : 'N/A'}</div>
+                <div class="metric-lbl">Recall</div>
+              </div>
+              <div class="metric-box">
+                <div class="metric-val">${met.fpr !== undefined ? (met.fpr * 100).toFixed(2) + '%' : 'N/A'}</div>
+                <div class="metric-lbl">FPR</div>
+              </div>
+            </div>
+
+            ${cm ? `
+              <div style="font-size:10px; text-transform:uppercase; color:#64748b; font-family:var(--ns-mono); margin-top:12px;">Confusion Matrix:</div>
+              <table class="conf-matrix">
+                <tr><th></th><th>Pred Legitimate</th><th>Pred Phishing</th></tr>
+                <tr><th>Actual Legitimate</th><td class="conf-highlight">${cm.true_negative ?? cm[0]?.[0] ?? '-'} (TN)</td><td>${cm.false_positive ?? cm[0]?.[1] ?? '-'} (FP)</td></tr>
+                <tr><th>Actual Phishing</th><td>${cm.false_negative ?? cm[1]?.[0] ?? '-'} (FN)</td><td class="conf-highlight">${cm.true_positive ?? cm[1]?.[1] ?? '-'} (TP)</td></tr>
+              </table>
+            ` : ''}
+
+            <div style="margin-top:14px; font-size:10px; color:#64748b; font-family:var(--ns-mono); display:flex; justify-content:space-between;">
+              <span>Evaluated: ${NS.esc(m.evaluated_at || 'Recorded in Model Card')}</span>
+              <span style="color:#34d399;">● Production Active</span>
+            </div>
+          </div>
+        `;
+      }).join('');
+    } catch (e) {
+      console.error(e);
+      document.getElementById('modelsContainer').innerHTML = '<div style="color:#ef4444; font-size:13px; padding:20px;">Failed to load model audit metrics.</div>';
+    }
+  }
+</script>
+</body>
+</html>

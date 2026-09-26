@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Investigation Center — NeuraShield</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='neurashield.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='ns_investigation.css') }}">
+</head>
+<body>
+<nav class="ns-nav scrolled" style="background:rgba(8,12,16,0.95);"><div class="ns-nav-inner">
+  <a href="/" class="ns-logo"><img src="{{ url_for('static', filename='static/ns_logo.png') }}" class="ns-logo-icon" alt="NS" onerror="this.style.display='none';">
+    <div class="ns-logo-text"><span class="ns-logo-name">NeuraShield</span><span class="ns-logo-sub">Threat Intelligence</span></div></a>
+  <div class="ns-nav-actions"><span style="font-family:var(--ns-mono);font-size:11px;color:var(--ns-text-dim);">{{ username }}</span><a href="/logout" class="btn-ghost">Logout</a></div>
+</div></nav>
+<div class="inv-layout">
+  <aside class="inv-sidebar"><div class="who"><small>Analyst</small><b>{{ username }}</b></div><ul class="inv-nav" id="nav"></ul></aside>
+  <main class="inv-main"><div class="inv-wrap">
+    <header class="inv-head"><div class="inv-eyebrow">Threat Investigation Center</div><h1 class="inv-title">Your investigations</h1>
+      <p class="inv-sub">Investigations are stored when you run them while logged in (URL scans from the dashboard and e-mail investigations). Open any row for its full report.</p></header>
+    <div class="panel" style="padding:0"><div class="tbl-wrap" style="border:0"><table class="tbl"><thead><tr><th>Investigation</th><th>Type</th><th>Target</th><th>Risk</th><th>Verdict</th><th>When</th></tr></thead><tbody id="rows"><tr><td colspan="6" class="muted">Loading…</td></tr></tbody></table></div></div>
+    <div style="margin-top:16px;display:flex;gap:10px"><button class="btn-elev secondary" id="prev" type="button">← Newer</button><button class="btn-elev secondary" id="next" type="button">Older →</button></div>
+  </div></main>
+</div>
+<script src="{{ url_for('static', filename='ns_investigation.js') }}"></script>
+<script>
+(function () {
+  const esc = NS.esc; let page = 1;
+  NS.renderNav(document.getElementById('nav'), 'investigations');
+  async function load() {
+    const r = await fetch('/api/investigations?page=' + page); const d = await r.json();
+    const rows = d.items || [];
+    document.getElementById('rows').innerHTML = rows.length ? rows.map(x => `<tr>
+      <td class="k"><a href="/report?id=${encodeURIComponent(x.investigation_id)}" style="color:var(--ns-cyan)">${esc(x.investigation_id)}</a></td>
+      <td>${esc(x.investigation_type)}</td><td class="brk" style="max-width:360px">${esc(x.target)}</td><td class="mono">${x.risk_score == null ? '—' : esc(x.risk_score)}</td>
+      <td>${esc(x.verdict || '')}</td><td class="mono small">${esc((x.created_at || '').replace('T', ' ').slice(0, 19))}</td></tr>`).join('')
+      : '<tr><td colspan="6" class="muted">No stored investigations yet. Insufficient data.</td></tr>';
+    document.getElementById('prev').disabled = page <= 1; document.getElementById('next').disabled = !d.has_more;
+  }
+  document.getElementById('prev').onclick = () => { if (page > 1) { page--; load(); } };
+  document.getElementById('next').onclick = () => { page++; load(); };
+  load();
+})();
+</script>
+</body>
+</html>

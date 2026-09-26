@@ -1,0 +1,1693 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Threat Lens Report — NeuraShield</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='neurashield.css') }}">
+  <style>
+    /* In-page overrides to guarantee flawless alignment and zero overlapping */
+    body {
+      background-color: var(--ns-black);
+      color: var(--ns-text);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    .report-top-nav {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: rgba(8, 12, 16, 0.95);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--ns-border);
+      padding: 12px 28px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .report-brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      text-decoration: none;
+    }
+
+    .report-brand-name {
+      font-weight: 700;
+      font-size: 16px;
+      color: var(--ns-text);
+    }
+
+    .btn-report-tool {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--ns-border);
+      color: var(--ns-text-dim);
+      font-family: var(--ns-mono);
+      font-size: 11px;
+      padding: 7px 14px;
+      border-radius: var(--ns-radius);
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: var(--ns-transition);
+      text-decoration: none;
+    }
+    .btn-report-tool:hover {
+      border-color: var(--ns-cyan);
+      color: var(--ns-cyan);
+      background: rgba(0, 200, 255, 0.06);
+    }
+
+    .btn-report-tool.primary {
+      background: linear-gradient(135deg, var(--ns-cyan), var(--ns-blue));
+      color: #000 !important;
+      font-weight: 700;
+      border: none;
+    }
+
+    /* FAQ & Scenarios */
+    .faq-item, .scenario-card {
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid var(--ns-border);
+      border-radius: var(--ns-radius);
+      padding: 18px 20px;
+      margin-bottom: 14px;
+      transition: var(--ns-transition);
+    }
+    .faq-item:hover, .scenario-card:hover {
+      border-color: var(--ns-border-h);
+      background: rgba(255, 255, 255, 0.04);
+    }
+    .faq-question {
+      font-weight: 700;
+      font-size: 13.5px;
+      color: var(--ns-text);
+      margin-bottom: 6px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .faq-answer {
+      font-size: 12.5px;
+      color: var(--ns-text-dim);
+      line-height: 1.6;
+    }
+
+    .scenario-title {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--ns-text);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 10px;
+    }
+    .scenario-steps {
+      list-style: none;
+      padding: 0;
+      margin: 0 0 10px 0;
+    }
+    .scenario-steps li {
+      font-size: 12px;
+      color: var(--ns-text-dim);
+      padding: 4px 0 4px 18px;
+      position: relative;
+    }
+    .scenario-steps li::before {
+      content: '→';
+      position: absolute;
+      left: 0;
+      color: var(--ns-cyan);
+      font-family: var(--ns-mono);
+    }
+
+    /* Loading and Error States */
+    #reportLoadingState, #reportErrorState {
+      text-align: center;
+      padding: 90px 20px;
+      max-width: 600px;
+      margin: 0 auto;
+    }
+
+    /* Waveform SVG inline */
+    .waveform-svg {
+      width: 160px;
+      height: 20px;
+    }
+  </style>
+</head>
+<body>
+
+<!-- ── Top Global Navigation Bar ── -->
+<nav class="report-top-nav">
+  <a href="/" class="report-brand">
+    <img src="{{ url_for('static', filename='static/ns_logo.png') }}"
+         class="ns-logo-icon" alt="NS" style="width:24px;height:24px;"
+         onerror="this.style.display='none';">
+    <div>
+      <span class="report-brand-name">NeuraShield</span>
+      <span style="font-family:var(--ns-mono);font-size:10px;color:var(--ns-cyan);margin-left:6px;">THREAT LENS</span>
+    </div>
+  </a>
+
+  <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+    <a href="/investigation-center" class="btn-report-tool" style="color:var(--ns-cyan);border-color:rgba(0,200,255,0.3);background:rgba(0,200,255,0.06);">⚡ Investigation Center</a>
+    <a href="/dashboard" class="btn-report-tool">← Scanner Dashboard</a>
+    <button type="button" class="btn-report-tool" onclick="window.print()">🖨 Print / PDF</button>
+    <button type="button" class="btn-report-tool primary" id="btnCopyInvId" onclick="copyInvestigationId()">📋 Copy ID</button>
+    {% if session.get('user_id') %}
+      <a href="/logout" class="btn-report-tool">Logout</a>
+    {% else %}
+      <a href="/login" class="btn-report-tool" style="border-color:rgba(255,255,255,0.15);">Login</a>
+    {% endif %}
+  </div>
+</nav>
+
+<!-- ── Main Report Viewport ── -->
+<div class="report-page-container">
+
+  <!-- Loading State -->
+  <div id="reportLoadingState">
+    <div style="font-size:36px;margin-bottom:14px;animation:spin 1.5s linear infinite;">⚙</div>
+    <div style="font-family:var(--ns-mono);font-size:14px;color:var(--ns-cyan);margin-bottom:8px;letter-spacing:0.1em;">
+      COMPUTING THREAT LENS DOSSIER...
+    </div>
+    <div style="font-size:12.5px;color:var(--ns-text-muted);">
+      Assembling deterministic security rule evaluation, lexical entropy matrix, and ML inference states.
+    </div>
+  </div>
+
+  <!-- Error State -->
+  <div id="reportErrorState" style="display:none;">
+    <div style="font-size:40px;margin-bottom:12px;color:var(--ns-red);">⚠</div>
+    <div style="font-family:var(--ns-mono);font-size:15px;color:var(--ns-red);margin-bottom:8px;letter-spacing:0.1em;">
+      INVESTIGATION NOT FOUND OR EXPIRED
+    </div>
+    <div style="font-size:12.5px;color:var(--ns-text-muted);margin-bottom:24px;line-height:1.6;">
+      The requested investigation record is not available in active memory or your session has expired. Return to the dashboard to scan the URL again.
+    </div>
+    <a href="/dashboard" class="btn-view-report"><span>RUN NEW SCAN</span> <span>→</span></a>
+  </div>
+
+  <!-- Report Content -->
+  <div id="reportContent" style="display:none;">
+
+    <!-- ── Breadcrumbs & New Scan (Screenshot 2) ── -->
+    <div class="threat-lens-breadcrumbs">
+      <div>
+        <a href="/">Home</a> / <a href="/dashboard">URL Scanner</a> / <span id="breadcrumbDomain" style="color:var(--ns-text);font-weight:600;">—</span>
+      </div>
+      <a href="/dashboard" class="btn-new-scan">
+        <span>+</span> <span>New scan</span>
+      </a>
+    </div>
+
+    <!-- ── Threat Lens Hero Card (Screenshot 2) ── -->
+    <div class="threat-lens-hero" id="sec-hero">
+      <div class="threat-lens-top-grid">
+
+        <!-- Left Column: Eyebrow, Question Title, Target URL, 3 Stats, Verdict Lead, Actions -->
+        <div>
+          <div class="threat-lens-eyebrow">
+            <span>●</span> <span>THREAT LENS · URL SCAN REPORT</span>
+          </div>
+
+          <h1 class="threat-lens-question">
+            Is <span class="domain-highlight" id="heroDomainName">—</span> safe?
+          </h1>
+
+          <div class="threat-lens-url">
+            <span id="heroTargetUrl" style="word-break:break-all;">—</span>
+            <button type="button" class="btn-report-tool" style="padding:3px 8px;font-size:9.5px;flex-shrink:0;" onclick="copyTargetUrl()">
+              Copy
+            </button>
+          </div>
+
+          <!-- 3 Stats Row (Screenshot 2) -->
+          <div class="threat-lens-stats-row">
+            <div class="threat-lens-stat-col">
+              <div class="threat-lens-stat-val" id="statScoreVal">
+                <span id="statScoreNum">0</span><span class="denom">/ 100</span>
+              </div>
+              <div class="threat-lens-stat-label">Score</div>
+            </div>
+
+            <div class="threat-lens-stat-col">
+              <div class="threat-lens-stat-val" id="statStatusVal" style="font-size:24px;">
+                <span id="statStatusText">—</span>
+              </div>
+              <div class="threat-lens-stat-label">Status</div>
+            </div>
+
+            <div class="threat-lens-stat-col">
+              <div class="threat-lens-stat-val" style="font-size:24px;color:var(--ns-cyan);" id="statCoverageVal">
+                <span>Strong</span>
+              </div>
+              <div class="threat-lens-stat-label" id="statCoverageSub">5 of 7 applicable capabilities</div>
+            </div>
+          </div>
+
+          <!-- Verdict Lead Section (Screenshot 2) -->
+          <div class="threat-lens-verdict-wrap">
+            <div class="threat-lens-verdict-tag">
+              <span>🛡</span> <span>VERDICT</span>
+            </div>
+
+            <div class="threat-lens-verdict-title" id="heroHeadlineVerdict">
+              —
+            </div>
+
+            <div class="threat-lens-verdict-desc" id="heroVerdictParagraph">
+              —
+            </div>
+
+            <!-- Evidence Highlight Strip (Screenshot 2) -->
+            <a href="#sec-evidence" class="threat-lens-evidence-strip" id="heroEvidenceStrip">
+              <div style="display:flex;align-items:center;gap:10px;">
+                <span style="color:#ff5555;font-size:16px;">🛡</span>
+                <span style="font-size:13px;font-weight:600;" id="heroEvidenceStripText">—</span>
+              </div>
+              <span style="color:var(--ns-text-muted);font-family:var(--ns-mono);font-size:14px;">›</span>
+            </a>
+
+            <!-- Share & Export Bar (Screenshot 2) -->
+            <div class="threat-lens-actions-bar">
+              <button type="button" class="btn-report-tool" onclick="copyShareLink(this)">
+                📋 Copy share link
+              </button>
+              <button type="button" class="btn-report-tool" onclick="shareTwitter()">
+                𝕏 Post
+              </button>
+              <button type="button" class="btn-report-tool" onclick="shareFacebook()">
+                Facebook
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right Column: Capture Placeholder Card (Screenshot 2) -->
+        <div class="threat-lens-capture-box">
+          <div class="capture-icon">🖼</div>
+          <div class="capture-title">No saved capture is available</div>
+          <div class="capture-sub">
+            The verdict remains based on the completed checks below. Live in-browser DOM and visual form inspection are scheduled for Module 3.
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ── Horizontal Risk Spectrum Meter (Screenshot 1) ── -->
+    <div class="spectrum-card" id="sec-spectrum">
+      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;">
+        <span style="font-family:var(--ns-mono);font-size:10px;letter-spacing:0.15em;text-transform:uppercase;color:var(--ns-text-muted);">
+          Threat Risk Spectrum
+        </span>
+        <span class="report-id-badge" id="spectrumInvId">ID: NS-INV-XXXX</span>
+      </div>
+
+      <!-- Segmented Bar with Pointer Pin (Reversed: Safe 0-19 on left, Dangerous 80-100 on right) -->
+      <div class="spectrum-track">
+        <!-- Floating Pointer Pin -->
+        <div class="spectrum-pointer" id="spectrumPointer" style="left: 3%;">
+          <div class="spectrum-pin" id="spectrumPinText">0</div>
+          <div class="spectrum-pin-arrow" id="spectrumPinArrow"></div>
+        </div>
+
+        <div class="spectrum-seg safe"></div>
+        <div class="spectrum-seg low-risk"></div>
+        <div class="spectrum-seg moderate"></div>
+        <div class="spectrum-seg high-risk"></div>
+        <div class="spectrum-seg dangerous"></div>
+      </div>
+
+      <!-- Legend: Safe (0-19) on left to Dangerous (80-100) on right -->
+      <div class="spectrum-legend">
+        <div class="spectrum-legend-item">
+          <span class="spectrum-dot" style="background:#00d68f;"></span>
+          <span>Safe (0-19)</span>
+        </div>
+        <div class="spectrum-legend-item">
+          <span class="spectrum-dot" style="background:#88d600;"></span>
+          <span>Low Risk (20-39)</span>
+        </div>
+        <div class="spectrum-legend-item">
+          <span class="spectrum-dot" style="background:#ffaa00;"></span>
+          <span>Moderate Risk (40-59)</span>
+        </div>
+        <div class="spectrum-legend-item">
+          <span class="spectrum-dot" style="background:#ff7c00;"></span>
+          <span>High Risk (60-79)</span>
+        </div>
+        <div class="spectrum-legend-item">
+          <span class="spectrum-dot" style="background:#ff3b3b;"></span>
+          <span>Dangerous (80-100)</span>
+        </div>
+      </div>
+
+      <div class="spectrum-subtext">
+        The score combines deterministic evidence strength and machine learning classification confidence. Analysis coverage is reported separately.
+      </div>
+    </div>
+
+    <!-- ── Layout Grid: Sticky Timeline Sidebar + Main Sections ── -->
+    <div class="report-grid-layout">
+
+      <!-- ── Left Sticky "ON THIS PAGE" Navigation (Screenshot 1) ── -->
+      <aside class="threat-nav-card">
+        <div class="threat-nav-header">
+          <span>🎯</span> <span>ON THIS PAGE</span>
+        </div>
+        <div class="threat-nav-list">
+          <a href="#sec-hero" class="threat-nav-item active">Overview</a>
+          <a href="#sec-brief" class="threat-nav-item">Investigation Brief</a>
+          <a href="#sec-target" class="threat-nav-item">Target Analysis</a>
+          <a href="#sec-evidence" class="threat-nav-item">Security Evidence</a>
+          <a href="#sec-story" class="threat-nav-item">Investigation Story</a>
+          <a href="#sec-domain" class="threat-nav-item">Domain & Infrastructure</a>
+          <a href="#sec-webpage" class="threat-nav-item">Webpage Intelligence</a>
+          <a href="#sec-ledger" class="threat-nav-item">Evidence Ledger</a>
+          <a href="#sec-actions" class="threat-nav-item">Your Next Move</a>
+          <a href="#sec-export" class="threat-nav-item">Export &amp; Evidence</a>
+        </div>
+      </aside>
+
+      <!-- ── Right Content Sections Column ── -->
+      <main class="report-content-col">
+
+        <!-- 01 · Investigation Brief (Screenshot 1) -->
+        <section class="report-section" id="sec-brief">
+          <div class="report-section-header">
+            <div>
+              <div class="section-eyebrow">01 · INVESTIGATION BRIEF</div>
+              <h2 class="section-title">Investigation Brief</h2>
+            </div>
+            <span class="ns-badge" id="briefCategoryBadge">BRIEF</span>
+          </div>
+
+          <!-- Decorative Waveform Divider (Screenshot 1) -->
+          <div class="waveform-divider">
+            <svg class="waveform-svg" viewBox="0 0 160 20" fill="none" stroke="currentColor" stroke-width="1.5">
+              <path d="M0 10 H40 L45 2 L55 18 L65 4 L70 14 L75 10 H160" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </div>
+
+          <!-- Brief Interior: Narrative on left + Evidence Anchors on right (Screenshot 1) -->
+          <div class="brief-interior-grid">
+            <div>
+              <div style="font-size:14px;color:var(--ns-text);line-height:1.7;margin-bottom:16px;" id="briefNarrativeWhat">
+                —
+              </div>
+
+              <div style="font-size:13.5px;color:var(--ns-text-dim);line-height:1.7;margin-bottom:16px;" id="briefNarrativeWhy">
+                —
+              </div>
+
+              <div style="padding:14px 16px;background:rgba(0,200,255,0.04);border-left:3px solid var(--ns-cyan);border-radius:4px;font-size:12.5px;color:var(--ns-text);line-height:1.6;" id="briefNarrativeAction">
+                —
+              </div>
+            </div>
+
+            <!-- Evidence Anchors Box (Screenshot 1) -->
+            <div class="evidence-anchors-box">
+              <div class="evidence-anchors-header">
+                <span>EVIDENCE ANCHORS</span>
+                <span id="evidenceAnchorCount">3</span>
+              </div>
+              <div id="evidenceAnchorsList">
+                <!-- Dynamically populated -->
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- 02 · Target & Structural Breakdown -->
+        <section class="report-section" id="sec-target">
+          <div class="report-section-header">
+            <div>
+              <div class="section-eyebrow">02 · TARGET ANATOMY</div>
+              <h2 class="section-title">URL Structural Decomposition</h2>
+            </div>
+            <span class="ns-badge ns-badge-cyan">URL Feature Matrix</span>
+          </div>
+
+          <div class="waveform-divider">
+            <svg class="waveform-svg" viewBox="0 0 160 20" fill="none" stroke="currentColor" stroke-width="1.5">
+              <path d="M0 10 H30 L38 3 L48 17 L58 5 L68 15 L78 10 H160" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </div>
+
+          <div class="m1-url-breakdown" id="targetBreakdownBar" style="margin-bottom:20px;">
+            <!-- Dynamically populated -->
+          </div>
+
+          <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(200px, 1fr));gap:14px;" id="targetMetricsGrid">
+            <!-- Dynamically populated -->
+          </div>
+        </section>
+
+        <!-- 03 · Security Evidence (Dual Engine: Deterministic Rules vs ML) -->
+        <section class="report-section" id="sec-evidence">
+          <div class="report-section-header">
+            <div>
+              <div class="section-eyebrow">03 · SECURITY EVIDENCE</div>
+              <h2 class="section-title">Detection Engines & Signals</h2>
+            </div>
+            <span class="ns-badge ns-badge-cyan">Rules + ML</span>
+          </div>
+
+          <div class="waveform-divider">
+            <svg class="waveform-svg" viewBox="0 0 160 20" fill="none" stroke="currentColor" stroke-width="1.5">
+              <path d="M0 10 H50 L58 3 L68 18 L78 5 L88 15 L95 10 H160" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </div>
+
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;">
+            <!-- Rules Engine Card -->
+            <div class="evidence-card" id="rulesCard">
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;padding-bottom:10px;border-bottom:1px solid var(--ns-border);">
+                <div style="font-weight:700;font-size:13.5px;color:var(--ns-text);">Deterministic Rules Engine</div>
+                <span class="ns-badge" id="rulesHitCountBadge">0 Hits</span>
+              </div>
+              <div id="rulesListBody">
+                <!-- Dynamically populated -->
+              </div>
+            </div>
+
+            <!-- ML Classifier Card -->
+            <div class="evidence-card" id="mlCard">
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;padding-bottom:10px;border-bottom:1px solid var(--ns-border);">
+                <div style="font-weight:700;font-size:13.5px;color:var(--ns-text);">Random Forest Classifier</div>
+                <span class="ns-badge" id="mlModelBadge">ML Inferred</span>
+              </div>
+              <table class="report-table">
+                <tr><td style="color:var(--ns-text-muted);">Model Family</td><td>Random Forest Ensemble</td></tr>
+                <tr><td style="color:var(--ns-text-muted);">Decision</td><td id="mlDecisionVal" style="font-weight:700;">—</td></tr>
+                <tr><td style="color:var(--ns-text-muted);">ML Confidence</td><td id="mlConfidenceVal">—</td></tr>
+                <tr><td style="color:var(--ns-text-muted);">Estimator Trees</td><td>100 Decision Trees</td></tr>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- 04 · Investigation Story (Timeline) -->
+        <section class="report-section" id="sec-story">
+          <div class="report-section-header">
+            <div>
+              <div class="section-eyebrow">04 · INVESTIGATION STORY</div>
+              <h2 class="section-title">Audit Execution Flow</h2>
+            </div>
+            <span class="ns-badge ns-badge-cyan">Chronological Audit</span>
+          </div>
+
+          <div class="waveform-divider">
+            <svg class="waveform-svg" viewBox="0 0 160 20" fill="none" stroke="currentColor" stroke-width="1.5">
+              <path d="M0 10 H20 L28 4 L38 18 L48 6 L58 14 L65 10 H160" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </div>
+
+          <div class="timeline-list" id="storyTimelineList">
+            <!-- Dynamically populated -->
+          </div>
+        </section>
+
+        <!-- 05 · Domain & Infrastructure (Module 2) -->
+        <section class="report-section" id="sec-domain">
+          <div class="report-section-header">
+            <div>
+              <div class="section-eyebrow">05 · INFRASTRUCTURE INTEL</div>
+              <h2 class="section-title">Domain & Infrastructure Intelligence</h2>
+            </div>
+            <span class="ns-badge ns-badge-cyan" id="domainModuleBadge">Module 2 Active</span>
+          </div>
+
+          <div class="waveform-divider">
+            <svg class="waveform-svg" viewBox="0 0 160 20" fill="none" stroke="currentColor" stroke-width="1.5">
+              <path d="M0 10 H45 L52 2 L62 18 L72 4 L82 14 L90 10 H160" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </div>
+
+          <!-- Domain Telemetry Grid -->
+            <div class="threat-lens-stats-grid" id="domainMetricsGrid" style="margin-bottom:16px;">
+              <!-- Populated by JS -->
+            </div>
+
+            <!-- 6 Telemetry Categories Coverage Bar -->
+            <div id="domainCategoryBreakdown" style="display:grid;grid-template-columns:repeat(auto-fit, minmax(140px, 1fr));gap:10px;margin-bottom:20px;">
+              <!-- Populated by JS -->
+            </div>
+
+            <!-- DNS & WHOIS tables -->
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:20px;">
+              <div class="evidence-card" style="margin-bottom:0;">
+                <div style="font-weight:700;font-size:12px;text-transform:uppercase;color:var(--ns-cyan);margin-bottom:12px;display:flex;align-items:center;gap:6px;">
+                  <span>📡</span> DNS Resource Records
+                </div>
+                <div id="domainDnsDetails" style="font-family:var(--ns-mono);font-size:11.5px;"></div>
+              </div>
+              <div class="evidence-card" style="margin-bottom:0;">
+                <div style="font-weight:700;font-size:12px;text-transform:uppercase;color:var(--ns-cyan);margin-bottom:12px;display:flex;align-items:center;gap:6px;">
+                  <span>📝</span> WHOIS &amp; Registration Lifecycle
+                </div>
+                <div id="domainWhoisDetails" style="font-family:var(--ns-mono);font-size:11.5px;"></div>
+              </div>
+            </div>
+
+            <!-- SSL / TLS & Nameservers -->
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:20px;">
+              <div class="evidence-card" style="margin-bottom:0;">
+                <div style="font-weight:700;font-size:12px;text-transform:uppercase;color:var(--ns-cyan);margin-bottom:12px;display:flex;align-items:center;gap:6px;">
+                  <span>🔒</span> SSL / TLS Cryptography Posture
+                </div>
+                <div id="domainSslDetails" style="font-family:var(--ns-mono);font-size:11.5px;"></div>
+              </div>
+              <div class="evidence-card" style="margin-bottom:0;">
+                <div style="font-weight:700;font-size:12px;text-transform:uppercase;color:var(--ns-cyan);margin-bottom:12px;display:flex;align-items:center;gap:6px;">
+                  <span>🌐</span> Nameserver Topology &amp; IP Routing
+                </div>
+                <div id="domainNsDetails" style="font-family:var(--ns-mono);font-size:11.5px;"></div>
+              </div>
+            </div>
+
+            <!-- Domain Rules Triggered -->
+            <div class="evidence-card" id="domainRulesCard" style="margin-bottom:16px;">
+              <div style="font-weight:700;font-size:12px;text-transform:uppercase;color:var(--ns-cyan);margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;">
+                <span><span>⚡</span> Domain Security Rules</span>
+                <span id="domainRulesCountBadge" class="ns-badge ns-badge-cyan">0 Rules</span>
+              </div>
+              <div id="domainRulesList"></div>
+            </div>
+
+            <!-- What We Could Not Verify -->
+            <div id="domainUnverifiedBox" style="background:rgba(0,200,255,0.03);border:1px solid rgba(0,200,255,0.15);border-radius:var(--ns-radius);padding:14px;font-size:11.5px;color:var(--ns-text-muted);line-height:1.5;">
+              <strong style="color:var(--ns-cyan);">Transparent Telemetry Disclosure:</strong>
+              <span id="domainUnverifiedText">All active infrastructure telemetry (DNS records, WHOIS registry, and SSL/TLS certificates) were audited live with SSRF safeguards.</span>
+            </div>
+          </div>
+        </section>
+
+        <!-- Threat Relationship Graph -->
+        <section class="report-section" id="sec-graph">
+          <div class="report-section-header">
+            <div>
+              <div class="section-eyebrow">GRAPH CORRELATION</div>
+              <h2 class="section-title">Threat Relationship Graph</h2>
+            </div>
+            <span class="ns-badge ns-badge-cyan">Multi-Entity Graph</span>
+          </div>
+          <div id="threatGraphContainer" style="background:rgba(0,0,0,0.4);border:1px solid var(--ns-border);border-radius:var(--ns-radius);padding:20px;margin-bottom:20px;">
+            <div id="threatGraphNodes" style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:16px;"></div>
+            <div id="threatGraphEdges" style="font-family:var(--ns-mono);font-size:11px;color:var(--ns-text-muted);border-top:1px solid rgba(255,255,255,0.05);padding-top:12px;"></div>
+          </div>
+        </section>
+
+        <!-- 06 · Webpage Intelligence (Module 3) -->
+        <section class="report-section" id="sec-webpage">
+          <div class="report-section-header">
+            <div>
+              <div class="section-eyebrow">06 · WEBPAGE & CONTENT</div>
+              <h2 class="section-title">Webpage & DOM Intelligence</h2>
+            </div>
+            <span class="ns-badge ns-badge-cyan" id="webpageModuleBadge">Module 3 Active</span>
+          </div>
+
+          <div class="waveform-divider">
+            <svg class="waveform-svg" viewBox="0 0 160 20" fill="none" stroke="currentColor" stroke-width="1.5">
+              <path d="M0 10 H35 L42 2 L52 18 L62 4 L72 14 L80 10 H160" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </div>
+
+          <!-- Webpage Intelligence Container (dynamic) -->
+          <div id="webpageReportContent"></div>
+        </section>
+
+        <!-- 07 · Evidence Ledger & Threat DNA -->
+        <section class="report-section" id="sec-ledger">
+          <div class="report-section-header">
+            <div>
+              <div class="section-eyebrow">07 · EVIDENCE LEDGER</div>
+              <h2 class="section-title">Evidence Ledger & Threat DNA</h2>
+            </div>
+            <span class="ns-badge ns-badge-cyan">Cryptographic Record</span>
+          </div>
+
+          <div class="waveform-divider">
+            <svg class="waveform-svg" viewBox="0 0 160 20" fill="none" stroke="currentColor" stroke-width="1.5">
+              <path d="M0 10 H40 L48 2 L58 18 L68 4 L78 14 L85 10 H160" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </div>
+
+          <!-- Threat DNA Fingerprint Box -->
+          <div style="margin-bottom:24px;">
+            <div class="threat-dna-box">
+              <span id="displayThreatDna">NS-XXXX-XXXX-XXXX-XXXX</span>
+              <button type="button" class="btn-report-tool" style="padding:4px 10px;font-size:10px;" onclick="copyThreatDna()">
+                Copy Threat DNA
+              </button>
+            </div>
+            <div style="font-size:11.5px;color:var(--ns-text-muted);margin-top:8px;">
+              Threat DNA is a SHA-256 derived signature of extracted evidence vectors and structural invariants for cross-campaign correlation.
+            </div>
+          </div>
+
+          <!-- Complete Ledger Table -->
+          <div style="overflow-x:auto;">
+            <table class="report-table">
+              <thead>
+                <tr>
+                  <th>Severity</th>
+                  <th>Signal</th>
+                  <th>Location</th>
+                  <th>Observation & Technical Rationale</th>
+                </tr>
+              </thead>
+              <tbody id="ledgerTableBody">
+                <!-- Dynamically populated -->
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- 08 · Your Next Move (Action Plan, Scenarios, FAQ) -->
+        <section class="report-section" id="sec-actions">
+          <div class="report-section-header">
+            <div>
+              <div class="section-eyebrow">08 · YOUR NEXT MOVE</div>
+              <h2 class="section-title">Recommended Actions & Guidance</h2>
+            </div>
+            <span class="ns-badge ns-badge-cyan">Next Steps</span>
+          </div>
+
+          <div class="waveform-divider">
+            <svg class="waveform-svg" viewBox="0 0 160 20" fill="none" stroke="currentColor" stroke-width="1.5">
+              <path d="M0 10 H30 L38 2 L48 18 L58 4 L68 14 L75 10 H160" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </div>
+
+          <!-- Recommendations List -->
+          <div id="actionsContainer" style="margin-bottom:24px;">
+            <!-- Dynamically populated -->
+          </div>
+
+          <!-- If You Already Interacted -->
+          <div style="margin-top:28px;margin-bottom:24px;">
+            <div style="font-weight:700;font-size:16px;color:var(--ns-text);margin-bottom:8px;">
+              If You Already Interacted
+            </div>
+            <div style="font-size:13px;color:var(--ns-text-muted);margin-bottom:16px;" id="scenariosPreamble">
+              Interaction with a suspicious link does not automatically mean your system is compromised. Follow the scenario that matches your activity:
+            </div>
+            <div id="scenariosContainer">
+              <!-- Dynamically populated -->
+            </div>
+          </div>
+
+          <!-- Safety FAQ -->
+          <div style="margin-top:28px;">
+            <div style="font-weight:700;font-size:16px;color:var(--ns-text);margin-bottom:14px;">
+              Frequently Asked Questions
+            </div>
+            <div id="faqContainer">
+              <!-- Dynamically populated -->
+            </div>
+          </div>
+        </section>
+
+        <!-- 09 · Export Report & Cybercrime Evidence Workflow -->
+        <section class="report-section" id="sec-export">
+          <div class="report-section-header">
+            <div>
+              <div class="section-eyebrow">09 · EXPORT &amp; INCIDENT WORKFLOW</div>
+              <h2 class="section-title">Report Export &amp; Cybercrime Evidence Package</h2>
+            </div>
+            <span class="ns-badge ns-badge-cyan">Forensic Artifacts</span>
+          </div>
+
+          <div class="waveform-divider">
+            <svg class="waveform-svg" viewBox="0 0 160 20" fill="none" stroke="currentColor" stroke-width="1.5">
+              <path d="M0 10 H30 L38 2 L48 18 L58 4 L68 14 L75 10 H160" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </div>
+
+          <!-- Export Options Grid -->
+          <div style="margin-bottom:28px;">
+            <div style="font-weight:700;font-size:15px;color:var(--ns-text);margin-bottom:6px;">
+              Export Investigation Report
+            </div>
+            <div style="font-size:12.5px;color:var(--ns-text-muted);margin-bottom:16px;">
+              Download or print structured telemetry dossiers for compliance, archival, or team escalation:
+            </div>
+
+            <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:14px;">
+              
+              <!-- PDF Export -->
+              <div style="background:rgba(255,255,255,0.02); border:1px solid var(--ns-border); border-radius:var(--ns-radius); padding:16px; display:flex; flex-direction:column; justify-content:space-between;">
+                <div>
+                  <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                    <span style="font-size:14px; font-weight:700; color:var(--ns-text);">📄 Print / PDF</span>
+                    <span class="ns-badge ns-badge-green" style="font-size:9.5px;">AVAILABLE</span>
+                  </div>
+                  <div style="font-size:11.5px; color:var(--ns-text-muted); line-height:1.4; margin-bottom:14px;">
+                    Formatted print layout styled for forensic briefing documents and threat reports.
+                  </div>
+                </div>
+                <button type="button" class="btn-report-tool primary" style="width:100%; justify-content:center;" onclick="window.print()">
+                  🖨 Generate PDF / Print
+                </button>
+              </div>
+
+              <!-- JSON Export -->
+              <div style="background:rgba(255,255,255,0.02); border:1px solid var(--ns-border); border-radius:var(--ns-radius); padding:16px; display:flex; flex-direction:column; justify-content:space-between;">
+                <div>
+                  <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                    <span style="font-size:14px; font-weight:700; color:var(--ns-text);">💾 Machine JSON</span>
+                    <span class="ns-badge ns-badge-green" style="font-size:9.5px;">AVAILABLE</span>
+                  </div>
+                  <div style="font-size:11.5px; color:var(--ns-text-muted); line-height:1.4; margin-bottom:14px;">
+                    Full auditable JSON telemetry payload including features, rules, and timeline.
+                  </div>
+                </div>
+                <button type="button" class="btn-report-tool" style="width:100%; justify-content:center; border-color:var(--ns-cyan); color:var(--ns-cyan);" onclick="exportInvestigationJson()">
+                  ⬇ Download JSON Dossier
+                </button>
+              </div>
+
+              <!-- CSV Export (Coming Soon) -->
+              <div style="background:rgba(255,255,255,0.015); border:1px solid rgba(255,255,255,0.05); border-radius:var(--ns-radius); padding:16px; display:flex; flex-direction:column; justify-content:space-between; opacity:0.75;">
+                <div>
+                  <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                    <span style="font-size:14px; font-weight:700; color:var(--ns-text-muted);">📊 Tabular CSV</span>
+                    <span class="ns-badge badge-muted" style="font-size:9.5px; background:rgba(255,255,255,0.06); color:var(--ns-text-dim);">COMING SOON</span>
+                  </div>
+                  <div style="font-size:11.5px; color:var(--ns-text-dim); line-height:1.4; margin-bottom:14px;">
+                    Flat table export for SIEM ingest and bulk spreadsheet incident cross-correlation.
+                  </div>
+                </div>
+                <button type="button" class="btn-report-tool" style="width:100%; justify-content:center; cursor:not-allowed; opacity:0.6;" disabled>
+                  ⏳ CSV Coming Soon
+                </button>
+              </div>
+
+            </div>
+          </div>
+
+          <!-- Cybercrime Evidence Package Card -->
+          <div style="background:linear-gradient(180deg, rgba(14,20,30,0.85), rgba(8,12,18,0.95)); border:1px solid rgba(0,200,255,0.25); border-radius:var(--ns-radius-lg); padding:22px; margin-top:20px;">
+            <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:12px; margin-bottom:14px;">
+              <div>
+                <div style="font-weight:700; font-size:16px; color:var(--ns-cyan); display:flex; align-items:center; gap:8px;">
+                  <span>⚖️</span> Cybercrime Evidence Package
+                </div>
+                <div style="font-size:12.5px; color:var(--ns-text-muted); margin-top:4px;">
+                  Prepares a tamper-evident technical dossier for submitting to corporate incident response or law enforcement.
+                </div>
+              </div>
+              <span class="ns-badge ns-badge-cyan" style="font-family:var(--ns-mono);">CHAIN OF EVIDENCE</span>
+            </div>
+
+            <!-- Evidence Details Grid -->
+            <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:10px; margin-bottom:16px; font-size:11.5px; font-family:var(--ns-mono);">
+              <div style="background:rgba(0,0,0,0.4); padding:8px 12px; border-radius:4px; border:1px solid rgba(255,255,255,0.04);">
+                <span style="color:var(--ns-text-dim);">Investigation ID:</span><br>
+                <span id="evidencePackageInvId" style="color:var(--ns-cyan); font-weight:700;">NS-PENDING</span>
+              </div>
+              <div style="background:rgba(0,0,0,0.4); padding:8px 12px; border-radius:4px; border:1px solid rgba(255,255,255,0.04);">
+                <span style="color:var(--ns-text-dim);">Threat DNA:</span><br>
+                <span id="evidencePackageDna" style="color:var(--ns-cyan); font-weight:700;">NS-DNA-PENDING</span>
+              </div>
+              <div style="background:rgba(0,0,0,0.4); padding:8px 12px; border-radius:4px; border:1px solid rgba(255,255,255,0.04);">
+                <span style="color:var(--ns-text-dim);">Evidence Ledger Items:</span><br>
+                <span id="evidencePackageLedgerCount" style="color:var(--ns-text); font-weight:700;">0 Findings</span>
+              </div>
+              <div style="background:rgba(0,0,0,0.4); padding:8px 12px; border-radius:4px; border:1px solid rgba(255,255,255,0.04);">
+                <span style="color:var(--ns-text-dim);">Cryptographic Trace:</span><br>
+                <span style="color:var(--ns-green); font-weight:700;">SHA-256 Telemetry Hash</span>
+              </div>
+            </div>
+
+            <!-- Notice box -->
+            <div style="background:rgba(255,170,0,0.05); border:1px solid rgba(255,170,0,0.2); border-radius:6px; padding:12px 14px; font-size:12px; color:var(--ns-text-muted); line-height:1.5; margin-bottom:18px;">
+              <strong style="color:var(--ns-amber);">IMPORTANT ADVISORY:</strong> NeuraShield structures, timestamps, and preserves empirical forensic data for investigation. NeuraShield does NOT automatically file police reports on your behalf. You may provide this prepared dossier to your organization's CERT / CSIRT, legal counsel, or official cybercrime reporting portals.
+            </div>
+
+            <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
+              <button type="button" class="btn-report-tool primary" onclick="prepareEvidencePackageModal()">
+                📦 Prepare Evidence Package
+              </button>
+              <a href="https://www.ic3.gov/" target="_blank" rel="noopener noreferrer" class="btn-report-tool" style="border-color:var(--ns-cyan); color:var(--ns-cyan);">
+                ↗ Report Cybercrime (Official IC3 / FBI Portal)
+              </a>
+              <a href="https://www.cisa.gov/report" target="_blank" rel="noopener noreferrer" class="btn-report-tool">
+                ↗ Report to CISA (US Official)
+              </a>
+            </div>
+          </div>
+        </section>
+
+      </main>
+    </div>
+  </div>
+</div>
+
+<script>
+  let currentInvestigation = null;
+
+  document.addEventListener('DOMContentLoaded', async () => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const invId = urlParams.get('id') || "{{ investigation_id }}";
+    const targetUrl = urlParams.get('url') || "";
+    const targetDomain = urlParams.get('domain') || "";
+
+    try {
+      let endpoint = `/api/investigation/${encodeURIComponent(invId || 'adhoc')}`;
+      const qParams = [];
+      if (targetUrl) qParams.push(`url=${encodeURIComponent(targetUrl)}`);
+      if (targetDomain) qParams.push(`domain=${encodeURIComponent(targetDomain)}`);
+      if (qParams.length > 0) endpoint += `?${qParams.join('&')}`;
+
+      const res = await fetch(endpoint);
+      if (!res.ok) {
+        showError();
+        return;
+      }
+      const data = await res.json();
+      currentInvestigation = data;
+      renderThreatLensReport(data);
+    } catch (err) {
+      console.error(err);
+      showError();
+    }
+  });
+
+
+  function showError() {
+    document.getElementById('reportLoadingState').style.display = 'none';
+    document.getElementById('reportErrorState').style.display = 'block';
+  }
+
+  function renderThreatLensReport(inv) {
+    document.getElementById('reportLoadingState').style.display = 'none';
+    document.getElementById('reportContent').style.display = 'block';
+
+    const risk = inv.risk || {};
+    const brief = inv.brief || {};
+    const target = inv.target || {};
+    const targetUrl = target.original_url || target.normalized_url || '';
+    const domain = inv.domain || (targetUrl.replace('http://', '').replace('https://', '').split('/')[0]) || 'target.com';
+
+    const score = risk.composite_score != null ? risk.composite_score : (risk.probability || 0);
+    const level = (risk.composite_level || 'LOW').toUpperCase();
+    const isPhish = risk.prediction && risk.prediction.toLowerCase().includes('phishing');
+    const isLeg = risk.prediction && risk.prediction.toLowerCase() === 'legitimate';
+
+    // ── Breadcrumbs ──
+    document.getElementById('breadcrumbDomain').textContent = domain;
+    document.getElementById('heroDomainName').textContent = domain;
+    document.getElementById('heroTargetUrl').textContent = targetUrl;
+
+    // ── Spectrum Category & Harmonized Status ──
+    let categoryText = 'Safe', categoryColor = '#00d68f', statusIcon = '✓';
+    if (score >= 80) { categoryText = 'Dangerous'; categoryColor = '#ff3b3b'; statusIcon = '⚠'; }
+    else if (score >= 60) { categoryText = 'High Risk'; categoryColor = '#ff7c00'; statusIcon = '⚠'; }
+    else if (score >= 40) { categoryText = 'Moderate Risk'; categoryColor = '#ffaa00'; statusIcon = '⚡'; }
+    else if (score >= 20) { categoryText = 'Low Risk'; categoryColor = '#88d600'; statusIcon = '✓'; }
+    else { categoryText = 'Safe'; categoryColor = '#00d68f'; statusIcon = '✓'; }
+
+    // ── 3 Stats (Screenshot 2) ──
+    document.getElementById('statScoreNum').textContent = score;
+    document.getElementById('statScoreVal').style.color = categoryColor;
+    document.getElementById('statStatusText').textContent = `${categoryText} ${statusIcon}`;
+    document.getElementById('statStatusVal').style.color = categoryColor;
+
+    // ── Lead Verdict (Screenshot 2) ──
+    document.getElementById('heroHeadlineVerdict').textContent = brief.headline_verdict || (
+      isPhish ? 'Suspicious URL profile with elevated risk signals across structural and lexical checks.'
+              : 'Authentic web address with consistent baseline lexical properties.'
+    );
+    document.getElementById('heroVerdictParagraph').textContent = brief.what_found || '';
+
+    // Evidence Highlight Strip
+    const rulesHit = (inv.security_rules && inv.security_rules.rules_hit) || [];
+    const evidenceStrip = document.getElementById('heroEvidenceStrip');
+    const evidenceStripText = document.getElementById('heroEvidenceStripText');
+    if (rulesHit.length > 0) {
+      evidenceStrip.className = 'threat-lens-evidence-strip';
+      evidenceStripText.textContent = `${rulesHit.length} security rule${rulesHit.length>1?'s':''} flagged this URL (${rulesHit[0].label || rulesHit[0].rule})`;
+    } else if (isPhish) {
+      evidenceStrip.className = 'threat-lens-evidence-strip';
+      evidenceStripText.textContent = `Random Forest machine learning model classified this URL with elevated phishing probability (${risk.probability || score}%)`;
+    } else {
+      evidenceStrip.className = 'threat-lens-evidence-strip safe';
+      evidenceStripText.textContent = `0 security rules triggered · All 18 deterministic checks passed cleanly`;
+    }
+
+    // ── Horizontal Risk Spectrum Meter (Screenshot 1) ──
+    document.getElementById('spectrumInvId').textContent = `ID: ${inv.investigation_id}`;
+    const pointer = document.getElementById('spectrumPointer');
+    const pinText = document.getElementById('spectrumPinText');
+    const pinArrow = document.getElementById('spectrumPinArrow');
+
+    // Clamp pointer between 3% and 97% for smooth alignment
+    const pointerPct = Math.min(Math.max(score, 3), 97);
+    pointer.style.left = `${pointerPct}%`;
+    pinText.textContent = `${score}`;
+    pinText.style.background = categoryColor;
+    pinArrow.style.borderTopColor = categoryColor;
+
+    // ── 01 · Investigation Brief (Screenshot 1) ──
+    document.getElementById('briefCategoryBadge').textContent = `${level} RISK`;
+    document.getElementById('briefCategoryBadge').className = isPhish ? 'ns-badge ns-badge-red' : (isLeg ? 'ns-badge ns-badge-green' : 'ns-badge ns-badge-amber');
+
+    document.getElementById('briefNarrativeWhat').textContent = brief.what_found || 'Investigation complete.';
+    document.getElementById('briefNarrativeWhy').textContent = brief.why_matters || 'URL structural and lexical parameters evaluated.';
+    document.getElementById('briefNarrativeAction').innerHTML = `<strong>Immediate Recommended Step:</strong> ${brief.next_step || 'Verify domain identity through official channels.'}`;
+
+    // Evidence Anchors (Screenshot 1)
+    const anchors = brief.evidence_anchors || [];
+    document.getElementById('evidenceAnchorCount').textContent = anchors.length;
+    document.getElementById('evidenceAnchorsList').innerHTML = anchors.map(a => `
+      <div class="evidence-anchor-item">
+        <div class="evidence-anchor-num">${a.num} · ${a.severity.toUpperCase()}</div>
+        <div class="evidence-anchor-title">${a.title}</div>
+        <div class="evidence-anchor-desc">${a.detail}</div>
+      </div>
+    `).join('');
+
+    // ── 02 · Target Structural Anatomy ──
+    const structural = inv.structural || {};
+    const lexical = inv.lexical || {};
+    const parsedDomain = structural.domain || domain;
+    const parsedSubdom = structural.subdomain || '';
+    const parsedProto = structural.protocol || 'HTTP';
+    const parsedTLD = structural.tld || '';
+    const parsedDepth = structural.url_depth || 0;
+    const hasIP = structural.has_ip;
+
+    document.getElementById('targetBreakdownBar').innerHTML = `
+      <div class="m1-url-seg ${parsedProto.toLowerCase()==='https'?'':'warn'}">
+        <span class="m1-url-seg-label">Protocol</span>
+        <span class="m1-url-seg-value">${parsedProto}</span>
+      </div>
+      ${parsedSubdom ? `
+      <div class="m1-url-seg warn">
+        <span class="m1-url-seg-label">Subdomain</span>
+        <span class="m1-url-seg-value">${parsedSubdom}</span>
+      </div>` : ''}
+      <div class="m1-url-seg ${hasIP?'danger':''}">
+        <span class="m1-url-seg-label">Host</span>
+        <span class="m1-url-seg-value">${parsedDomain}</span>
+      </div>
+      <div class="m1-url-seg">
+        <span class="m1-url-seg-label">TLD</span>
+        <span class="m1-url-seg-value">${parsedTLD || '—'}</span>
+      </div>
+      <div class="m1-url-seg ${parsedDepth>4?'warn':''}">
+        <span class="m1-url-seg-label">Path Depth</span>
+        <span class="m1-url-seg-value">${parsedDepth} level${parsedDepth!==1?'s':''}</span>
+      </div>
+    `;
+
+    document.getElementById('targetMetricsGrid').innerHTML = `
+      <div class="evidence-card low" style="margin-bottom:0;">
+        <div class="m1-data-row"><span class="m1-data-key">URL Length</span><span class="m1-data-val">${structural.url_length || 0} chars</span></div>
+        <div class="m1-data-row"><span class="m1-data-key">Domain Length</span><span class="m1-data-val">${structural.domain_length || 0} chars</span></div>
+      </div>
+      <div class="evidence-card low" style="margin-bottom:0;">
+        <div class="m1-data-row"><span class="m1-data-key">URL Entropy</span><span class="m1-data-val">${lexical.url_entropy || 0}</span></div>
+        <div class="m1-data-row"><span class="m1-data-key">Domain Entropy</span><span class="m1-data-val">${lexical.domain_entropy || 0}</span></div>
+      </div>
+      <div class="evidence-card low" style="margin-bottom:0;">
+        <div class="m1-data-row"><span class="m1-data-key">IP in Host</span><span class="m1-data-val ${hasIP?'danger':'ok'}">${hasIP?'YES ⚠':'No'}</span></div>
+        <div class="m1-data-row"><span class="m1-data-key">SSL / HTTPS</span><span class="m1-data-val ${structural.https?'ok':'danger'}">${structural.https?'HTTPS ✓':'HTTP ✗'}</span></div>
+      </div>
+    `;
+
+    // ── 03 · Security Evidence ──
+    const rulesListBody = document.getElementById('rulesListBody');
+    document.getElementById('rulesHitCountBadge').textContent = `${rulesHit.length} Hit${rulesHit.length===1?'':'s'}`;
+    document.getElementById('rulesHitCountBadge').className = rulesHit.length > 0 ? 'ns-badge ns-badge-red' : 'ns-badge ns-badge-green';
+
+    if (rulesHit.length === 0) {
+      rulesListBody.innerHTML = `<div style="font-size:12.5px;color:var(--ns-green);padding:8px 0;">✓ All 18 deterministic rules evaluated cleanly without trigger.</div>`;
+    } else {
+      rulesListBody.innerHTML = rulesHit.map(r => `
+        <div style="margin-bottom:10px;padding-bottom:10px;border-bottom:1px solid rgba(255,255,255,0.05);">
+          <div style="display:flex;align-items:center;gap:8px;">
+            <span class="m1-rule-code ${r.sev}">${r.sev}</span>
+            <span style="font-family:var(--ns-mono);font-size:11.5px;font-weight:600;color:var(--ns-text);">${r.rule}</span>
+          </div>
+          <div style="font-size:12px;color:var(--ns-text-muted);margin-top:4px;">${r.label}</div>
+        </div>
+      `).join('');
+    }
+
+    document.getElementById('mlDecisionVal').textContent = risk.prediction || '—';
+    document.getElementById('mlDecisionVal').style.color = isPhish ? '#ff3b3b' : '#00d68f';
+    document.getElementById('mlConfidenceVal').textContent = risk.probability != null ? `${risk.probability}%` : 'Rule Override';
+
+    // ── 04 · Investigation Story (Timeline) ──
+    const storyList = inv.timeline || [];
+    document.getElementById('storyTimelineList').innerHTML = storyList.map(item => `
+      <div class="timeline-item">
+        <div class="timeline-stage" style="display:flex;align-items:center;flex-wrap:wrap;gap:8px;">
+          ${item.time ? `<span style="display:inline-block;padding:2px 7px;border-radius:4px;background:rgba(0,200,255,0.08);border:1px solid rgba(0,200,255,0.25);color:var(--ns-cyan);font-family:var(--ns-mono);font-size:10px;font-weight:600;">${item.time}</span>` : ''}
+          <span>${item.title}</span>
+        </div>
+        <div class="timeline-text">${item.description}</div>
+      </div>
+    `).join('');
+
+    // ── 05 · Domain & Infrastructure Intelligence ──
+    const dIntel = inv.domain_intelligence || {};
+    const dRules = inv.domain_rules || {};
+    const dDns = dIntel.dns || {};
+    const dIp = dIntel.ip || {};
+    const dWhois = dIntel.registration || {};
+    const dSsl = dIntel.ssl || {};
+    const dNs = dIntel.nameservers || {};
+
+    const domainMetricsGrid = document.getElementById('domainMetricsGrid');
+    if (domainMetricsGrid) {
+      const ageVal = dWhois.domain_age_days != null
+        ? (dWhois.domain_age_days >= 365
+            ? `${dWhois.domain_age_days.toLocaleString()} Days (~${(dWhois.domain_age_days / 365.25).toFixed(1)} yrs)`
+            : `${dWhois.domain_age_days} Days`)
+        : 'Unavailable';
+
+      domainMetricsGrid.innerHTML = `
+        <div class="threat-lens-stat-box">
+          <div class="threat-lens-stat-label">DNS Resolution</div>
+          <div class="threat-lens-stat-val" style="font-size:15px;color:${dDns.dns_resolution?'var(--ns-green)':'var(--ns-red)'};">
+            ${dDns.dns_resolution ? 'RESOLVED ✓' : (dDns.collection_status === 'nxdomain' ? 'NXDOMAIN' : 'UNRESOLVED')}
+          </div>
+          <div class="threat-lens-stat-sub">${(dDns.a_records||[]).length} IPv4 · ${(dDns.aaaa_records||[]).length} IPv6</div>
+        </div>
+        <div class="threat-lens-stat-box">
+          <div class="threat-lens-stat-label">Domain Age</div>
+          <div class="threat-lens-stat-val" style="font-size:15px;color:var(--ns-cyan);">
+            ${ageVal}
+          </div>
+          <div class="threat-lens-stat-sub">${dWhois.creation_date ? 'Created: ' + dWhois.creation_date.split('T')[0] : (dWhois.collection_status === 'error' ? 'WHOIS Parse Error / Timeout' : 'WHOIS Restricted')}</div>
+        </div>
+        <div class="threat-lens-stat-box">
+          <div class="threat-lens-stat-label">SSL Transport</div>
+          <div class="threat-lens-stat-val" style="font-size:15px;color:${dSsl.ssl_valid?'var(--ns-cyan)':(dSsl.ssl_available?'var(--ns-amber)':'var(--ns-text-muted)')};">
+            ${dSsl.ssl_valid ? 'TRANSPORT VERIFIED ✓' : (dSsl.ssl_available ? 'INVALID TLS ⚠' : 'PORT 443 CLOSED')}
+          </div>
+          <div class="threat-lens-stat-sub">${dSsl.certificate_issuer ? dSsl.certificate_issuer.substring(0, 24) : 'Port 443 closed'}</div>
+        </div>
+        <div class="threat-lens-stat-box">
+          <div class="threat-lens-stat-label">Telemetry Coverage</div>
+          <div class="threat-lens-stat-val" style="font-size:15px;color:var(--ns-cyan);">
+            ${dIntel.evidence_coverage || 0}%
+          </div>
+          <div class="threat-lens-stat-sub">6 Telemetry Categories</div>
+        </div>
+      `;
+    }
+
+    // 6 Telemetry Categories Breakdown Strip
+    const catContainer = document.getElementById('domainCategoryBreakdown');
+    if (catContainer) {
+      const cats = dIntel.telemetry_categories || {
+        'dns_topology': { name: 'DNS Topology', status: dDns.collection_status === 'success' ? 'success' : 'partial' },
+        'registration_whois': { name: 'Registration & WHOIS', status: dWhois.collection_status || 'unavailable' },
+        'ip_infrastructure': { name: 'IP & Infrastructure', status: dIp.collection_status || 'unavailable' },
+        'nameserver_infrastructure': { name: 'Nameservers', status: dNs.collection_status || 'unavailable' },
+        'ssl_cryptography': { name: 'SSL/TLS Cryptography', status: dSsl.collection_status || 'unavailable' },
+        'external_reputation': { name: 'Reputation Feeds', status: 'unconfigured' },
+      };
+      catContainer.innerHTML = Object.entries(cats).map(([k, cat]) => {
+        let stClass = 'badge-muted';
+        let stColor = 'var(--ns-text-muted)';
+        let stLabel = (cat.status || 'unknown').toUpperCase();
+        if (cat.status === 'success') { stClass = 'ns-badge-green'; stColor = 'var(--ns-green)'; }
+        else if (cat.status === 'empty' || cat.status === 'partial') { stClass = 'ns-badge-amber'; stColor = 'var(--ns-amber)'; }
+        else if (cat.status === 'unconfigured') { stClass = 'ns-badge-cyan'; stColor = 'var(--ns-cyan)'; }
+        return `
+          <div style="background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.06);border-radius:6px;padding:8px 10px;text-align:center;">
+            <div style="font-size:10px;color:var(--ns-text-muted);text-transform:uppercase;margin-bottom:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${cat.name || k}</div>
+            <span class="ns-badge ${stClass}" style="font-size:9.5px;padding:2px 6px;">${stLabel}</span>
+          </div>
+        `;
+      }).join('');
+    }
+
+    const domainDnsDetails = document.getElementById('domainDnsDetails');
+    if (domainDnsDetails) {
+      const obsTime = dDns.observation_timestamp ? dDns.observation_timestamp.replace('T', ' ').substring(0, 19) + ' UTC' : 'Live Observation';
+      domainDnsDetails.innerHTML = `
+        <div class="m1-data-row"><span class="m1-data-key">Status:</span><span class="m1-data-val ${dDns.dns_resolution?'ok':'danger'}">${dDns.collection_status || 'unavailable'}</span></div>
+        <div class="m1-data-row"><span class="m1-data-key">Resolver:</span><span class="m1-data-val">${dDns.resolver_source || 'Public recursive (8.8.8.8, 1.1.1.1)'}</span></div>
+        <div class="m1-data-row"><span class="m1-data-key">Observed:</span><span class="m1-data-val" style="color:var(--ns-text-dim);">${obsTime}</span></div>
+        <div class="m1-data-row"><span class="m1-data-key">A Records:</span><span class="m1-data-val">${(dDns.a_records||[]).join(', ') || 'No records returned'}</span></div>
+        <div class="m1-data-row"><span class="m1-data-key">MX Mail:</span><span class="m1-data-val">${(dDns.mx_records||[]).length > 0 ? (dDns.mx_records||[]).join(', ') : 'No records returned'}</span></div>
+        <div class="m1-data-row"><span class="m1-data-key">TXT Records:</span><span class="m1-data-val">${(dDns.txt_records||[]).length > 0 ? dDns.txt_records.length + ' record(s)' : 'No records returned'}</span></div>
+      `;
+    }
+
+    const domainWhoisDetails = document.getElementById('domainWhoisDetails');
+    if (domainWhoisDetails) {
+      const remainingLifetime = dWhois.remaining_lifetime_days != null ? `${dWhois.remaining_lifetime_days.toLocaleString()} days` : 'Unavailable';
+      const ageStr = dWhois.domain_age_days != null
+        ? (dWhois.domain_age_days >= 365 ? `${dWhois.domain_age_days.toLocaleString()} days (~${(dWhois.domain_age_days / 365.25).toFixed(1)} yrs)` : `${dWhois.domain_age_days} days`)
+        : 'Unavailable';
+      domainWhoisDetails.innerHTML = `
+        <div class="m1-data-row"><span class="m1-data-key">Registrar:</span><span class="m1-data-val">${dWhois.registrar || 'Protected / Restricted'}</span></div>
+        <div class="m1-data-row"><span class="m1-data-key">Created:</span><span class="m1-data-val">${dWhois.creation_date ? dWhois.creation_date.split('T')[0] : 'Unavailable'}</span></div>
+        <div class="m1-data-row"><span class="m1-data-key">Expires:</span><span class="m1-data-val">${dWhois.expiration_date ? dWhois.expiration_date.split('T')[0] : 'Unavailable'}</span></div>
+        <div class="m1-data-row"><span class="m1-data-key">Domain Age:</span><span class="m1-data-val">${ageStr}</span></div>
+        <div class="m1-data-row"><span class="m1-data-key">Lifetime Remaining:</span><span class="m1-data-val">${remainingLifetime}</span></div>
+        <div class="m1-data-row"><span class="m1-data-key">Privacy Guard:</span><span class="m1-data-val">${dWhois.privacy_detected ? 'Active (WHOIS Privacy Guard)' : 'None Detected'}</span></div>
+      `;
+    }
+
+    const domainSslDetails = document.getElementById('domainSslDetails');
+    if (domainSslDetails) {
+      domainSslDetails.innerHTML = `
+        <div class="m1-data-row"><span class="m1-data-key">Transport State:</span><span class="m1-data-val ${dSsl.ssl_valid?'ok':'warn'}">${dSsl.transport_state || (dSsl.ssl_valid ? 'CERTIFICATE_VALID' : 'PORT_443_CLOSED')}</span></div>
+        <div class="m1-data-row"><span class="m1-data-key">Certificate Issuer:</span><span class="m1-data-val">${dSsl.certificate_issuer || 'None'}</span></div>
+        <div class="m1-data-row"><span class="m1-data-key">Protocol / Cipher:</span><span class="m1-data-val">${dSsl.tls_version || 'None'} / ${dSsl.cipher_suite || 'None'}</span></div>
+        <div class="m1-data-row"><span class="m1-data-key">Hostname Match:</span><span class="m1-data-val ${dSsl.certificate_hostname_match?'ok':'danger'}">${dSsl.certificate_hostname_match ? 'Match ✓' : 'Mismatch / None'}</span></div>
+        <div class="m1-data-row"><span class="m1-data-key">SANs Count:</span><span class="m1-data-val">${dSsl.certificate_san_count || 0} Subject Alt Names</span></div>
+        <div class="m1-data-row"><span class="m1-data-key">Wildcard Cert:</span><span class="m1-data-val">${dSsl.certificate_is_wildcard ? 'Yes (*)' : 'No'}</span></div>
+        <div style="margin-top:10px;padding:6px 10px;background:rgba(0,200,255,0.04);border:1px solid rgba(0,200,255,0.15);border-radius:4px;font-size:10.5px;color:var(--ns-text-muted);line-height:1.4;">
+          <strong style="color:var(--ns-cyan);">Transport Notice:</strong> Valid TLS confirms encryption in transit, but does NOT guarantee site benevolence or legitimate ownership.
+        </div>
+      `;
+    }
+
+    const domainNsDetails = document.getElementById('domainNsDetails');
+    if (domainNsDetails) {
+      const revHint = dIp.reverse_dns_hint || (dIp.reverse_dns_ptrs && dIp.reverse_dns_ptrs.length > 0 ? dIp.reverse_dns_ptrs.join(', ') : 'Reverse lookup not delegated');
+      domainNsDetails.innerHTML = `
+        <div class="m1-data-row"><span class="m1-data-key">Nameservers:</span><span class="m1-data-val">${(dNs.nameserver_list||[]).slice(0, 3).join(', ') || 'None'}</span></div>
+        <div class="m1-data-row"><span class="m1-data-key">NS Diversity:</span><span class="m1-data-val">${dNs.nameserver_diversity || 0} unique provider(s)</span></div>
+        <div class="m1-data-row"><span class="m1-data-key">IP Routing:</span><span class="m1-data-val">${(dIp.resolved_ipv4||[]).join(', ') || 'None'}</span></div>
+        <div class="m1-data-row"><span class="m1-data-key">Provider / PTR:</span><span class="m1-data-val">${revHint}</span></div>
+        <div class="m1-data-row"><span class="m1-data-key">SSRF Policy:</span><span class="m1-data-val ok">${dIntel.ssrf_policy || 'PASS — Public Route Verified'}</span></div>
+      `;
+    }
+
+    const dRulesList = dRules.rules_hit || [];
+    const threatDRules = dRulesList.filter(r => (r.severity || '').toUpperCase() !== 'INFORMATIONAL');
+    const infoDRules = dRulesList.filter(r => (r.severity || '').toUpperCase() === 'INFORMATIONAL');
+    const domainRulesList = document.getElementById('domainRulesList');
+    const domainRulesCountBadge = document.getElementById('domainRulesCountBadge');
+    if (domainRulesCountBadge) {
+      if (threatDRules.length > 0) {
+        domainRulesCountBadge.textContent = `${threatDRules.length} Threat Rule(s)`;
+        domainRulesCountBadge.className = 'ns-badge ns-badge-red';
+        domainRulesCountBadge.removeAttribute('style');
+      } else if (infoDRules.length > 0) {
+        domainRulesCountBadge.textContent = `${infoDRules.length} Observation(s)`;
+        domainRulesCountBadge.className = 'ns-badge';
+        domainRulesCountBadge.style.background = 'rgba(0, 200, 255, 0.15)';
+        domainRulesCountBadge.style.color = 'var(--ns-cyan)';
+        domainRulesCountBadge.style.border = '1px solid rgba(0, 200, 255, 0.35)';
+      } else {
+        domainRulesCountBadge.textContent = '0 Triggered';
+        domainRulesCountBadge.className = 'ns-badge ns-badge-green';
+        domainRulesCountBadge.removeAttribute('style');
+      }
+    }
+    if (domainRulesList) {
+      if (dRulesList.length === 0) {
+        domainRulesList.innerHTML = `<div style="font-size:12px;color:var(--ns-green);padding:6px 0;">✓ All deterministic domain security heuristics passed cleanly.</div>`;
+      } else {
+        domainRulesList.innerHTML = dRulesList.map(r => {
+          const sevStr = r.severity || 'INFO';
+          const isInfo = sevStr.toUpperCase() === 'INFORMATIONAL';
+          const borderCol = isInfo ? 'var(--ns-cyan)' : ((sevStr === 'CRITICAL' || sevStr === 'HIGH') ? 'var(--ns-red)' : 'var(--ns-amber)');
+          const tagStyle = isInfo ? 'background:rgba(0,200,255,0.15);color:var(--ns-cyan);border:1px solid rgba(0,200,255,0.3);padding:1px 6px;border-radius:3px;font-size:10px;' : '';
+          return `
+            <div style="margin-bottom:8px;padding:8px;background:rgba(255,255,255,0.02);border-radius:4px;border-left:2px solid ${borderCol};">
+              <div style="display:flex;justify-content:space-between;align-items:center;">
+                <span style="font-weight:600;font-size:12px;color:var(--ns-text);">${r.title} (${r.rule_id})</span>
+                <span class="m1-rule-code ${sevStr.toLowerCase()}" style="${tagStyle}">${sevStr}</span>
+              </div>
+              <div style="font-size:11px;color:var(--ns-text-muted);margin-top:3px;">${r.evidence}</div>
+              ${r.interpretation ? `<div style="font-size:10px;color:var(--ns-text-dim);margin-top:2px;"><em>${r.interpretation}</em></div>` : ''}
+            </div>
+          `;
+        }).join('');
+      }
+    }
+
+    // Transparent Telemetry Disclosure Notice
+    const domainUnverifiedText = document.getElementById('domainUnverifiedText');
+    if (domainUnverifiedText) {
+      domainUnverifiedText.innerHTML = `
+        <strong>Verified Live:</strong> DNS resource records, WHOIS registration lifecycle, IP routing &amp; reverse DNS PTRs, Nameserver diversity, and SSL/TLS cryptographic handshake (guarded by SSRF policy).<br>
+        <strong>Unverified / Out of Scope:</strong> External threat reputation intelligence feeds (unconfigured API keys; rate limited), and live DOM webpage content / password form harvesting (strictly isolated under upcoming Module 3).
+      `;
+    }
+
+    // ── Threat Relationship Graph ──
+    const tGraph = inv.threat_graph || { nodes: [], edges: [] };
+    const graphNodesEl = document.getElementById('threatGraphNodes');
+    const graphEdgesEl = document.getElementById('threatGraphEdges');
+    if (graphNodesEl) {
+      graphNodesEl.innerHTML = (tGraph.nodes || []).map(n => `
+        <div style="display:inline-flex;align-items:center;gap:6px;padding:6px 12px;border-radius:6px;background:rgba(255,255,255,0.04);border:1px solid rgba(0,200,255,0.2);font-family:var(--ns-mono);font-size:11px;">
+          <span style="color:var(--ns-cyan);font-weight:700;">[${n.type.toUpperCase()}]</span>
+          <span style="color:var(--ns-text);">${n.label}</span>
+        </div>
+      `).join('');
+    }
+    if (graphEdgesEl) {
+      graphEdgesEl.innerHTML = '<strong>Correlated Topology Links:</strong><br>' + (tGraph.edges || []).map(e => `${e.from} ──(${e.label})──&gt; ${e.to}`).join(' · ');
+    }
+
+    // ── 06 · Webpage Intelligence ──
+    const intel = inv.intelligence || {};
+    const wIntel = inv.webpage_intelligence || intel.webpage_intelligence || {};
+    const wRules = inv.webpage_rules || intel.webpage_rules || {};
+    const wFetch = inv.webpage_fetch || intel.webpage_fetch || {};
+    const redInfo = wFetch.redirect_analysis || {};
+
+    const isAvailable = (wIntel.webpage_status === 'AVAILABLE' || wIntel.status === 'analyzed' || (wFetch.fetch_status === 'FETCH_SUCCESS' && wIntel.html_analysis && wIntel.html_analysis.status === 'analyzed'));
+    const isUnavailable = (wIntel.webpage_status === 'UNAVAILABLE' || (wFetch.fetch_status && wFetch.fetch_status !== 'FETCH_SUCCESS') || wIntel.status === 'UNAVAILABLE');
+
+    const wpBadge = document.getElementById('webpageModuleBadge');
+    const wpContainer = document.getElementById('webpageReportContent');
+
+    if (wpContainer) {
+      if (isUnavailable) {
+        if (wpBadge) {
+          wpBadge.textContent = 'UNAVAILABLE';
+          wpBadge.className = 'ns-badge ns-badge-red';
+        }
+        const actualReason = wFetch.fetch_status || wIntel.reason || 'FETCH_FAILURE';
+        const detail = wFetch.fetch_status_detail || wIntel.reason_detail || 'Target connection or retrieval failed';
+
+        wpContainer.innerHTML = `
+          <div style="background:rgba(255,124,0,0.06);border:1px solid rgba(255,124,0,0.3);border-radius:var(--ns-radius);padding:22px;margin-bottom:16px;">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:8px;">
+              <div style="display:flex;align-items:center;gap:10px;">
+                <span style="font-size:22px;">⚠️</span>
+                <div>
+                  <div style="font-size:14px;font-weight:800;color:var(--ns-amber);text-transform:uppercase;letter-spacing:0.5px;">
+                    Webpage Intelligence: UNAVAILABLE
+                  </div>
+                  <div style="font-size:12px;color:var(--ns-text-dim);margin-top:2px;">
+                    Reason: <strong style="color:#fff;font-family:var(--ns-mono);">${actualReason}</strong> (${detail})
+                  </div>
+                </div>
+              </div>
+              <span class="ns-badge ns-badge-amber">Evidence Coverage: Reduced</span>
+            </div>
+
+            <div style="background:rgba(0,0,0,0.3);border-radius:6px;padding:14px;border-left:3px solid var(--ns-amber);margin-bottom:14px;">
+              <div style="font-weight:700;font-size:13px;color:#fff;margin-bottom:4px;">
+                "Webpage could not be retrieved, so webpage-level analysis was not performed."
+              </div>
+              <div style="font-size:12px;color:var(--ns-text-muted);line-height:1.5;">
+                A domain existing does NOT mean a webpage exists. Domain Intelligence and DNS resolution operate independently at the network infrastructure layer. Because HTTP/HTTPS webpage content was unreachable, DOM, form, script, and credential analysis were strictly skipped. Webpage unavailability is not converted into a phishing verdict.
+              </div>
+            </div>
+
+            <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(180px, 1fr));gap:12px;font-family:var(--ns-mono);font-size:11.5px;">
+              <div style="padding:8px 12px;background:rgba(255,255,255,0.02);border-radius:4px;border:1px solid rgba(255,255,255,0.04);">
+                <span style="color:var(--ns-text-muted);">DNS / IP:</span> <span style="color:var(--ns-cyan);">Resolved separately</span>
+              </div>
+              <div style="padding:8px 12px;background:rgba(255,255,255,0.02);border-radius:4px;border:1px solid rgba(255,255,255,0.04);">
+                <span style="color:var(--ns-text-muted);">HTTP / HTML:</span> <span style="color:var(--ns-amber);">Unavailable</span>
+              </div>
+              <div style="padding:8px 12px;background:rgba(255,255,255,0.02);border-radius:4px;border:1px solid rgba(255,255,255,0.04);">
+                <span style="color:var(--ns-text-muted);">DOM / Forms:</span> <span style="color:var(--ns-text-muted);">Not analyzed</span>
+              </div>
+              <div style="padding:8px 12px;background:rgba(255,255,255,0.02);border-radius:4px;border:1px solid rgba(255,255,255,0.04);">
+                <span style="color:var(--ns-text-muted);">Webpage Risk:</span> <span style="color:var(--ns-green);">0 / Neutral (Not penalized)</span>
+              </div>
+            </div>
+          </div>
+        `;
+      } else if (isAvailable) {
+        if (wpBadge) {
+          wpBadge.textContent = 'Module 3 Active';
+          wpBadge.className = 'ns-badge ns-badge-cyan';
+        }
+        const forms = wIntel.form_analysis || {};
+        const scripts = wIntel.script_analysis || {};
+        const iframes = wIntel.iframe_analysis || {};
+        const headers = wIntel.header_analysis || {};
+        const resources = wIntel.resource_analysis || {};
+        const rulesHit = wRules.rules_hit || [];
+        const idCon = inv.identity_consistency || intel.identity_consistency || wIntel.identity_consistency || {};
+        const claimed = idCon.claimed_identity || {};
+        const observed = idCon.observed_behavior || {};
+        const isConsistent = idCon.state === 'CONSISTENT';
+
+        wpContainer.innerHTML = `
+          <div class="threat-lens-stats-grid" style="margin-bottom:16px;">
+            <div class="threat-lens-stat-box">
+              <div class="threat-lens-stat-label">HTTP Status</div>
+              <div class="threat-lens-stat-val" style="font-size:15px;color:${wFetch.http_status === 200 ? 'var(--ns-green)' : 'var(--ns-amber)'};">
+                ${wFetch.http_status || '200'} ${wFetch.http_status === 200 ? 'OK' : ''}
+              </div>
+              <div class="threat-lens-stat-sub">${wFetch.response_time_ms || 0} ms · ${redInfo.count || 0} Hops</div>
+            </div>
+            <div class="threat-lens-stat-box">
+              <div class="threat-lens-stat-label">Forms &amp; Credentials</div>
+              <div class="threat-lens-stat-val" style="font-size:15px;color:${forms.has_password_field ? 'var(--ns-red)' : 'var(--ns-cyan)'};">
+                ${forms.has_password_field ? 'PW FORM DETECTED ⚠️' : (forms.form_count || 0) + ' Forms'}
+              </div>
+              <div class="threat-lens-stat-sub">${forms.has_cross_domain_action ? 'Cross-domain action ⚠️' : 'Same-origin targets'}</div>
+            </div>
+            <div class="threat-lens-stat-box">
+              <div class="threat-lens-stat-label">JavaScript Posture</div>
+              <div class="threat-lens-stat-val" style="font-size:15px;color:${scripts.has_suspicious_patterns ? 'var(--ns-amber)' : 'var(--ns-cyan)'};">
+                ${scripts.total_count || 0} Scripts
+              </div>
+              <div class="threat-lens-stat-sub">${scripts.has_suspicious_patterns ? 'Suspicious patterns detected' : 'Clean execution signals'}</div>
+            </div>
+            <div class="threat-lens-stat-box">
+              <div class="threat-lens-stat-label">Security Headers</div>
+              <div class="threat-lens-stat-val" style="font-size:15px;color:${(headers.present_count || 0) >= 4 ? 'var(--ns-green)' : 'var(--ns-amber)'};">
+                ${headers.present_count || 0}/6 Enforced
+              </div>
+              <div class="threat-lens-stat-sub">${headers.coverage_percent || 0}% policy coverage</div>
+            </div>
+          </div>
+
+          <!-- Webpage Identity Consistency (Claimed vs Observed Behavior) -->
+          <div class="evidence-card" style="margin-bottom:20px;border-color:${isConsistent ? 'rgba(0,214,143,0.3)' : (idCon.state === 'INCONSISTENT' ? 'rgba(255,59,59,0.35)' : 'rgba(0,200,255,0.25)')};">
+            <div style="font-weight:700;font-size:12px;text-transform:uppercase;color:var(--ns-cyan);margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">
+              <span style="display:flex;align-items:center;gap:6px;"><span>⚖️</span> Webpage Identity Consistency (Claimed vs. Observed Behavior)</span>
+              <span class="ns-badge ${isConsistent ? 'ns-badge-green' : (idCon.state === 'INCONSISTENT' ? 'ns-badge-red' : 'ns-badge-amber')}">${idCon.state || 'ANALYZED'}</span>
+            </div>
+
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:14px;">
+              <!-- Claimed Identity Indicators -->
+              <div style="background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.05);border-radius:6px;padding:12px;">
+                <div style="font-family:var(--ns-mono);font-size:10px;color:var(--ns-cyan);margin-bottom:6px;font-weight:700;">1. CLAIMED IDENTITY INDICATORS</div>
+                <div style="font-family:var(--ns-mono);font-size:11.5px;">
+                  <div class="m1-data-row"><span class="m1-data-key">Declared Title:</span><span class="m1-data-val">${claimed.page_title || 'Untitled / Generic'}</span></div>
+                  <div class="m1-data-row"><span class="m1-data-key">Primary Heading:</span><span class="m1-data-val">${claimed.primary_heading || 'None'}</span></div>
+                  <div class="m1-data-row"><span class="m1-data-key">Referenced Brands:</span><span class="m1-data-val">${(claimed.detected_brands || []).map(b => b.toUpperCase()).join(', ') || 'None declared'}</span></div>
+                  <div class="m1-data-row"><span class="m1-data-key">Declared Purpose:</span><span class="m1-data-val">${(claimed.login_language || []).join(', ') || (claimed.urgency_indicators || []).join(', ') || 'Standard browsing'}</span></div>
+                </div>
+              </div>
+
+              <!-- Observed Technical Behavior -->
+              <div style="background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.05);border-radius:6px;padding:12px;">
+                <div style="font-family:var(--ns-mono);font-size:10px;color:#ffaa00;margin-bottom:6px;font-weight:700;">2. OBSERVED TECHNICAL BEHAVIOR</div>
+                <div style="font-family:var(--ns-mono);font-size:11.5px;">
+                  <div class="m1-data-row"><span class="m1-data-key">Host Origin Domain:</span><span class="m1-data-val">${observed.page_registered_domain || '—'}</span></div>
+                  <div class="m1-data-row"><span class="m1-data-key">Credential Harvester:</span><span class="m1-data-val ${observed.has_password_field ? 'danger' : 'ok'}">${observed.has_password_field ? 'Password Field Active' : 'None'}</span></div>
+                  <div class="m1-data-row"><span class="m1-data-key">Form Destination:</span><span class="m1-data-val ${observed.has_cross_domain_action ? 'danger' : 'ok'}">${observed.has_cross_domain_action ? 'Foreign Host: ' + (observed.cross_domain_destinations || []).join(', ') : 'Same Origin / Authorized'}</span></div>
+                  <div class="m1-data-row"><span class="m1-data-key">External Dependencies:</span><span class="m1-data-val">${observed.external_domain_count || 0} external domain(s)</span></div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Consistency Assessment -->
+            <div style="background:rgba(0,0,0,0.3);border-radius:6px;padding:12px;margin-bottom:12px;border-left:3px solid ${isConsistent ? 'var(--ns-green)' : 'var(--ns-red)'};">
+              <div style="font-size:12px;font-weight:700;color:#fff;margin-bottom:4px;">Consistency Assessment: ${idCon.state || 'ANALYZED'}</div>
+              <div style="font-size:11.5px;color:var(--ns-text-muted);line-height:1.5;">${idCon.consistency_assessment || 'The claimed identity and observed technical behavior show no significant inconsistency.'}</div>
+            </div>
+
+            <!-- Supporting Telemetry Evidence -->
+            <div style="font-family:var(--ns-mono);font-size:11px;color:var(--ns-text-muted);margin-bottom:10px;">
+              <strong style="color:var(--ns-text-dim);">Supporting Telemetry Evidence:</strong>
+              <ul style="margin:4px 0 0;padding-left:18px;line-height:1.5;">
+                ${(idCon.supporting_evidence || []).map(e => `<li>${e}</li>`).join('')}
+              </ul>
+            </div>
+
+            <!-- Evidence Limitations -->
+            <div style="font-size:10.5px;color:var(--ns-text-dim);border-top:1px solid rgba(255,255,255,0.05);padding-top:8px;">
+              <em>Evidence Limitations: JavaScript static inspection; brand references evaluated lexically without presumption that brand references alone prove phishing.</em>
+            </div>
+          </div>
+
+          <!-- 4 Grid Cards -->
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:20px;">
+            <div class="evidence-card" style="margin-bottom:0;">
+              <div style="font-weight:700;font-size:12px;text-transform:uppercase;color:var(--ns-cyan);margin-bottom:12px;display:flex;align-items:center;gap:6px;">
+                <span>📝</span> Form &amp; Credential Intelligence
+              </div>
+              <div style="font-family:var(--ns-mono);font-size:11.5px;">
+                <div class="m1-data-row"><span class="m1-data-key">Total Forms:</span><span class="m1-data-val">${forms.form_count || 0}</span></div>
+                <div class="m1-data-row"><span class="m1-data-key">Password Inputs:</span><span class="m1-data-val ${forms.has_password_field ? 'danger' : 'ok'}">${forms.has_password_field ? 'PRESENT (High Risk)' : 'None'}</span></div>
+                <div class="m1-data-row"><span class="m1-data-key">Cross-Domain:</span><span class="m1-data-val ${forms.has_cross_domain_action ? 'danger' : 'ok'}">${forms.has_cross_domain_action ? 'YES — Submits to Foreign Domain' : 'No (Same Origin)'}</span></div>
+                <div class="m1-data-row"><span class="m1-data-key">Sensitive Fields:</span><span class="m1-data-val">Email: ${forms.has_email_field ? 'Yes' : 'No'} · OTP: ${forms.has_otp_field ? 'Yes' : 'No'} · Card: ${forms.has_card_field ? 'Yes' : 'No'}</span></div>
+              </div>
+            </div>
+
+            <div class="evidence-card" style="margin-bottom:0;">
+              <div style="font-weight:700;font-size:12px;text-transform:uppercase;color:var(--ns-cyan);margin-bottom:12px;display:flex;align-items:center;gap:6px;">
+                <span>⚡</span> JavaScript &amp; Iframes
+              </div>
+              <div style="font-family:var(--ns-mono);font-size:11.5px;">
+                <div class="m1-data-row"><span class="m1-data-key">Scripts:</span><span class="m1-data-val">${scripts.inline_count || 0} inline · ${scripts.external_count || 0} external</span></div>
+                <div class="m1-data-row"><span class="m1-data-key">Suspicious Code:</span><span class="m1-data-val ${scripts.has_suspicious_patterns ? 'warn' : 'ok'}">${scripts.has_suspicious_patterns ? (scripts.suspicious_patterns || []).map(p => typeof p === 'string' ? p : (p.name || p.pattern || 'suspicious pattern')).join(', ') : 'None observed'}</span></div>
+                <div class="m1-data-row"><span class="m1-data-key">Iframes:</span><span class="m1-data-val">${iframes.total_count || 0} total · ${iframes.cross_domain_count || 0} cross-domain · ${iframes.hidden_count || 0} hidden</span></div>
+                <div class="m1-data-row"><span class="m1-data-key">External Dependencies:</span><span class="m1-data-val">${resources.external_domain_count || 0} external domain(s)</span></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Webpage Security Rules -->
+          <div class="evidence-card" style="margin-bottom:16px;">
+            <div style="font-weight:700;font-size:12px;text-transform:uppercase;color:var(--ns-cyan);margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;">
+              <span><span>⚡</span> Webpage Security Rules (12 Evaluated)</span>
+              <span class="ns-badge ${rulesHit.length > 0 ? 'ns-badge-red' : 'ns-badge-green'}">${rulesHit.length} Triggered</span>
+            </div>
+            <div>
+              ${rulesHit.length === 0 ? '<div style="font-size:12px;color:var(--ns-green);padding:6px 0;">✓ All 12 deterministic webpage security heuristics passed cleanly.</div>' :
+                rulesHit.map(r => {
+                  const rSev = r.severity || 'HIGH';
+                  return `
+                  <div style="margin-bottom:8px;padding:8px;background:rgba(255,255,255,0.02);border-radius:4px;border-left:2px solid ${rSev==='CRITICAL'||rSev==='HIGH'?'var(--ns-red)':'var(--ns-amber)'};">
+                    <div style="display:flex;justify-content:space-between;align-items:center;">
+                      <span style="font-weight:600;font-size:12px;color:var(--ns-text);">${r.title} (${r.rule_id})</span>
+                      <span class="m1-rule-code ${rSev.toLowerCase()}">${rSev}</span>
+                    </div>
+                    <div style="font-size:11px;color:var(--ns-text-muted);margin-top:3px;">${r.evidence}</div>
+                  </div>
+                `;}).join('')
+              }
+            </div>
+          </div>
+
+          <div style="background:rgba(0,200,255,0.03);border:1px solid rgba(0,200,255,0.15);border-radius:var(--ns-radius);padding:14px;font-size:11.5px;color:var(--ns-text-muted);line-height:1.5;">
+            <strong style="color:var(--ns-cyan);">Webpage Telemetry Scope:</strong>
+            HTML content safely retrieved via SSRF-protected fetcher. JavaScript statically inspected without client-side execution to eliminate zero-day risks.
+          </div>
+        `;
+      } else {
+        if (wpBadge) {
+          wpBadge.textContent = 'Module 3 Available';
+          wpBadge.className = 'ns-badge ns-badge-amber';
+        }
+        const targetUrl = inv.target ? (inv.target.original_url || inv.target.normalized_url || '') : '';
+        wpContainer.innerHTML = `
+          <div style="background:rgba(0,200,255,0.03);border:1px solid rgba(0,200,255,0.2);border-radius:var(--ns-radius);padding:24px;text-align:center;">
+            <div style="font-size:24px;margin-bottom:8px;">📄</div>
+            <div style="font-weight:700;font-size:14px;color:#fff;margin-bottom:6px;">Webpage &amp; DOM Intelligence Layer Available</div>
+            <p style="font-size:12px;color:var(--ns-text-dim);max-width:540px;margin:0 auto 16px;line-height:1.5;">
+              This report was initiated from URL or Domain intelligence. You can launch safe in-depth inspection of the actual webpage HTML, credential forms, JavaScript patterns, and security headers.
+            </p>
+            <a href="/webpage-intelligence?url=${encodeURIComponent(targetUrl)}" class="btn-primary" style="display:inline-flex;align-items:center;gap:8px;font-size:12px;text-decoration:none;padding:10px 20px;">
+              <span>Launch Webpage Investigation</span>
+              <span>→</span>
+            </a>
+          </div>
+        `;
+      }
+    }
+
+    // ── 07 · Evidence Ledger & Threat DNA ──
+    document.getElementById('displayThreatDna').textContent = inv.threat_dna || 'NS-UNKNOWN';
+    const ledger = inv.evidence_ledger || [];
+    const ledgerBody = document.getElementById('ledgerTableBody');
+    if (ledger.length === 0) {
+      ledgerBody.innerHTML = `<tr><td colspan="4" style="text-align:center;color:var(--ns-text-muted);padding:18px;">No risk indicators detected. All baseline attributes within safe distribution.</td></tr>`;
+    } else {
+      ledgerBody.innerHTML = ledger.map(item => `
+        <tr>
+          <td><span class="m1-rule-code ${item.severity || 'low'}">${(item.severity || 'low').toUpperCase()}</span></td>
+          <td style="font-family:var(--ns-mono);color:var(--ns-cyan);">${item.signal}</td>
+          <td style="font-family:var(--ns-mono);">${item.where || 'URL'}</td>
+          <td>
+            <div style="font-weight:600;margin-bottom:2px;">${item.what}</div>
+            <div style="font-size:11px;color:var(--ns-text-muted);">${item.why}</div>
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    // ── 08 · Actions, Guidance & FAQ ──
+    const recs = inv.recommendations || [];
+    document.getElementById('actionsContainer').innerHTML = recs.map(r => `
+      <div class="evidence-card ${r.priority === 'critical' ? 'critical' : (r.priority === 'high' ? 'high' : 'low')}">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+          <span style="font-weight:700;font-size:13px;color:var(--ns-text);">${r.action}</span>
+          <span class="ns-badge ${r.priority === 'critical' ? 'ns-badge-red' : (r.priority === 'high' ? 'ns-badge-amber' : 'ns-badge-cyan')}">${r.priority.toUpperCase()}</span>
+        </div>
+        <div style="font-size:12px;color:var(--ns-text-dim);">${r.reason}</div>
+      </div>
+    `).join('');
+
+    const guidance = inv.interaction_guidance || {};
+    if (guidance.preamble) {
+      document.getElementById('scenariosPreamble').textContent = guidance.preamble;
+    }
+    const scenarios = guidance.scenarios || [];
+    document.getElementById('scenariosContainer').innerHTML = scenarios.map(s => `
+      <div class="scenario-card">
+        <div class="scenario-title"><span>${s.icon || '⚡'}</span> <span>Scenario: ${s.scenario}</span></div>
+        <ul class="scenario-steps">
+          ${(s.steps || []).map(step => `<li>${step}</li>`).join('')}
+        </ul>
+        <div style="font-size:11.5px;color:var(--ns-text-muted);font-style:italic;margin-top:6px;">
+          Note: ${s.note}
+        </div>
+      </div>
+    `).join('');
+
+    const faqs = inv.safety_faq || [];
+    document.getElementById('faqContainer').innerHTML = faqs.map(f => `
+      <div class="faq-item">
+        <div class="faq-question"><span>Q:</span> ${f.q}</div>
+        <div class="faq-answer"><strong>A:</strong> ${f.a}</div>
+      </div>
+    `).join('');
+
+    // 09 · Export & Evidence Package Metadata
+    const pkgInvId = document.getElementById('evidencePackageInvId');
+    if (pkgInvId) pkgInvId.textContent = inv.investigation_id || 'NS-ADHOC';
+    const pkgDna = document.getElementById('evidencePackageDna');
+    if (pkgDna) pkgDna.textContent = inv.threat_dna || 'NS-DNA-UNKNOWN';
+    const pkgCount = document.getElementById('evidencePackageLedgerCount');
+    if (pkgCount) pkgCount.textContent = `${(inv.evidence_ledger || []).length} Verified Signal(s)`;
+
+    // Setup smooth scroll spy for left timeline navigation
+    setupScrollSpy();
+  }
+
+  function exportInvestigationJson() {
+    if (!currentInvestigation) {
+      alert('Investigation data is not yet loaded.');
+      return;
+    }
+    const invId = currentInvestigation.investigation_id || 'NS-EXPORT';
+    const blob = new Blob([JSON.stringify(currentInvestigation, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `NeuraShield_Dossier_${invId}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }
+
+  function prepareEvidencePackageModal() {
+    if (!currentInvestigation) {
+      alert('Investigation data is not yet loaded.');
+      return;
+    }
+    const invId = currentInvestigation.investigation_id || 'NS-ADHOC';
+    const target = (currentInvestigation.target && (currentInvestigation.target.original_url || currentInvestigation.target.normalized_url)) || currentInvestigation.domain || 'N/A';
+    const dna = currentInvestigation.threat_dna || 'NS-DNA-UNKNOWN';
+    const risk = currentInvestigation.risk || {};
+    const score = risk.composite_score != null ? risk.composite_score : (risk.probability || 0);
+    const level = (risk.composite_level || 'LOW').toUpperCase();
+    const ledger = currentInvestigation.evidence_ledger || [];
+
+    const summaryText = `NEURASHIELD CYBER THREAT EVIDENCE DOSSIER
+================================================================================
+Investigation ID: ${invId}
+Target Analyzed:  ${target}
+Threat DNA:       ${dna}
+Risk Assessment:  ${level} (${score}/100)
+Captured:         ${currentInvestigation.timestamp || new Date().toISOString()}
+Evidence Signals: ${ledger.length} verified findings logged
+================================================================================
+Chain of Custody Notice:
+This structured forensic telemetry package was prepared for submission to
+authorized cybersecurity incident response teams, CERT/CSIRTs, or law enforcement.
+NeuraShield preserves technical telemetry without modification.
+================================================================================`;
+
+    const blob = new Blob([summaryText + '\n\n' + JSON.stringify(currentInvestigation, null, 2)], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `NeuraShield_Evidence_Package_${invId}.txt`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }
+
+  function setupScrollSpy() {
+    const sections = document.querySelectorAll('main.report-content-col section.report-section, #sec-hero');
+    const navLinks = document.querySelectorAll('.threat-nav-list .threat-nav-item');
+
+    window.addEventListener('scroll', () => {
+      let currentSectionId = '';
+      sections.forEach(sec => {
+        const top = sec.offsetTop - 140;
+        if (window.pageYOffset >= top) {
+          currentSectionId = sec.getAttribute('id');
+        }
+      });
+
+      navLinks.forEach(link => {
+        link.classList.remove('active');
+        if (link.getAttribute('href') === '#' + currentSectionId) {
+          link.classList.add('active');
+        }
+      });
+    });
+  }
+
+  function copyInvestigationId() {
+    if (!currentInvestigation) return;
+    const id = currentInvestigation.investigation_id;
+    navigator.clipboard.writeText(id).then(() => {
+      const btn = document.getElementById('btnCopyInvId');
+      const orig = btn.innerHTML;
+      btn.innerHTML = '✓ Copied!';
+      setTimeout(() => btn.innerHTML = orig, 2000);
+    });
+  }
+
+  function copyThreatDna() {
+    if (!currentInvestigation) return;
+    navigator.clipboard.writeText(currentInvestigation.threat_dna || '').then(() => alert('Threat DNA signature copied!'));
+  }
+
+  function copyTargetUrl() {
+    if (!currentInvestigation) return;
+    const url = (currentInvestigation.target && (currentInvestigation.target.original_url || currentInvestigation.target.normalized_url)) || '';
+    navigator.clipboard.writeText(url).then(() => alert('Target URL copied to clipboard!'));
+  }
+
+  function copyShareLink(btn) {
+    navigator.clipboard.writeText(window.location.href).then(() => {
+      const orig = btn.innerHTML;
+      btn.innerHTML = '✓ Copied!';
+      setTimeout(() => btn.innerHTML = orig, 2000);
+    });
+  }
+
+  function shareTwitter() {
+    const text = encodeURIComponent(`NeuraShield Threat Lens Report: ${window.location.href}`);
+    window.open(`https://twitter.com/intent/tweet?text=${text}`, '_blank');
+  }
+
+  function shareFacebook() {
+    const url = encodeURIComponent(window.location.href);
+    window.open(`https://www.facebook.com/sharer/sharer.php?u=${url}`, '_blank');
+  }
+</script>
+</body>
+</html>

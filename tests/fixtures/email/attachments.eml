@@ -1,0 +1,44 @@
+From: Accounts Payable <ap@vendor-billing.top>
+To: finance@recipient.test
+Subject: Outstanding invoice - payment overdue
+Date: Wed, 23 Sep 2026 09:00:00 +0000
+Message-ID: <inv-77@vendor-billing.top>
+MIME-Version: 1.0
+Content-Type: multipart/mixed; boundary="===============0760876386968049004=="
+
+--===============0760876386968049004==
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: quoted-printable
+
+Hello, the outstanding invoice is attached. Please open the attachment and en=
+able content to view. Payment is overdue; wire transfer to our new bank accou=
+nt today.
+
+--===============0760876386968049004==
+Content-Type: application/zip
+Content-Transfer-Encoding: base64
+Content-Disposition: attachment; filename="invoice.zip"
+MIME-Version: 1.0
+
+UEsDBBQAAAAAAPWDN12GhER2QgAAAEIAAAAQAAAAaW52b2ljZV8wOTIzLmV4ZU1aAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFBL
+AwQUAAAAAAD1gzddZ184sQwAAAAMAAAACgAAAHJlYWRtZS50eHRzZWUgYXR0YWNoZWRQSwECFAMU
+AAAAAAD1gzddhoREdkIAAABCAAAAEAAAAAAAAAAAAAAAgAEAAAAAaW52b2ljZV8wOTIzLmV4ZVBL
+AQIUAxQAAAAAAPWDN11nXzixDAAAAAwAAAAKAAAAAAAAAAAAAACAAXAAAAByZWFkbWUudHh0UEsF
+BgAAAAACAAIAdgAAAKQAAAAAAA==
+
+--===============0760876386968049004==
+Content-Type: application/vnd.ms-word.document.macroEnabled.12
+Content-Transfer-Encoding: base64
+Content-Disposition: attachment; filename="Remittance.docm"
+MIME-Version: 1.0
+
+UEsDBBQAAAAAAPWDN13HHBc8CAAAAAgAAAATAAAAW0NvbnRlbnRfVHlwZXNdLnhtbDxUeXBlcy8+
+UEsDBBQAAAAAAPWDN13dWoYNDQAAAA0AAAARAAAAd29yZC9kb2N1bWVudC54bWw8dzpkb2N1bWVu
+dC8+UEsDBBQAAAAAAPWDN133LYqBEAAAABAAAAATAAAAd29yZC92YmFQcm9qZWN0LmJpbgBmYWtl
+LXZiYS1tYXJrZXJQSwECFAMUAAAAAAD1gzddxxwXPAgAAAAIAAAAEwAAAAAAAAAAAAAAgAEAAAAA
+W0NvbnRlbnRfVHlwZXNdLnhtbFBLAQIUAxQAAAAAAPWDN13dWoYNDQAAAA0AAAARAAAAAAAAAAAA
+AACAATkAAAB3b3JkL2RvY3VtZW50LnhtbFBLAQIUAxQAAAAAAPWDN133LYqBEAAAABAAAAATAAAA
+AAAAAAAAAACAAXUAAAB3b3JkL3ZiYVByb2plY3QuYmluUEsFBgAAAAADAAMAwQAAALYAAAAAAA==
+
+--===============0760876386968049004==--

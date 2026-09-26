@@ -1,0 +1,10 @@
+From: =?utf-8?B?w4lxdWlwZSBGYWN0dXJhdGlvbg==?= <billing@example.org>
+To: client@recipient.test
+Subject: =?utf-8?Q?Votre_facture_=E2=80=94_septembre?=
+Date: Wed, 23 Sep 2026 07:00:00 +0200
+Message-ID: <enc1@example.org>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=utf-8
+Content-Transfer-Encoding: base64
+
+Qm9uam91ciwgdm90cmUgZmFjdHVyZSBlc3QgZGlzcG9uaWJsZTogaHR0cHM6Ly9kb2NzLmV4YW1wbGUub3JnL2YvMTIz

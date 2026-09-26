@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Continuous Threat Monitoring — NeuraShield SOC</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='neurashield.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='ns_investigation.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='investigation_center.css') }}">
+  <style>
+    .mon-layout { max-width: 1400px; margin: 0 auto; padding: 24px 20px 80px 20px; display: flex; flex-direction: column; gap: 24px; }
+    .mon-hero {
+      background: linear-gradient(135deg, rgba(6,16,28,0.95), rgba(4,10,18,0.98));
+      border: 1px solid rgba(0, 229, 255, 0.25); border-left: 4px solid #00e5ff;
+      border-radius: 8px; padding: 22px 24px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;
+    }
+    .mon-hero h1 { margin: 0; font-size: 22px; font-weight: 700; color: #fff; display: flex; align-items: center; gap: 10px; }
+    .mon-hero p { margin: 6px 0 0 0; font-size: 13px; color: var(--ic-text-dim, #94a3b8); }
+    .mon-stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; }
+    .mon-stat-card { background: rgba(10, 18, 28, 0.7); border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 16px 20px; }
+    .mon-stat-val { font-size: 28px; font-weight: 800; font-family: var(--ns-mono, monospace); color: #00e5ff; margin-top: 4px; }
+    .mon-stat-lbl { font-size: 11px; text-transform: uppercase; color: #64748b; letter-spacing: 0.05em; font-weight: 600; }
+    
+    .mon-table { width: 100%; border-collapse: collapse; font-size: 13px; margin-top: 12px; }
+    .mon-table th { text-align: left; padding: 10px 14px; background: rgba(0,0,0,0.4); color: #64748b; font-family: var(--ns-mono, monospace); font-size: 11px; text-transform: uppercase; border-bottom: 1px solid rgba(255,255,255,0.08); }
+    .mon-table td { padding: 14px; border-bottom: 1px solid rgba(255,255,255,0.05); vertical-align: middle; }
+    .mon-table tr:hover { background: rgba(0, 229, 255, 0.02); }
+
+    .mon-badge { display: inline-block; padding: 3px 8px; border-radius: 4px; font-size: 10px; font-weight: 700; font-family: var(--ns-mono, monospace); text-transform: uppercase; }
+    .mon-badge-low { background: rgba(34, 197, 94, 0.15); color: #4ade80; border: 1px solid rgba(34, 197, 94, 0.3); }
+    .mon-badge-high { background: rgba(239, 68, 68, 0.15); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.3); }
+    .mon-badge-active { background: rgba(6, 182, 212, 0.15); color: #38bdf8; border: 1px solid rgba(6, 182, 212, 0.3); }
+
+    .mon-diff-box { background: rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.08); border-radius: 6px; padding: 14px; font-family: var(--ns-mono, monospace); font-size: 11px; color: #cbd5e1; line-height: 1.6; }
+  </style>
+</head>
+<body>
+
+<nav class="ns-nav scrolled" style="background:rgba(6, 9, 14, 0.96); border-bottom: 1px solid rgba(0, 200, 255, 0.16);">
+  <div class="ns-nav-inner">
+    <a href="/" class="ns-logo">
+      <img src="{{ url_for('static', filename='static/ns_logo.png') }}" class="ns-logo-icon" alt="NS" onerror="this.style.display='none';">
+      <div class="ns-logo-text">
+        <span class="ns-logo-name">NeuraShield</span>
+        <span class="ns-logo-sub">Cybersecurity Investigation Platform</span>
+      </div>
+    </a>
+    <div class="ns-nav-actions">
+      <span style="font-family:var(--ns-mono);font-size:11px;color:#94a3b8;margin-left:14px;">{{ username }}</span>
+      <a href="/logout" class="btn-ghost" style="margin-left:8px;">Logout</a>
+    </div>
+  </div>
+</nav>
+
+<div class="inv-layout">
+  <aside class="inv-sidebar">
+    <div class="who">
+      <small>Security Operations</small>
+      <b>{{ username }}</b>
+    </div>
+    <ul class="inv-nav" id="sidebar-nav"></ul>
+  </aside>
+
+  <main class="inv-main">
+    <div class="mon-layout">
+      <!-- Hero Header -->
+      <div class="mon-hero">
+        <div>
+          <h1><span>🛰️</span> Module 7 — Continuous Threat Monitoring</h1>
+          <p>Automated baseline tracking, DNS/IP drift analysis, and proactive anomaly investigation for enterprise assets.</p>
+        </div>
+        <button class="ic-btn-primary" onclick="openEnrollModal()">
+          <span>+ Enroll Asset</span>
+        </button>
+      </div>
+
+      <!-- Quick Telemetry Stats -->
+      <div class="mon-stats-grid">
+        <div class="mon-stat-card">
+          <div class="mon-stat-lbl">Active Monitored Targets</div>
+          <div class="mon-stat-val" id="statTotalAssets">0</div>
+        </div>
+        <div class="mon-stat-card">
+          <div class="mon-stat-lbl">Infrastructure Shifts Detected</div>
+          <div class="mon-stat-val" id="statTotalEvents" style="color:#fbbf24;">0</div>
+        </div>
+        <div class="mon-stat-card">
+          <div class="mon-stat-lbl">High-Risk Drift Alerts</div>
+          <div class="mon-stat-val" id="statHighRisk" style="color:#f87171;">0</div>
+        </div>
+        <div class="mon-stat-card">
+          <div class="mon-stat-lbl">Engine Health</div>
+          <div class="mon-stat-val" style="color:#4ade80;font-size:20px;padding-top:6px;">ONLINE (1h cycle)</div>
+        </div>
+      </div>
+
+      <!-- Asset Enrollment Form Card (Collapsible) -->
+      <div class="ic-card" id="enrollCard" style="display:none;">
+        <div class="ic-card-header" style="display:flex;justify-content:space-between;">
+          <span class="ic-card-title">Enroll New Monitored Asset</span>
+          <button type="button" class="btn-ghost" onclick="closeEnrollModal()">Cancel</button>
+        </div>
+        <form onsubmit="submitEnrollAsset(event)" style="margin-top:14px;display:grid;grid-template-columns:1fr 1fr 1fr auto;gap:12px;align-items:end;">
+          <div>
+            <label class="ic-selector-label">Target Domain / URL</label>
+            <input type="text" id="enrollTarget" class="ic-text-input" placeholder="e.g. secure.bank-portal.com" required>
+          </div>
+          <div>
+            <label class="ic-selector-label">Asset Type</label>
+            <select id="enrollType" class="ic-text-input" style="background:#040911;">
+              <option value="DOMAIN">DOMAIN</option>
+              <option value="URL">URL / WEBPAGE</option>
+            </select>
+          </div>
+          <div>
+            <label class="ic-selector-label">Friendly Label / Owner</label>
+            <input type="text" id="enrollLabel" class="ic-text-input" placeholder="e.g. Corporate SSO Gateway">
+          </div>
+          <button type="submit" class="ic-start-btn" style="height:44px;">
+            <span>ESTABLISH BASELINE</span>
+          </button>
+        </form>
+      </div>
+
+      <!-- Monitored Assets Table -->
+      <div class="ic-card">
+        <div class="ic-card-header" style="display:flex;justify-content:space-between;align-items:center;">
+          <span class="ic-card-title">Monitored Assets &amp; Baseline Status</span>
+          <button class="btn-ghost" onclick="loadMonitoredAssets()">↻ Refresh</button>
+        </div>
+        <div style="overflow-x:auto;">
+          <table class="mon-table">
+            <thead>
+              <tr>
+                <th>Target Asset</th>
+                <th>Type</th>
+                <th>Status</th>
+                <th>Current Risk</th>
+                <th>Shifts</th>
+                <th>Last Checked</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="assetsTableBody">
+              <tr><td colspan="7" style="text-align:center;color:#64748b;padding:24px;">Loading monitored assets...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Recent Differential Events -->
+      <div class="ic-card">
+        <div class="ic-card-header">
+          <span class="ic-card-title">Drift Detection &amp; Alert Ledger</span>
+        </div>
+        <div id="eventsList" style="margin-top:14px;display:flex;flex-direction:column;gap:10px;">
+          <div style="color:#64748b;font-size:12px;">Loading recent alert events...</div>
+        </div>
+      </div>
+
+    </div>
+  </main>
+</div>
+
+<script src="{{ url_for('static', filename='ns_investigation.js') }}"></script>
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    NS.renderNav(document.getElementById('sidebar-nav'), 'monitoring');
+    loadMonitoredAssets();
+    loadRecentEvents();
+  });
+
+  function openEnrollModal() { document.getElementById('enrollCard').style.display = 'block'; }
+  function closeEnrollModal() { document.getElementById('enrollCard').style.display = 'none'; }
+
+  async function loadMonitoredAssets() {
+    try {
+      const res = await fetch('/api/monitoring');
+      const data = await res.json();
+      const assets = data.assets || [];
+      document.getElementById('statTotalAssets').textContent = assets.length;
+
+      let highRiskCount = 0;
+      let totalShifts = 0;
+
+      const tbody = document.getElementById('assetsTableBody');
+      if (!assets.length) {
+        tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:#64748b;padding:24px;">No assets enrolled yet. Click "+ Enroll Asset" above to begin monitoring.</td></tr>';
+        return;
+      }
+
+      tbody.innerHTML = assets.map(a => {
+        if (a.current_risk_level === 'HIGH' || a.current_risk_level === 'CRITICAL') highRiskCount++;
+        totalShifts += (a.change_count || 0);
+
+        const rLvl = a.current_risk_level || 'LOW';
+        const badgeCls = (rLvl === 'HIGH' || rLvl === 'CRITICAL') ? 'mon-badge-high' : 'mon-badge-low';
+        return `
+          <tr>
+            <td>
+              <strong style="color:#f8fafc;">${NS.esc(a.target)}</strong>
+              ${a.label ? `<div style="font-size:11px;color:#64748b;">${NS.esc(a.label)}</div>` : ''}
+            </td>
+            <td><span class="mon-badge">${NS.esc(a.asset_type)}</span></td>
+            <td><span class="mon-badge mon-badge-active">${NS.esc(a.status)}</span></td>
+            <td><span class="mon-badge ${badgeCls}">${NS.esc(rLvl)} (${a.current_risk_score}/100)</span></td>
+            <td><strong style="color:#38bdf8;">${a.change_count || 0}</strong></td>
+            <td style="font-family:var(--ns-mono);font-size:11px;color:#94a3b8;">${a.last_checked_at ? a.last_checked_at.replace('T', ' ').slice(0, 16) : 'Never'}</td>
+            <td>
+              <button class="btn-elev" onclick="checkAssetNow(${a.id})" style="padding:4px 10px;font-size:11px;">Check Now</button>
+              <button class="btn-ghost" onclick="deleteAsset(${a.id})" style="padding:4px 8px;font-size:11px;color:#f87171;">✕</button>
+            </td>
+          </tr>
+        `;
+      }).join('');
+
+      document.getElementById('statHighRisk').textContent = highRiskCount;
+      document.getElementById('statTotalEvents').textContent = totalShifts;
+    } catch (err) {
+      console.error(err);
+    }
+  }
+
+  async function checkAssetNow(id) {
+    try {
+      const btn = event.target;
+      btn.disabled = true;
+      btn.textContent = 'Checking...';
+      const res = await fetch(`/api/monitoring/${id}/check`, { method: 'POST' });
+      const data = await res.json();
+      btn.disabled = false;
+      btn.textContent = 'Check Now';
+      loadMonitoredAssets();
+      loadRecentEvents();
+      alert(`Check completed. Discovered ${data.events_count} infrastructure/risk changes.`);
+    } catch (e) {
+      alert('Check failed: ' + e.message);
+    }
+  }
+
+  async function submitEnrollAsset(e) {
+    e.preventDefault();
+    const target = document.getElementById('enrollTarget').value.trim();
+    const asset_type = document.getElementById('enrollType').value;
+    const label = document.getElementById('enrollLabel').value.trim();
+
+    try {
+      const res = await fetch('/api/monitoring', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ target, asset_type, label })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Enrollment failed');
+      closeEnrollModal();
+      document.getElementById('enrollTarget').value = '';
+      loadMonitoredAssets();
+    } catch (err) {
+      alert(err.message);
+    }
+  }
+
+  async function deleteAsset(id) {
+    if (!confirm('Are you sure you want to stop monitoring this asset?')) return;
+    try {
+      await fetch(`/api/monitoring/${id}`, { method: 'DELETE' });
+      loadMonitoredAssets();
+    } catch (e) {
+      alert('Delete failed');
+    }
+  }
+
+  async function loadRecentEvents() {
+    try {
+      const res = await fetch('/api/monitoring/events');
+      const data = await res.json();
+      const evs = data.events || [];
+      const container = document.getElementById('eventsList');
+      if (!evs.length) {
+        container.innerHTML = '<div style="color:#64748b;font-size:12px;padding:12px 0;">No drift events recorded yet. Baselines are consistent.</div>';
+        return;
+      }
+      container.innerHTML = evs.map(ev => `
+        <div class="mon-diff-box" style="border-left: 3px solid ${ev.severity === 'CRITICAL' ? '#ef4444' : (ev.severity === 'HIGH' ? '#f59e0b' : '#38bdf8')};">
+          <div style="display:flex;justify-content:space-between;margin-bottom:4px;">
+            <strong style="color:#fff;">${NS.esc(ev.target)}</strong>
+            <span style="color:#64748b;font-size:10px;">${NS.esc(ev.created_at.replace('T', ' ').slice(0, 16))}</span>
+          </div>
+          <div>${NS.esc(ev.diff_summary)}</div>
+          ${ev.investigation_id ? `<div style="margin-top:6px;font-size:10px;"><a href="/investigation-center?id=${NS.esc(ev.investigation_id)}" style="color:#00e5ff;">View Triggered Investigation (${NS.esc(ev.investigation_id)}) →</a></div>` : ''}
+        </div>
+      `).join('');
+    } catch (e) {
+      console.error(e);
+    }
+  }
+</script>
+</body>
+</html>

@@ -1,127 +1,644 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Admin Dashboard</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin — NeuraShield Command Center</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='neurashield.css') }}">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    .ns-layout{display:flex;min-height:100vh;padding-top:68px;}
+    .ns-sidebar{width:220px;flex-shrink:0;background:var(--ns-surface);border-right:1px solid var(--ns-border);display:flex;flex-direction:column;padding:28px 0;position:fixed;top:68px;left:0;bottom:0;overflow-y:auto;}
+    .ns-sidebar-logo{padding:0 20px 24px;border-bottom:1px solid var(--ns-border);margin-bottom:16px;}
+    .sidebar-nav{list-style:none;padding:0 10px;}
+    .sidebar-nav li{margin-bottom:2px;}
+    .sidebar-nav a{display:flex;align-items:center;gap:10px;padding:10px 14px;font-size:12px;font-weight:500;letter-spacing:0.04em;text-transform:uppercase;color:var(--ns-text-muted);text-decoration:none;border-radius:var(--ns-radius);transition:var(--ns-transition);}
+    .sidebar-nav a:hover{color:var(--ns-text);background:rgba(0,200,255,0.05);}
+    .sidebar-nav a.active{color:var(--ns-cyan);background:var(--ns-cyan-dim);}
+    .sidebar-bottom{margin-top:auto;padding:16px;border-top:1px solid var(--ns-border);}
+    .ns-main{flex:1;margin-left:220px;padding:40px;max-width:calc(100vw - 220px);}
+    .ns-page-title{font-size:22px;font-weight:700;letter-spacing:-0.02em;margin-bottom:4px;}
+    .ns-page-sub{font-family:var(--ns-mono);font-size:11px;letter-spacing:0.08em;text-transform:uppercase;color:var(--ns-text-muted);}
+    @media(max-width:900px){.ns-sidebar{display:none;}.ns-main{margin-left:0;max-width:100%;padding:20px;}}
+
+    .admin-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:28px;}
+    @media(max-width:900px){.admin-stats{grid-template-columns:repeat(2,1fr);}}
+    @media(max-width:480px){.admin-stats{grid-template-columns:1fr;}}
+
+    .admin-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px;}
+    @media(max-width:800px){.admin-grid{grid-template-columns:1fr;}}
+
+    .chart-wrap{padding:24px;max-width:300px;margin:0 auto;}
+
+    .scan-input-row{display:flex;gap:12px;margin-top:16px;}
+    @media(max-width:560px){.scan-input-row{flex-direction:column;}}
+  </style>
 </head>
 <body>
-    <!-- Advanced Terminal Loader -->
-    <div id="loading-overlay">
-        <div class="terminal-loader" id="terminal-content">
-            <div class="terminal-line">> INITIALIZING SCANNING PROTOCOL...</div>
-        </div>
-        <div class="loader-bar">
-            <div class="loader-progress" id="progress-bar"></div>
-        </div>
+
+<!-- Navbar -->
+<nav class="ns-nav scrolled" style="background:rgba(8,12,16,0.95);">
+  <div class="ns-nav-inner">
+    <a href="/" class="ns-logo">
+      <img src="{{ url_for('static', filename='static/ns_logo.png') }}" class="ns-logo-icon" alt="NS" onerror="this.style.display='none';">
+      <div class="ns-logo-text">
+        <span class="ns-logo-name">NeuraShield</span>
+        <span class="ns-logo-sub">Command Center</span>
+      </div>
+    </a>
+    <div class="ns-nav-actions">
+      <span class="ns-badge ns-badge-cyan" style="margin-right:8px;"><span class="dot"></span> Commander</span>
+      <span style="font-family:var(--ns-mono);font-size:11px;color:var(--ns-text-dim);">{{ username }}</span>
+      <a href="/logout" class="btn-ghost">Logout</a>
+    </div>
+  </div>
+</nav>
+
+<div class="ns-layout">
+  <!-- Sidebar -->
+  <aside class="ns-sidebar">
+    <div class="ns-sidebar-logo">
+      <div style="font-family:var(--ns-mono);font-size:9px;letter-spacing:0.15em;text-transform:uppercase;color:var(--ns-text-muted);">Commander (Admin)</div>
+      <div style="font-size:13px;font-weight:600;color:var(--ns-text);margin-top:2px;">{{ username }}</div>
+    </div>
+    <ul class="sidebar-nav">
+      <li><a href="/admin" class="active"><span class="icon">📊</span> Command Center</a></li>
+      <li><a href="/admin/institutions"><span class="icon">🏛</span> Institutional Directory</a></li>
+      <li><a href="/gmail-simulation" target="_blank"><span class="icon">✉</span> Gmail Demo Live</a></li>
+      <li><a href="/investigation-center"><span class="icon">⚡</span> Investigation Center</a></li>
+      <li><a href="/domain-intelligence"><span class="icon">🌐</span> Domain Intel</a></li>
+      <li><a href="/upload"><span class="icon">📂</span> Bulk Analysis</a></li>
+      <li style="margin-top:16px;padding:0 14px;font-family:var(--ns-mono);font-size:9px;letter-spacing:0.15em;text-transform:uppercase;color:var(--ns-text-muted);">Planned</li>
+      <li><a style="opacity:0.4;cursor:not-allowed;"><span class="icon">📈</span> Analytics</a></li>
+      <li><a style="opacity:0.4;cursor:not-allowed;"><span class="icon">🔬</span> Model Performance</a></li>
+    </ul>
+    <div class="sidebar-bottom">
+      <a href="/logout" class="btn-ghost btn-full" style="font-size:10px;">Logout</a>
+    </div>
+  </aside>
+
+  <!-- Main -->
+  <main class="ns-main">
+    <div style="margin-bottom:36px;">
+      <div class="ns-page-title">Command Center</div>
+      <div class="ns-page-sub">System Overview · Threat Intelligence Analytics</div>
     </div>
 
-    <nav>
-        <a href="/admin">Home</a>
-        <a href="/upload">Bulk Analysis</a>
-        <a href="/logout">Logout</a>
-    </nav>
-    <div class="container" style="max-width: 900px; margin-top: 100px;">
-        <h2>COMMAND CENTER</h2>
-        <p>System Overview & Global Threat Analysis</p>
+    <!-- Stats -->
+    <div class="admin-stats">
+      <div class="ns-stat">
+        <div class="ns-stat-value">{{ total_users }}</div>
+        <div class="ns-stat-label">Active Agents</div>
+      </div>
+      <div class="ns-stat">
+        <div class="ns-stat-value">{{ total_logs }}</div>
+        <div class="ns-stat-label">Total Scans</div>
+      </div>
+      <div class="ns-stat">
+        <div class="ns-stat-value" style="color:var(--ns-red);">{{ phishing_count }}</div>
+        <div class="ns-stat-label">Threats Found</div>
+      </div>
+      <div class="ns-stat">
+        <div class="ns-stat-value" style="color:var(--ns-green);">{{ legitimate_count }}</div>
+        <div class="ns-stat-label">Legitimate</div>
+      </div>
+    </div>
 
-        <div style="display: flex; justify-content: space-around; margin: 40px 0; gap: 20px;">
-            <div style="background: rgba(255,255,255,0.05); padding: 25px; border-radius: 15px; width: 45%; border: 1px solid rgba(255,255,255,0.1);">
-                <h3 style="margin: 0; font-size: 2.5em; color: #00f260; text-shadow: 0 0 15px rgba(0,242,96,0.3);">{{ total_users }}</h3>
-                <span style="color: #a0aab5; font-size: 0.8em; letter-spacing: 2px;">ACTIVE AGENTS</span>
-            </div>
-            <div style="background: rgba(255,255,255,0.05); padding: 25px; border-radius: 15px; width: 45%; border: 1px solid rgba(255,255,255,0.1);">
-                <h3 style="margin: 0; font-size: 2.5em; color: #4facfe; text-shadow: 0 0 15px rgba(79,172,254,0.3);">{{ total_logs }}</h3>
-                <span style="color: #a0aab5; font-size: 0.8em; letter-spacing: 2px;">TOTAL SCANS</span>
-            </div>
+    <div class="admin-grid">
+      <!-- Chart -->
+      <div class="ns-card">
+        <div class="scan-line"></div>
+        <div style="font-size:12px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--ns-text);margin-bottom:4px;">Threat Distribution</div>
+        <div style="font-family:var(--ns-mono);font-size:10px;color:var(--ns-text-muted);margin-bottom:20px;">Phishing vs Legitimate detections</div>
+        <div class="chart-wrap">
+          <canvas id="threatChart"></canvas>
         </div>
-
-        <div style="background: rgba(255,255,255,0.05); padding: 20px; border-radius: 15px; margin: 30px auto; max-width: 400px;">
-            <canvas id="threatChart"></canvas>
+        <div style="display:flex;justify-content:center;gap:20px;margin-top:12px;">
+          <div style="display:flex;align-items:center;gap:6px;font-family:var(--ns-mono);font-size:10px;color:var(--ns-text-muted);">
+            <div style="width:10px;height:10px;border-radius:2px;background:var(--ns-red);"></div> Phishing
+          </div>
+          <div style="display:flex;align-items:center;gap:6px;font-family:var(--ns-mono);font-size:10px;color:var(--ns-text-muted);">
+            <div style="width:10px;height:10px;border-radius:2px;background:var(--ns-green);"></div> Legitimate
+          </div>
         </div>
+      </div>
 
-        <h3>QUICK THREAT SCAN</h3>
-        <form id="scanForm" method="POST" action="/admin" onsubmit="startAdminScan(event)">
-            <input type="text" name="url" placeholder="Enter Target URL for Immediate Analysis" required>
-            <button type="submit">PERFORMANCE ANALYSIS</button>
+      <!-- Quick Scan -->
+      <div class="ns-card">
+        <div class="scan-line"></div>
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+          <span class="ns-badge ns-badge-cyan"><span class="dot"></span> Active</span>
+          <span style="font-family:var(--ns-mono);font-size:10px;letter-spacing:0.1em;text-transform:uppercase;color:var(--ns-text-muted);">URL Engine</span>
+        </div>
+        <div style="font-size:15px;font-weight:700;margin-bottom:4px;">Quick Threat Scan</div>
+        <p style="font-size:13px;color:var(--ns-text-dim);margin-bottom:0;">Analyze any URL through the full detection pipeline with live neural visualization.</p>
+
+        <form method="POST" action="/admin" id="adminScanForm" onsubmit="startAdminScan(event)">
+          <div class="scan-input-row">
+            <input type="text" name="url" id="adminScanUrl" class="ns-input" placeholder="https://target-url.com" required style="flex:1;">
+            <button type="submit" class="btn-primary" id="adminScanBtn" style="padding:14px 20px;">
+              <span class="btn-light"></span>Scan <span class="btn-arrow">→</span>
+            </button>
+          </div>
         </form>
 
-        {% if result %}
-        <div class="result {{ result }}">
-            VERDICT: {{ result }}
+        <!-- Threat Core Stage -->
+        <div class="scan-core-stage" id="adminCoreStage" aria-hidden="true" style="margin-top:16px;">
+          <canvas class="scan-core-canvas" id="adminCoreCanvas" width="180" height="180"></canvas>
+          <div class="scan-core-target" id="adminCoreTarget"></div>
+          <div class="scan-bars" id="adminBars"></div>
         </div>
-        {% endif %}
 
-        <div style="margin-top: 40px;">
-             <a href="/upload" class="button" style="background: linear-gradient(90deg, #4facfe, #00f260); color: white; padding: 15px 30px; border-radius: 50px; text-decoration: none; font-weight: bold; box-shadow: 0 4px 15px rgba(79,172,254,0.4);">INITIATE MASS DATA INGESTION</a>
+        <!-- Result Container -->
+        <div id="adminResultContainer">
+          {% if result %}
+          <div style="margin-top:20px;padding:16px;border-radius:var(--ns-radius);
+            {% if 'Phishing' in result %}background:var(--ns-red-dim);border:1px solid rgba(255,59,59,0.3);
+            {% elif result == 'Legitimate' %}background:var(--ns-green-dim);border:1px solid rgba(0,214,143,0.3);
+            {% else %}background:rgba(255,170,0,0.1);border:1px solid rgba(255,170,0,0.3);{% endif %}">
+            <span class="ns-verdict {% if 'Phishing' in result %}phishing{% elif result == 'Legitimate' %}legitimate{% else %}warning{% endif %}">
+              {% if 'Phishing' in result %}⚠ {{ result }}{% elif result == 'Legitimate' %}✓ Legitimate{% else %}{{ result }}{% endif %}
+            </span>
+          </div>
+          {% endif %}
         </div>
+
+        <div style="margin-top:20px;padding-top:16px;border-top:1px solid var(--ns-border);">
+          <a href="/upload" class="btn-primary btn-full" style="padding:13px;justify-content:center;">
+            <span class="btn-light"></span>
+            Open Bulk CSV Analyzer <span class="btn-arrow">→</span>
+          </a>
+        </div>
+      </div>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script>
-        const ctx = document.getElementById('threatChart').getContext('2d');
-        new Chart(ctx, {
-            type: 'doughnut',
-            data: {
-                labels: ['Phishing', 'Legitimate'],
-                datasets: [{
-                    data: [{{ phishing_count }}, {{ legitimate_count }}],
-                    backgroundColor: ['#ff3b30', '#34c759'],
-                    borderColor: ['rgba(255, 59, 48, 0.5)', 'rgba(52, 199, 89, 0.5)'],
-                    borderWidth: 1
-                }]
-            },
-            options: {
-                responsive: true,
-                plugins: {
-                    legend: {
-                        labels: { color: '#c9d1d9' }
-                    }
-                }
-            }
-        });
+    <!-- Detection method breakdown -->
+    <div style="margin-top:20px;" class="ns-card">
+      <div class="scan-line"></div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;">
+        <div>
+          <div style="font-size:12px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;">System Status</div>
+          <div style="font-family:var(--ns-mono);font-size:10px;color:var(--ns-text-muted);margin-top:2px;">Detection engine health</div>
+        </div>
+        <span class="ns-badge ns-badge-green"><span class="dot"></span> All Systems Operational</span>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px;">
+        <div style="padding:14px;background:var(--ns-surface-2);border:1px solid var(--ns-border);border-radius:var(--ns-radius);">
+          <div style="font-family:var(--ns-mono);font-size:9px;letter-spacing:0.15em;text-transform:uppercase;color:var(--ns-text-muted);margin-bottom:6px;">Rule Engine</div>
+          <span class="ns-badge ns-badge-green"><span class="dot"></span> Online</span>
+        </div>
+        <div style="padding:14px;background:var(--ns-surface-2);border:1px solid var(--ns-border);border-radius:var(--ns-radius);">
+          <div style="font-family:var(--ns-mono);font-size:9px;letter-spacing:0.15em;text-transform:uppercase;color:var(--ns-text-muted);margin-bottom:6px;">ML Classifier</div>
+          <span class="ns-badge ns-badge-green"><span class="dot"></span> Online</span>
+        </div>
+        <div style="padding:14px;background:var(--ns-surface-2);border:1px solid var(--ns-border);border-radius:var(--ns-radius);">
+          <div style="font-family:var(--ns-mono);font-size:9px;letter-spacing:0.15em;text-transform:uppercase;color:var(--ns-text-muted);margin-bottom:6px;">Scan Database</div>
+          <span class="ns-badge ns-badge-green"><span class="dot"></span> Online</span>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
 
-        function startAdminScan(event) {
-            event.preventDefault();
-            const overlay = document.getElementById('loading-overlay');
-            const terminal = document.getElementById('terminal-content');
-            const bar = document.getElementById('progress-bar');
-            overlay.style.display = 'flex';
-
-            const steps = [
-                "> AUTHENTICATING ADMIN CREDENTIALS...",
-                "> CONNECTING TO THREAT INTELLIGENCE FEED...",
-                "> BYPASSING CACHE LAYER...",
-                "> PERFORMING DEEP PACKET INSPECTION...",
-                "> RUNNING HEURISTIC ANALYSIS...",
-                "> CROSS-REFERENCING BLACKLISTS...",
-                "> ANALYZING DOMAIN REPUTATION...",
-                "> FINALIZING VERDICT..."
-            ];
-
-            let stepIndex = 0;
-            const totalTime = 4000; 
-            const intervalTime = totalTime / steps.length;
-
-            terminal.innerHTML = '<div class="terminal-line">> INITIALIZING SYSTEM...</div>';
-
-            const interval = setInterval(() => {
-                if (stepIndex < steps.length) {
-                    const div = document.createElement('div');
-                    div.className = 'terminal-line';
-                    div.innerText = steps[stepIndex];
-                    terminal.appendChild(div);
-                    
-                    // Update progress bar
-                    const percent = ((stepIndex + 1) / steps.length) * 100;
-                    bar.style.width = percent + '%';
-                    
-                    stepIndex++;
-                } else {
-                    clearInterval(interval);
-                    document.getElementById('scanForm').submit();
-                }
-            }, intervalTime);
+<script>
+  // Chart.js
+  const ctx = document.getElementById('threatChart').getContext('2d');
+  new Chart(ctx, {
+    type: 'doughnut',
+    data: {
+      labels: ['Phishing', 'Legitimate'],
+      datasets: [{
+        data: [{{ phishing_count }}, {{ legitimate_count }}],
+        backgroundColor: ['rgba(255,59,59,0.8)', 'rgba(0,214,143,0.8)'],
+        borderColor: ['rgba(255,59,59,0.3)', 'rgba(0,214,143,0.3)'],
+        borderWidth: 1,
+        hoverBackgroundColor: ['rgba(255,59,59,1)', 'rgba(0,214,143,1)'],
+      }]
+    },
+    options: {
+      cutout: '72%',
+      responsive: true,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: '#0d1520',
+          borderColor: 'rgba(0,200,255,0.2)',
+          borderWidth: 1,
+          titleColor: '#e2e8f0',
+          bodyColor: '#94a3b8',
+          titleFont: { family: 'JetBrains Mono', size: 11 },
+          bodyFont: { family: 'JetBrains Mono', size: 11 },
         }
-    </script>
+      }
+    }
+  });
+
+  // 3D tilt
+  document.querySelectorAll('.ns-card').forEach(card => {
+    card.addEventListener('mousemove', e => {
+      const r = card.getBoundingClientRect();
+      const x = (e.clientX-r.left)/r.width-0.5;
+      const y = (e.clientY-r.top)/r.height-0.5;
+      card.style.transform=`perspective(600px) rotateY(${x*4}deg) rotateX(${-y*4}deg) translateY(-2px)`;
+    });
+    card.addEventListener('mouseleave', () => { card.style.transform=''; });
+  });
+
+  // Threat Core Canvas for Admin
+  const ADMIN_STAGES = [
+    { label: 'Layer 1: Structural Decomposition', ms: 420 },
+    { label: 'Layer 2: Lexical & Entropy Analysis', ms: 450 },
+    { label: 'Layer 3: Security Rule Matching',    ms: 400 },
+    { label: 'Layer 4: ML Inference & Risk Fusion', ms: 430 },
+  ];
+
+  function drawAdminScanCore(canvas, progress) {
+    const ctx = canvas.getContext('2d');
+    const W = canvas.width, H = canvas.height, cx = W / 2, cy = H / 2;
+    ctx.clearRect(0, 0, W, H);
+    const a = progress.t;
+    for (let i = 0; i < 3; i++) {
+      ctx.beginPath();
+      ctx.arc(cx, cy, 40 + i * 18, a * (1 + i * 0.3), a * (1 + i * 0.3) + Math.PI * 1.3);
+      ctx.strokeStyle = `rgba(0,200,255,${0.5 - i * 0.13})`;
+      ctx.lineWidth = 2 - i * 0.4;
+      ctx.stroke();
+    }
+    ctx.save();
+    ctx.translate(cx, cy);
+    ctx.rotate(a * 2.2);
+    const g = ctx.createLinearGradient(0, 0, 70, 0);
+    g.addColorStop(0, 'rgba(0,200,255,0.6)');
+    g.addColorStop(1, 'rgba(0,200,255,0)');
+    ctx.strokeStyle = g;
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(0, 0);
+    ctx.lineTo(70, 0);
+    ctx.stroke();
+    ctx.restore();
+    const pr = 16 + Math.sin(a * 4) * 3;
+    const rg = ctx.createRadialGradient(cx, cy, 0, cx, cy, pr * 2);
+    rg.addColorStop(0, 'rgba(0,200,255,0.5)');
+    rg.addColorStop(1, 'rgba(0,200,255,0)');
+    ctx.fillStyle = rg;
+    ctx.beginPath();
+    ctx.arc(cx, cy, pr * 2, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.beginPath();
+    ctx.arc(cx, cy, pr, 0, Math.PI * 2);
+    ctx.fillStyle = 'rgba(0,200,255,0.22)';
+    ctx.strokeStyle = '#00c8ff';
+    ctx.lineWidth = 2;
+    ctx.fill();
+    ctx.stroke();
+    ctx.fillStyle = '#00c8ff';
+    ctx.font = '700 13px JetBrains Mono, monospace';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('🛡', cx, cy);
+    for (let i = 0; i < 6; i++) {
+      const ang = a * 1.1 + i * (Math.PI / 3);
+      const nx = cx + Math.cos(ang) * 74, ny = cy + Math.sin(ang) * 74;
+      ctx.beginPath();
+      ctx.arc(nx, ny, 2.5, 0, Math.PI * 2);
+      ctx.fillStyle = i < progress.stage * 1.5 ? '#00d68f' : 'rgba(0,200,255,0.5)';
+      ctx.fill();
+    }
+  }
+
+  // Admin interactive scan
+  async function startAdminScan(e) {
+    e.preventDefault();
+    const urlInput = document.getElementById('adminScanUrl');
+    const url = urlInput.value.trim();
+    if (!url) return;
+
+    const core = document.getElementById('adminCoreStage');
+    const canvas = document.getElementById('adminCoreCanvas');
+    const target = document.getElementById('adminCoreTarget');
+    const barsWrap = document.getElementById('adminBars');
+    const resultContainer = document.getElementById('adminResultContainer');
+    const btn = document.getElementById('adminScanBtn');
+
+    btn.disabled = true;
+    target.textContent = url;
+    core.classList.add('on');
+
+    barsWrap.innerHTML = ADMIN_STAGES.map((s, i) => `
+      <div class="scan-bar-row" id="asbar-${i}">
+        <div class="scan-bar-label"><span>${s.label}</span><span class="sbar-pct">0%</span></div>
+        <div class="scan-bar-track"><div class="scan-bar-fill"></div></div>
+      </div>`).join('');
+
+    let coreRAF, prog = { t: 0, stage: 0 }, animating = true;
+    canvas.width = 180; canvas.height = 180;
+    (function spin() {
+      if (!animating) return;
+      prog.t += 0.05;
+      drawAdminScanCore(canvas, prog);
+      coreRAF = requestAnimationFrame(spin);
+    })();
+
+    const fetchPromise = fetch('/api/scan', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ url })
+    }).then(r => r.json());
+
+    for (let i = 0; i < ADMIN_STAGES.length; i++) {
+      prog.stage = i + 1;
+      const row = document.getElementById('asbar-' + i);
+      const fill = row.querySelector('.scan-bar-fill');
+      const pctEl = row.querySelector('.sbar-pct');
+      const start = performance.now(), dur = ADMIN_STAGES[i].ms;
+      await new Promise(res => {
+        (function step(now) {
+          const p = Math.min((now - start) / dur, 1);
+          fill.style.width = (p * 100) + '%';
+          pctEl.textContent = Math.round(p * 100) + '%';
+          if (p < 1) requestAnimationFrame(step);
+          else { row.classList.add('done'); res(); }
+        })(start);
+      });
+    }
+
+    let data;
+    try {
+      data = await fetchPromise;
+    } catch (err) {
+      animating = false;
+      cancelAnimationFrame(coreRAF);
+      core.classList.remove('on');
+      btn.disabled = false;
+      resultContainer.innerHTML = `<div style="color:var(--ns-red);font-size:11px;margin-top:10px;">Analysis error. Please try again.</div>`;
+      return;
+    }
+
+    await new Promise(r => setTimeout(r, 200));
+    animating = false;
+    cancelAnimationFrame(coreRAF);
+    core.classList.remove('on');
+    btn.disabled = false;
+
+        renderAdminModule1Result(data, resultContainer);
+  }
+
+  function renderAdminModule1Result(data, container) {
+    const intel      = data.intelligence || {};
+    const invId      = data.investigation_id || (data.investigation && data.investigation.investigation_id) || '';
+    const isPhish    = data.prediction && data.prediction.toLowerCase().includes('phishing');
+    const isLeg      = data.prediction && data.prediction.toLowerCase() === 'legitimate';
+    const prob       = data.probability;
+    const ruleMatch  = data.prediction && data.prediction.toLowerCase().includes('rule match');
+
+    const compositeRisk  = intel.composite_risk  || 0;
+    const compositeLevel = (intel.composite_level || 'LOW').toLowerCase();
+
+    const structural   = intel.structural   || {};
+    const lexical      = intel.lexical      || {};
+    const secRules     = intel.security_rules || {};
+    const mlClass      = intel.ml_classifier  || {};
+
+    const verdictLabel = isPhish ? '⚠ Phishing Detected' : (isLeg ? '✓ Legitimate' : '⚡ Rule Match');
+    const verdictBadge = isPhish ? 'ns-badge-red' : (isLeg ? 'ns-badge-green' : 'ns-badge-amber');
+    const cardBorder   = isPhish
+      ? 'border-color:rgba(255,59,59,0.35);background:linear-gradient(135deg,var(--ns-surface),rgba(255,59,59,0.04))'
+      : (isLeg
+        ? 'border-color:rgba(0,214,143,0.35);background:linear-gradient(135deg,var(--ns-surface),rgba(0,214,143,0.04))'
+        : 'border-color:rgba(255,170,0,0.35);background:linear-gradient(135deg,var(--ns-surface),rgba(255,170,0,0.04))');
+
+    // URL Breakdown Bar
+    const parsedDomain   = structural.domain    || '';
+    const parsedSubdom   = structural.subdomain || '';
+    const parsedProto    = structural.protocol  || 'HTTP';
+    const parsedTLD      = structural.tld       || '';
+    const parsedDepth    = structural.url_depth || 0;
+    const hasIP          = structural.has_ip;
+
+    const urlBreakdown = `
+      <div class="m1-url-breakdown">
+        <div class="m1-url-seg ${parsedProto.toLowerCase()==='https'?'':'warn'}">
+          <span class="m1-url-seg-label">Protocol</span>
+          <span class="m1-url-seg-value">${parsedProto}</span>
+        </div>
+        ${parsedSubdom ? `<div class="m1-url-seg warn">
+          <span class="m1-url-seg-label">Subdomain</span>
+          <span class="m1-url-seg-value">${parsedSubdom}</span>
+        </div>` : ''}
+        <div class="m1-url-seg ${hasIP?'danger':''}">
+          <span class="m1-url-seg-label">Host</span>
+          <span class="m1-url-seg-value">${parsedDomain}</span>
+        </div>
+        <div class="m1-url-seg">
+          <span class="m1-url-seg-label">Depth</span>
+          <span class="m1-url-seg-value">${parsedDepth} lvl</span>
+        </div>
+        <div class="m1-url-seg">
+          <span class="m1-url-seg-label">TLD</span>
+          <span class="m1-url-seg-value">${parsedTLD || 'none'}</span>
+        </div>
+      </div>`;
+
+    function scoreLevel(s) {
+      return s >= 70 ? 'CRITICAL' : s >= 45 ? 'HIGH' : s >= 20 ? 'MEDIUM' : 'LOW';
+    }
+    function lvColor(lv) {
+      lv = lv.toLowerCase();
+      return lv === 'critical' ? 'var(--ns-red)' : lv === 'high' ? '#ff7c00' : lv === 'medium' ? 'var(--ns-amber)' : 'var(--ns-green)';
+    }
+
+    function layerCard(icon, title, sub, score, level, body) {
+      const lv = level.toLowerCase();
+      const sc = lvColor(lv);
+      return `<div class="m1-layer-card level-${lv}">
+        <div class="m1-layer-header">
+          <span class="m1-layer-icon">${icon}</span>
+          <span class="m1-layer-badge ${lv}">${level}</span>
+        </div>
+        <div class="m1-layer-title">${title}</div>
+        <div class="m1-layer-sub">${sub}</div>
+        <div class="m1-mini-score-row">
+          <span class="m1-mini-score-num" style="color:${sc}">${score}</span>
+          <div class="m1-mini-bar-wrap">
+            <div class="m1-mini-bar-track">
+              <div class="m1-mini-bar-fill" style="width:0%;background:${sc};" data-target="${score}"></div>
+            </div>
+          </div>
+        </div>
+        ${body}
+      </div>`;
+    }
+
+    const strucScore = structural.risk_score || 0, strucLevel = scoreLevel(strucScore);
+    const lexScore   = lexical.risk_score || 0,    lexLevel   = scoreLevel(lexScore);
+    const ruleScore  = secRules.risk_score || 0;
+    const ruleSev    = secRules.severity || 'NONE';
+    const ruleLevel  = ruleSev === 'CRITICAL' ? 'CRITICAL' : ruleSev === 'HIGH' ? 'HIGH' : ruleSev === 'MEDIUM' ? 'MEDIUM' : 'LOW';
+    const mlScore    = mlClass.risk_score || 0,    mlLevel    = scoreLevel(mlScore);
+
+    const kwList   = (lexical.suspicious_keywords || []).slice(0, 3);
+    const brandList= lexical.brand_list || [];
+    const rulesHit = (secRules.rules_hit || []).slice(0, 4);
+
+    function dataRow(key, val, cls='') {
+      return `<div class="m1-data-row"><span class="m1-data-key">${key}</span><span class="m1-data-val ${cls}">${val}</span></div>`;
+    }
+
+    const strucBody = `<div class="m1-data-list">
+      ${dataRow('URL Length', (structural.url_length || 0) + ' ch', structural.url_length > 75 ? 'warn' : '')}
+      ${dataRow('Subdomains', structural.subdomain_count || 0, structural.subdomain_count > 1 ? 'warn' : '')}
+      ${dataRow('Protocol', structural.https ? 'HTTPS ✓' : 'HTTP ✗', structural.https ? 'ok' : 'danger')}
+      ${dataRow('IP as Host', structural.has_ip ? 'YES ⚠' : 'No', structural.has_ip ? 'danger' : 'ok')}
+    </div>`;
+
+    const lexBody = `<div class="m1-data-list">
+      ${dataRow('Domain Entropy', lexical.domain_entropy || 0, lexical.domain_entropy > 3.5 ? 'warn' : '')}
+      ${dataRow('Brand Impersonation', lexical.brand_impersonation ? (brandList[0] || 'YES') : 'None', lexical.brand_impersonation ? 'danger' : 'ok')}
+      ${dataRow('Homograph', lexical.homograph ? 'Detected ⚠' : 'Clean ✓', lexical.homograph ? 'danger' : 'ok')}
+      ${kwList.length ? dataRow('Keywords', kwList.join(', '), 'danger') : ''}
+    </div>`;
+
+    const rulesBody = rulesHit.length ? `
+      <div class="m1-rule-list">
+        ${rulesHit.map(r => `
+          <div class="m1-rule-item">
+            <span class="m1-rule-code ${r.sev ? r.sev.toLowerCase() : 'medium'}">${r.rule || r.rule_id}</span>
+            <span class="m1-rule-label">${r.label || r.title}</span>
+          </div>`).join('')}
+      </div>` : `<div class="m1-no-rules">✓ No deterministic rule violations</div>`;
+
+    const mlBody = `<div class="m1-data-list">
+      ${dataRow('ML Verdict', mlClass.prediction || data.prediction || '—', isPhish ? 'danger' : 'ok')}
+      ${dataRow('Probability', prob != null ? prob + '%' : 'N/A', '')}
+      ${dataRow('Engine', mlClass.method || 'Random Forest', '')}
+      ${dataRow('Estimators', (mlClass.n_estimators || 100) + ' trees', '')}
+    </div>`;
+
+    const f = data.features || {};
+    const signals = [
+      { label: 'URL Length', val: Math.min((f.url_length || 0) / 120, 1) },
+      { label: 'Suspicious Keywords', val: f.suspicious_word || 0 },
+      { label: 'IP in Hostname', val: f.has_ip || 0 },
+      { label: 'Homograph Pattern', val: f.homograph || 0 },
+      { label: 'ML Probability', val: data.probability ? data.probability / 100 : 0.5 }
+    ];
+
+    const signalHTML = signals.map(s => {
+      const pct = Math.round(s.val * 100);
+      const color = isPhish ? (pct > 40 ? 'red' : '') : 'green';
+      return `
+        <div class="ns-signal-row">
+          <span class="ns-signal-label" style="width:120px;font-size:10px;">${s.label}</span>
+          <div class="ns-signal-track">
+            <div class="ns-signal-fill ${color}" style="width:${pct}%"></div>
+          </div>
+          <span style="font-family:var(--ns-mono);font-size:9.5px;color:var(--ns-text-muted);min-width:32px;text-align:right;">${pct}%</span>
+        </div>`;
+    }).join('');
+
+    container.innerHTML = `
+      <div style="margin-top:20px;padding:22px;border-radius:var(--ns-radius-lg);border:1px solid var(--ns-border);${cardBorder};animation:fadeInUp 0.4s ease both;">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:16px;flex-wrap:wrap;">
+          <div>
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;">
+              <span class="ns-verdict ${isPhish ? 'phishing' : (isLeg ? 'legitimate' : 'warning')}" style="font-size:14px;padding:5px 12px;">
+                ${verdictLabel}
+              </span>
+              <span class="ns-badge ${verdictBadge}">Risk Level: ${(intel.composite_level || 'LOW').toUpperCase()}</span>
+            </div>
+            <div style="font-family:var(--ns-mono);font-size:11.5px;color:var(--ns-text-muted);word-break:break-all;max-width:550px;margin-top:6px;">
+              ${data.url || ''}
+            </div>
+          </div>
+          ${prob != null ? `
+          <div style="text-align:right;">
+            <div style="font-family:var(--ns-mono);font-size:36px;font-weight:700;line-height:1;color:${isPhish ? 'var(--ns-red)' : 'var(--ns-green)'};">
+              ${prob}%
+            </div>
+            <div style="font-family:var(--ns-mono);font-size:9px;letter-spacing:0.1em;text-transform:uppercase;color:var(--ns-text-muted);margin-top:2px;">
+              ML Confidence
+            </div>
+          </div>` : `
+          <div><span class="ns-badge ${verdictBadge}">Rule Triggered</span></div>`}
+        </div>
+
+        <div style="margin-top:14px;">${urlBreakdown}</div>
+        ${invId ? `
+        <div style="margin-top:14px;padding-top:12px;border-top:1px solid var(--ns-border);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;">
+          <span class="report-id-badge"><span style="opacity:0.6;">ID:</span> ${invId}</span>
+          <a href="/report?id=${encodeURIComponent(invId)}" target="_blank" class="btn-view-report">
+            <span>VIEW FULL REPORT</span> <span>→</span>
+          </a>
+        </div>` : ''}
+      </div>
+
+      <!-- Composite Threat Risk Gauge -->
+      <div class="m1-risk-gauge" style="margin-top:16px;animation:fadeInUp 0.4s ease 0.1s both;">
+        <div class="m1-risk-score ${compositeLevel}">${compositeRisk}</div>
+        <div class="m1-risk-bar-wrap">
+          <div class="m1-risk-bar-label">Composite Threat Risk Score</div>
+          <div class="m1-risk-bar-track">
+            <div class="m1-risk-bar-fill ${compositeLevel}" style="width:0%;" data-target="${compositeRisk}"></div>
+          </div>
+          <div style="font-family:var(--ns-mono);font-size:9px;color:var(--ns-text-muted);margin-top:6px;">
+            Weighted fusion of 4 analytical layers · Level: <span style="color:${compositeLevel==='critical'?'var(--ns-red)':compositeLevel==='high'?'#ff7c00':compositeLevel==='medium'?'var(--ns-amber)':'var(--ns-green)'};">${(intel.composite_level||'LOW').toUpperCase()}</span>
+          </div>
+        </div>
+        <div style="text-align:right;flex-shrink:0;">
+          <div style="font-family:var(--ns-mono);font-size:9px;letter-spacing:0.1em;text-transform:uppercase;color:var(--ns-text-muted);margin-bottom:6px;">Layer Breakdown</div>
+          ${[
+            ['Structural',  strucScore, strucLevel],
+            ['Lexical',     lexScore,   lexLevel],
+            ['Rules',       ruleScore,  ruleLevel],
+            ['ML',          mlScore,    mlLevel]
+          ].map(([n,s,lv])=>`
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:3px;">
+              <span style="font-family:var(--ns-mono);font-size:9px;color:var(--ns-text-muted);width:60px;text-align:right;">${n}</span>
+              <div style="width:75px;height:4px;background:var(--ns-black);border:1px solid var(--ns-border);border-radius:99px;overflow:hidden;">
+                <div style="height:100%;width:${s}%;background:${lv.toLowerCase()==='critical'?'var(--ns-red)':lv.toLowerCase()==='high'?'#ff7c00':lv.toLowerCase()==='medium'?'var(--ns-amber)':'var(--ns-green)'};border-radius:99px;"></div>
+              </div>
+              <span style="font-family:var(--ns-mono);font-size:9px;font-weight:700;min-width:26px;${lv.toLowerCase()==='critical'?'color:var(--ns-red)':lv.toLowerCase()==='high'?'color:#ff7c00':lv.toLowerCase()==='medium'?'color:var(--ns-amber)':'color:var(--ns-green)'}">${s}</span>
+            </div>`).join('')}
+        </div>
+      </div>
+
+      <!-- 4 Layer Analysis Cards -->
+      <div class="m1-layers-grid" style="margin-top:14px;animation:fadeInUp 0.4s ease 0.2s both;">
+        ${layerCard('🔍', 'URL Structure', 'Structural Decomposition', strucScore, strucLevel, strucBody)}
+        ${layerCard('📊', 'Lexical Intel', 'Pattern & Entropy Analysis', lexScore, lexLevel, lexBody)}
+        ${layerCard('🛡', 'Security Rules', 'Deterministic Rule Engine', ruleScore, ruleLevel, rulesBody)}
+        ${layerCard('🤖', 'ML Classifier', 'Random Forest Inference', mlScore, mlLevel, mlBody)}
+      </div>
+
+      <!-- Signal Breakdown -->
+      <div class="ns-card" style="margin-top:14px;padding:18px;animation:fadeInUp 0.4s ease 0.3s both;">
+        <div class="scan-line"></div>
+        <div class="ns-signals">
+          <div class="ns-signals-title">Signal Breakdown — Feature Risk Indicators</div>
+          ${signalHTML}
+        </div>
+      </div>
+
+      <!-- Limitations Notice (Section 54) -->
+      <div style="margin-top:12px;padding:10px 14px;background:rgba(0,200,255,0.03);border:1px solid rgba(0,200,255,0.12);border-radius:var(--ns-radius);font-family:var(--ns-mono);font-size:9.5px;color:var(--ns-text-muted);display:flex;align-items:center;gap:8px;">
+        <span>ℹ</span>
+        <span><strong>Scope:</strong> Module 1 provides URL-level intelligence. Live DNS, WHOIS registration age, SSL certs, and webpage DOM inspection are handled by subsequent intelligence layers.</span>
+      </div>`;
+
+    requestAnimationFrame(() => {
+      setTimeout(() => {
+        container.querySelectorAll('.m1-mini-bar-fill[data-target]').forEach(el => {
+          el.style.width = el.getAttribute('data-target') + '%';
+        });
+        container.querySelectorAll('.m1-risk-bar-fill[data-target]').forEach(el => {
+          el.style.width = el.getAttribute('data-target') + '%';
+        });
+      }, 100);
+    });
+
+    container.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }}
+</script>
 </body>
 </html>

@@ -1,14 +1,18 @@
 # Python
 env/
+venv/
 .venv/
 __pycache__/
 *.pyc
 
-# Data and models
-model/phishing_model.pkl
+# Training data & raw dumps (avoids false-positive secret triggers from raw phishtank samples)
+data/
+datasets/
 dataset/
+*.csv
 backend/database.db
 
 # OS files
 .DS_Store
 Thumbs.db
+.neurashield_secret_key

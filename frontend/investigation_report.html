@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Threat Investigation Report — NeuraShield</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='neurashield.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='ns_investigation.css') }}">
+</head>
+<body>
+<nav class="ns-nav scrolled" style="background:rgba(8,12,16,0.95);">
+  <div class="ns-nav-inner">
+    <a href="/" class="ns-logo">
+      <img src="{{ url_for('static', filename='static/ns_logo.png') }}" class="ns-logo-icon" alt="NS" onerror="this.style.display='none';">
+      <div class="ns-logo-text"><span class="ns-logo-name">NeuraShield</span><span class="ns-logo-sub">Threat Intelligence</span></div>
+    </a>
+    <div class="ns-nav-actions">
+      {% if username %}<span style="font-family:var(--ns-mono);font-size:11px;color:var(--ns-text-dim);">{{ username }}</span><a href="/logout" class="btn-ghost">Logout</a>
+      {% else %}<a href="/login" class="btn-ghost">Login</a>{% endif %}
+    </div>
+  </div>
+</nav>
+<div class="inv-layout">
+  <aside class="inv-sidebar"><div class="who"><small>Analyst</small><b>{{ username or 'Guest' }}</b></div><ul class="inv-nav" id="nav"></ul></aside>
+  <main class="inv-main">
+    <div class="inv-wrap">
+      <div id="loading" class="panel"><p class="dim" style="margin:0">Loading investigation…</p></div>
+      <div id="notfound" class="panel" style="display:none"><h3>Investigation not available</h3>
+        <p class="dim" style="margin:0">It does not exist, belongs to another account, or you are not logged in.</p></div>
+      <div id="report" style="display:none">
+        <div class="rpt-summary" id="sticky"></div>
+        <div class="rpt-grid">
+          <nav class="rpt-toc no-print" id="toc"></nav>
+          <article id="body"></article>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+<script src="{{ url_for('static', filename='ns_investigation.js') }}"></script>
+<script>
+(async function () {
+  const esc = NS.esc, $ = (id) => document.getElementById(id);
+  NS.renderNav($('nav'), 'investigations');
+  const invId = new URLSearchParams(location.search).get('id') || {{ investigation_id|tojson }};
+  let inv;
+  try { const r = await fetch('/api/investigation/' + encodeURIComponent(invId)); if (!r.ok) throw 0; inv = await r.json(); }
+  catch (e) { $('loading').style.display = 'none'; $('notfound').style.display = 'block'; return; }
+  $('loading').style.display = 'none'; $('report').style.display = 'block';
+  document.title = `${inv.investigation_id} — NeuraShield Report`;
+  const s = inv.summary || {}, L = inv.layers || {}, em = L.email;
+  const fmt = (t) => { if (!t) return 'Not available'; const d = new Date(t); return isNaN(d) ? t : d.toLocaleString(); };
+
+  $('sticky').innerHTML = `<div class="row"><span class="mono">${esc(inv.investigation_id)}</span>
+    <span>Verdict <b>${esc(s.verdict_label)}</b></span><span>Risk <b>${esc(s.risk_score)}</b>/100</span>
+    <span>ML <b>${s.ml_probability == null ? 'N/A' : Math.round(s.ml_probability * 100) + '%'}</b></span>
+    <span>Confidence <b>${esc(s.confidence)}%</b></span><span>Coverage <b>${esc(s.evidence_coverage)}%</b></span>
+    <span class="no-print" style="margin-left:auto;display:flex;gap:8px;flex-wrap:wrap">
+      <button class="btn-elev secondary" id="pdfBtn" type="button">PDF</button>
+      <button class="btn-elev secondary" id="jsonBtn" type="button">JSON</button>
+      <button class="btn-elev secondary" id="csvBtn" type="button">CSV</button></span></div>`;
+
+  const S = [];  // [id, title, lead, html] — only populated sections are pushed
+  const add = (id, title, lead, html) => { if (html) S.push([id, title, lead, html]); };
+
+  add('header', 'Investigation', null, `<div class="kv">
+    <div class="k">Investigation ID</div><div class="v mono">${esc(inv.investigation_id)}</div>
+    <div class="k">Started</div><div class="v">${esc(fmt(inv.timestamp))}</div>
+    <div class="k">Target</div><div class="v">${esc(inv.target && inv.target.display)} <span class="muted">(${esc(inv.target && inv.target.type)})</span></div>
+    <div class="k">Status</div><div class="v">${esc(inv.status)}${inv.persisted === false ? ' · <span class="muted">not persisted</span>' : ''}</div></div>`);
+
+  add('summary', 'Executive summary', 'Risk, model probability, confidence and coverage are separate measures.', NS.quickResult(inv).split('<div class="sec panel">')[0]);
+
+  const b = inv.brief || {};
+  add('brief', 'Investigation brief', null, `<div class="grid-2"><div><h4 class="small muted" style="margin:0 0 6px">WHAT WAS INVESTIGATED</h4><p class="dim" style="margin:0">${esc(b.investigated)}</p>
+     <h4 class="small muted" style="margin:16px 0 6px">WHAT WAS OBSERVED</h4><ul class="plain">${(b.observed || []).map(x => `<li>${esc(x)}</li>`).join('')}</ul></div>
+     <div><h4 class="small muted" style="margin:0 0 6px">IMPORTANT LIMITATIONS</h4><ul class="plain">${(b.limitations || []).map(x => `<li>${esc(x)}</li>`).join('')}</ul></div></div>`);
+
+  const kf = inv.key_findings || [];
+  add('key', 'Key findings', 'Most important evidence only, ordered by severity.', kf.length ? kf.map(r => `<div class="find">${NS.sev(r.severity)}<div><div class="t">${esc(r.name)}</div><div class="w">${esc(r.evidence)}</div><div class="w">${esc(r.explanation)}</div></div></div>`).join('') : '<p class="dim">No rule with a risk contribution was triggered.</p>');
+
+  if (inv.target) add('target', 'Target analysis', null, `<div class="kv">
+    <div class="k">Input</div><div class="v">${esc(inv.target.input)}</div><div class="k">Input mode</div><div class="v mono">${esc(inv.target.input_mode)}</div>
+    <div class="k">Normalised target</div><div class="v mono brk">${esc(inv.target.normalized)}</div>
+    ${em ? `<div class="k">Subject</div><div class="v">${NS.na(em.message.subject, 'no Subject header')}</div><div class="k">Date header</div><div class="v">${NS.na(em.message.date_raw, 'absent')}</div>
+    <div class="k">Message-ID</div><div class="v mono brk">${NS.na(em.message.message_id, 'absent')}</div><div class="k">Size</div><div class="v">${esc(em.message.size_bytes)} bytes</div>
+    <div class="k">MIME</div><div class="v">${esc(em.mime && em.mime.content_type)} · ${esc(em.mime && em.mime.part_count)} part(s)${(em.message.parser_defects || []).length ? ' · parser defects: ' + esc(em.message.parser_defects.join(', ')) : ''}</div>` : ''}</div>`);
+
+  if (em) add('email', 'Layer · Email Intelligence', 'Claims vs evidence for the sender, authentication, content and attachments.', `
+    <details class="x" open><summary>Sender identity & consistency</summary><div class="body">${NS.email.identity(em)}</div></details>
+    <details class="x" open><summary>Authentication & sender domain</summary><div class="body">${NS.email.auth(em)}</div></details>
+    <details class="x"><summary>Content & HTML</summary><div class="body">${NS.email.content(em)}</div></details>
+    <details class="x"><summary>Attachments (static)</summary><div class="body">${NS.email.attachments(em)}</div></details>`);
+  if (em && (em.urls || {}).url_count) add('urls', 'Layer · URL Intelligence (links in the message)', `${(L.url || []).length} link(s) analysed by Module 1.`, NS.email.links(em, L.url));
+  if ((L.domain || []).length) add('domains', 'Layer · Domain Intelligence', 'Live collection for the sender and link domains (Module 2).', `<div class="tbl-wrap"><table class="tbl"><thead><tr><th>Domain</th><th>Role</th><th>Status</th><th>Age (days)</th><th>Registrar</th><th>TLS</th><th>Domain rule risk</th></tr></thead><tbody>
+    ${L.domain.map(d => `<tr><td class="k mono">${esc(d.domain)}</td><td>${esc(d.role)}</td><td>${d.status === 'COLLECTED' ? NS.state('VERIFIED') : NS.state('UNAVAILABLE') + ` <span class="muted small">${esc(d.reason || '')}</span>`}</td>
+      <td>${NS.na(d.domain_age_days, '')}</td><td>${NS.na(d.registrar, '')}</td><td>${NS.na(d.tls, '')}</td><td>${d.risk_score == null ? '<span class="muted">—</span>' : esc(d.risk_score) + '/100'}</td></tr>`).join('')}</tbody></table></div>`);
+  if ((L.webpage || []).length) add('webpages', 'Layer · Webpage Intelligence (opt-in)', 'Linked pages retrieved with SSRF protection; static inspection only.', `<div class="tbl-wrap"><table class="tbl"><thead><tr><th>URL</th><th>Status</th><th>Details</th></tr></thead><tbody>
+    ${L.webpage.map(w => `<tr><td class="mono brk">${esc(w.url)}</td><td>${w.webpage_status === 'AVAILABLE' ? NS.state('VERIFIED') : NS.state('UNAVAILABLE')}</td>
+      <td>${w.webpage_status === 'AVAILABLE' ? `HTTP ${esc(w.http_status)} · title: ${NS.na(w.title, '')} · password field: ${w.has_password_field ? 'yes' : 'no'} · cross-domain form: ${w.cross_domain_form ? 'yes' : 'no'} · rule risk ${esc(w.risk_score)}` : `${esc(w.reason)} — ${esc(w.message || w.detail || 'Webpage could not be retrieved, so webpage-level analysis was not performed.')}`}</td></tr>`).join('')}</tbody></table></div>`);
+
+  // Module 9: Brand Impersonation Analysis
+  const brand = inv.brand_analysis || (inv.layers || {}).brand;
+  if (brand && brand.verdict) {
+    const brandHtml = `
+      <div class="kv">
+        <div class="k">Claimed Brand / Entity</div><div class="v">${esc(brand.claimed_brand || 'Not explicitly stated')}</div>
+        <div class="k">Impersonation Verdict</div><div class="v"><span class="chip" style="font-weight:700; color:${brand.verdict.includes('STRONG') ? 'var(--ns-red)' : (brand.verdict.includes('POTENTIAL') ? 'var(--ns-amber)' : 'var(--ns-green)')};">${esc(brand.verdict)}</span></div>
+        <div class="k">Confidence Level</div><div class="v mono">${brand.confidence !== undefined ? Math.round(brand.confidence * 100) + '%' : 'UNAVAILABLE'}</div>
+        <div class="k">Identified Indicators</div><div class="v">${(brand.indicators || []).length ? (brand.indicators || []).map(i => `<div style="color:var(--ns-amber);margin:2px 0;">⚠️ ${esc(i)}</div>`).join('') : '<span class="muted">No brand spoofing flags observed</span>'}</div>
+      </div>
+      <p class="muted small" style="margin-top:6px;">Brand alignment evaluated strictly against verified institutional registries and trademark profiles without automated extrapolation.</p>
+    `;
+    add('brand', 'Layer · Brand Impersonation Intelligence (Module 9)', 'Evidence-backed analysis comparing claimed brand, domain typosquatting, and form prompts.', brandHtml);
+  }
+
+  // QR Intelligence
+  const qr = (inv.layers || {}).qr || inv.qr_findings;
+  if (qr) {
+    const qrHtml = `
+      <div class="kv">
+        <div class="k">Payload Type</div><div class="v mono">${esc(qr.payload_type || 'URL')}</div>
+        <div class="k">Decoded Value</div><div class="v mono brk">${esc(qr.decoded_value || qr.content || 'N/A')}</div>
+        <div class="k">Inspection Status</div><div class="v">${qr.status === 'DECODED' ? NS.state('VERIFIED') : NS.state('UNAVAILABLE')}</div>
+      </div>
+    `;
+    add('qr', 'Layer · QR Intelligence', 'Decoded barcode payload parsed and integrated into investigation pipeline.', qrHtml);
+  }
+
+  // Module 6: Threat Intelligence Indicators
+  const ti = inv.threat_intelligence || {};
+  if (ti.indicators_checked && ti.indicators_checked.length) {
+    const tiHtml = `
+      <div class="tbl-wrap"><table class="tbl"><thead><tr><th>Indicator</th><th>Type</th><th>Status</th><th>Reputation</th><th>Sources</th><th>Confidence</th></tr></thead><tbody>
+        ${ti.indicators_checked.map(ind => `
+          <tr>
+            <td class="k mono">${esc(ind.value)}</td>
+            <td><span class="chip">${esc(ind.type)}</span></td>
+            <td><span class="sev ${ind.status === 'KNOWN_MALICIOUS' ? 'HIGH' : (ind.status === 'SUSPICIOUS' ? 'MEDIUM' : 'LOW')}">${esc(ind.status)}</span></td>
+            <td>${esc(ind.reputation || 'UNAVAILABLE')}</td>
+            <td class="small muted">${esc((ind.sources || []).join(', ') || 'NeuraShield ThreatDB')}</td>
+            <td class="mono">${ind.confidence !== undefined ? ind.confidence + '%' : 'UNAVAILABLE'}</td>
+          </tr>
+        `).join('')}
+      </tbody></table></div>
+      <p class="muted small" style="margin-top:6px;">External threat intelligence derived strictly from verified indicators. Missing intelligence reflects provider state, never treated as clean.</p>
+    `;
+    add('threat_intel', 'Layer · Threat Intelligence (Module 6)', 'Independent external threat reputation evidence for discovered indicators.', tiHtml);
+  }
+
+  // Module 6: Campaign Correlation & Shared Infrastructure
+  const camp = inv.campaign_correlation || {};
+  if (camp.matches && camp.matches.length) {
+    const campHtml = `
+      <div class="tbl-wrap"><table class="tbl"><thead><tr><th>Related Investigation</th><th>Shared Indicator</th><th>Relationship</th><th>Confidence</th><th>Telemetry Notes</th></tr></thead><tbody>
+        ${camp.matches.map(m => `
+          <tr>
+            <td class="k mono"><a href="/report?id=${encodeURIComponent(m.investigation_id)}" style="color:var(--ns-cyan);">${esc(m.investigation_id)}</a></td>
+            <td class="mono">${esc(m.shared_indicator)}</td>
+            <td><span class="chip">${esc(m.relationship)}</span></td>
+            <td class="mono">${esc(m.confidence || 'MEDIUM')}</td>
+            <td class="small dim">${esc(m.details || '')}</td>
+          </tr>
+        `).join('')}
+      </tbody></table></div>
+      <p class="muted small" style="margin-top:8px;">Observed technical relationships across historical telemetry. Attacker identity and campaign attribution are not inferred.</p>
+    `;
+    add('campaign', 'Campaign & Historical Infrastructure', 'Cross-investigation correlations and observed indicator overlap.', campHtml);
+  }
+
+  // Module 6: Incident Assessment & Response Guidance
+  const incAssess = inv.incident_assessment || {};
+  const guidance = inv.response_guidance || {};
+  if (incAssess.severity || (guidance.recommended_actions && guidance.recommended_actions.length)) {
+    const actionsHtml = (guidance.recommended_actions || []).map(act => `
+      <li style="margin-bottom:8px;">
+        <span class="chip" style="color:var(--ns-cyan);">${esc(act.priority || 'P2')}</span>
+        <b>${esc(act.action)}:</b> ${esc(act.description || '')}
+        <div class="muted small" style="margin-top:2px;">Evidence Basis: ${esc(act.evidence_basis || act.rationale || 'Technical telemetry')}</div>
+      </li>
+    `).join('');
+
+    const incHtml = `
+      <div class="grid-2">
+        <div>
+          <h4 class="small muted" style="margin:0 0 6px">INCIDENT ESCALATION ASSESSMENT</h4>
+          <p><b>Recommendation:</b> <span style="color:${incAssess.incident_recommended ? 'var(--ns-red)' : 'var(--ns-green)'}; font-weight:700;">${incAssess.incident_recommended ? 'INCIDENT CREATION RECOMMENDED' : 'MONITORING ONLY'}</span></p>
+          <p><b>Assessed Severity:</b> <span class="sev ${esc(incAssess.severity || 'LOW')}">${esc(incAssess.severity || 'LOW')}</span></p>
+          <p class="dim">${esc(incAssess.reason || 'Telemetry evaluated for multi-layer coordination.')}</p>
+        </div>
+        <div>
+          <h4 class="small muted" style="margin:0 0 6px">RECOMMENDED RESPONSE ACTIONS (NON-DESTRUCTIVE)</h4>
+          <ul class="plain">${actionsHtml || '<li>Standard baseline security controls monitoring.</li>'}</ul>
+        </div>
+      </div>
+    `;
+    add('incident', 'Incident Assessment & Response Guidance', 'Evidence-backed incident escalation analysis and actionable containment steps.', incHtml);
+  }
+
+  const rules = inv.rules || [];
+  add('rules', 'Detection evidence', 'Every rule with ID, severity, evidence, contribution and limitation.', `${rules.length ? `<div class="tbl-wrap"><table class="tbl"><thead><tr><th>Rule</th><th>Severity</th><th>Evidence</th><th>Contribution</th><th>Limitation</th></tr></thead><tbody>
+    ${rules.map(r => `<tr><td class="k">${esc(r.rule_id)}<div class="muted small" style="white-space:normal">${esc(r.name)}</div></td><td>${NS.sev(r.severity)}</td><td>${esc(r.evidence)}</td><td class="mono">${esc(r.risk_contribution)}</td><td class="small muted">${esc(r.limitation)}</td></tr>`).join('')}</tbody></table></div>` : '<p class="dim">No rules triggered.</p>'}
+    <h4 class="small muted" style="margin:16px 0 6px">ML EVIDENCE</h4><p class="dim" style="margin:0">${inv.ml && inv.ml.status === 'OK' ? `Text model probability ${Math.round(inv.ml.probability * 100)}% (${esc(inv.ml.model_version || '')}). ${esc(inv.ml.note)}` : `Not available — ${esc((inv.ml || {}).reason)}`}</p>`);
+
+  if (inv.risk_fusion) add('fusion', 'Risk fusion', 'How the score was formed. Nothing is hidden.', NS.fusion(inv.risk_fusion) + `<div class="kv" style="margin-top:12px"><div class="k">Confidence</div><div class="v">${esc(s.confidence)}% — <span class="small dim">${esc((inv.confidence_detail || {}).method)}. ${esc((inv.confidence_detail || {}).meaning)}</span></div></div>
+    <details class="x" style="margin-top:12px"><summary>Evidence coverage (${esc(s.evidence_coverage)}%)</summary><div class="body">${NS.coverageTable(inv.coverage || {})}</div></details>`);
+
+  const dna = inv.threat_dna;
+  if (dna) add('dna', 'Threat DNA', null, `<div class="dna">${esc(dna.fingerprint)}</div><p class="muted small">${esc(dna.disclaimer)}</p>
+    <div class="tbl-wrap"><table class="tbl"><tbody>${(dna.readable || []).map(g => `<tr><td class="k">${esc(g.group.replace(/_/g, ' '))}</td><td><div class="chips">${g.values.map(v => `<span class="chip">${esc(v)}</span>`).join('')}</div></td></tr>`).join('')}</tbody></table></div>
+    ${(inv.similar_investigations || []).length ? `<h4 class="small muted" style="margin:16px 0 6px">INVESTIGATIONS WITH OVERLAPPING TRAITS</h4><ul class="plain">${inv.similar_investigations.map(x => `<li><a href="/report?id=${encodeURIComponent(x.investigation_id)}" style="color:var(--ns-cyan)">${esc(x.investigation_id)}</a> — “${esc(x.subject)}”, Jaccard ${esc(x.jaccard)}; shared: ${esc(x.shared_traits.join(', '))}</li>`).join('')}</ul><p class="muted small">${esc(inv.similarity_note)}</p>` : ''}`);
+
+  if (inv.graph && (inv.graph.nodes || []).length) add('graph', 'Threat relationship graph', 'Hover a node or edge for details; every edge lists its evidence.', NS.graph(inv.graph));
+  if ((inv.timeline || []).length) add('timeline', 'Investigation timeline', 'Message routing timestamps (as written in headers) and NeuraShield processing events.', `<ul class="tl">${inv.timeline.map(e => `<li class="${e.state === 'SYSTEM' ? 'sys' : ''}"><time>${esc(fmt(e.time))} · ${esc(e.source)}</time>${esc(e.event)}</li>`).join('')}</ul>`);
+  if (em) add('evidence', 'Security evidence', 'Raw technical evidence.', `<details class="x"><summary>Received chain</summary><div class="body">${NS.email.received(em)}</div></details>
+    <details class="x"><summary>All headers (${(em.headers || []).length})</summary><div class="body">${NS.email.headers(em)}</div></details>`);
+  add('found', 'What we found', null, `<ul class="plain">${(inv.findings || []).map(f => `<li>${esc(f.text)}</li>`).join('')}</ul>`);
+  add('notverified', 'What we could not verify', 'Missing evidence is reported, never treated as malicious.', `<ul class="plain">${(inv.could_not_verify || []).map(f => `<li>${esc(f.text)}</li>`).join('')}</ul>`);
+  add('todo', 'What should you do?', null, `<ul class="plain">${(inv.recommendations || []).map(r => `<li>${esc(r)}</li>`).join('')}</ul>`);
+  add('interacted', 'If you already interacted with this message', null, (inv.interaction_guidance || []).map(g => `<details class="x"><summary>${esc(g.question)}</summary><div class="body"><ul class="plain">${g.steps.map(x => `<li>${esc(x)}</li>`).join('')}</ul></div></details>`).join(''));
+  if (inv.final_assessment) add('final', 'Final assessment', null, `<p class="dim" style="font-size:14.5px;line-height:1.7;margin:0">${esc(inv.final_assessment)}</p>`);
+  const ep = inv.evidence_package;
+  if (ep) add('package', 'Evidence package', 'For reporting to your IT team, provider or authorities.', `<div class="kv">
+    <div class="k">Investigation ID</div><div class="v mono">${esc(ep.investigation_id)}</div><div class="k">Threat DNA</div><div class="v mono">${esc(ep.threat_dna)}</div>
+    <div class="k">Message SHA-256</div><div class="v mono brk">${esc(ep.target && ep.target.message_sha256)}</div>
+    <div class="k">Findings</div><div class="v">${esc((ep.findings || []).length)} · URLs ${esc((ep.urls || []).length)} · attachments ${esc((ep.attachments || []).length)}</div>
+    <div class="k">Screenshots</div><div class="v muted">${esc(ep.note)}</div></div>
+    <h4 class="small muted" style="margin:16px 0 6px">INCIDENT DESCRIPTION (EDIT BEFORE USE)</h4><pre class="raw">${esc(ep.incident_description_template)}</pre>
+    <div class="panel" style="margin-top:12px"><b>${esc(ep.reporting_portal.name)}</b><p class="dim small" style="margin:6px 0 10px">${esc(ep.reporting_portal.submission_status)} Financial fraud helpline: ${esc(ep.reporting_portal.helpline)}.</p>
+      <a class="btn-elev" href="${esc(ep.reporting_portal.url)}" target="_blank" rel="noopener noreferrer">Open cybercrime.gov.in ↗</a>
+      <button class="btn-elev secondary" type="button" id="pkgBtn" style="margin-left:8px">Download evidence package (JSON)</button></div>`);
+
+  $('body').innerHTML = S.map(([id, t, lead, html]) => `<section class="rpt-sec" id="s-${id}"><h2>${esc(t)}</h2>${lead ? `<p class="lead">${esc(lead)}</p>` : '<div style="height:12px"></div>'}${html}</section>`).join('');
+  $('toc').innerHTML = S.map(([id, t]) => `<a href="#s-${id}">${esc(t)}</a>`).join('');
+
+  const dl = (name, text, type) => { const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([text], { type })); a.download = name; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 1000); };
+  $('jsonBtn').onclick = () => dl(`${inv.investigation_id}.json`, JSON.stringify(inv, null, 2), 'application/json');
+  $('csvBtn').onclick = () => {
+    const q = (v) => '"' + String(v == null ? '' : v).replace(/"/g, '""') + '"';
+    const rows = [['rule_id', 'name', 'severity', 'layer', 'risk_contribution', 'evidence']].concat(rules.map(r => [r.rule_id, r.name, r.severity, r.layer, r.risk_contribution, r.evidence]));
+    dl(`${inv.investigation_id}_findings.csv`, rows.map(r => r.map(q).join(',')).join('\n'), 'text/csv');
+  };
+  $('pdfBtn').onclick = () => { document.querySelectorAll('details.x').forEach(d => d.open = true); window.print(); };
+  if ($('pkgBtn')) $('pkgBtn').onclick = () => dl(`${inv.investigation_id}_evidence_package.json`, JSON.stringify(ep, null, 2), 'application/json');
+
+  const links = [...document.querySelectorAll('#toc a')];
+  const obs = new IntersectionObserver((ents) => ents.forEach(en => { if (en.isIntersecting) { links.forEach(l => l.classList.toggle('on', l.getAttribute('href') === '#' + en.target.id)); } }), { rootMargin: '-40% 0px -55% 0px' });
+  document.querySelectorAll('.rpt-sec').forEach(sec => obs.observe(sec));
+})();
+</script>
+</body>
+</html>
