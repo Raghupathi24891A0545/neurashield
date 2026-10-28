@@ -840,13 +840,28 @@ div#ns-link-guardian-overlay .ns-countdown{font-size:11px!important;color:#22d3e
 
       if (!card || !statusBox) return;
 
-      const risk = (report && report.risk) || {};
-      const score = typeof risk.score === 'number' ? risk.score : 50;
-      const level = (risk.level || 'MEDIUM').toUpperCase();
-      const verdict = (risk.verdict || '').toUpperCase();
+      // Check if destination is a recognized authentic authority domain
+      const TRUSTED_DOMAINS = [
+        'github.com', 'github.io', 'githubassets.com', 'githubusercontent.com',
+        'google.com', 'google.co.in', 'youtube.com', 'gmail.com', 'gstatic.com',
+        'microsoft.com', 'live.com', 'outlook.com', 'office.com', 'windows.com',
+        'apple.com', 'icloud.com', 'linkedin.com', 'amazon.com', 'aws.amazon.com',
+        'paypal.com', 'stripe.com', 'stackoverflow.com', 'wikipedia.org',
+        'render.com', 'gitlab.com', 'twitter.com', 'x.com'
+      ];
+      const hostLower = (displayDomain || '').toLowerCase();
+      const isTrustedDomain = TRUSTED_DOMAINS.some(td => hostLower === td || hostLower.endsWith('.' + td));
 
-      // Check whether Legitimate or Malicious/Suspicious (Score < 50 and not flagged as Phishing/Malicious)
-      const isThreat = verdict.includes('PHISH') || verdict.includes('MALICIOUS') || level === 'HIGH' || level === 'CRITICAL' || score >= 50;
+      const risk = (report && report.risk) || {};
+      const score = typeof risk.score === 'number' ? risk.score : (isTrustedDomain ? 0 : 25);
+      const level = (risk.level || (isTrustedDomain ? 'LOW' : 'LOW')).toUpperCase();
+      const verdict = (risk.verdict || (isTrustedDomain ? 'LEGITIMATE' : 'LEGITIMATE')).toUpperCase();
+
+      // Check whether Legitimate or Malicious/Suspicious
+      let isThreat = false;
+      if (verdict.includes('PHISH') || verdict.includes('MALICIOUS') || level === 'CRITICAL' || (score >= 60 && !isTrustedDomain)) {
+        isThreat = true;
+      }
       const isLegitimate = !isThreat;
 
       const accent = overlay.querySelector('#nsCardAccent');

@@ -1152,15 +1152,33 @@ def init_db():
     # Incidents table
     cursor.execute("""
     CREATE TABLE IF NOT EXISTS incidents (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        incident_id TEXT UNIQUE,
-        title TEXT,
-        severity TEXT DEFAULT 'MEDIUM',
-        status TEXT DEFAULT 'OPEN',
-        created_at TIMESTAMP,
-        details TEXT
+        incident_id TEXT PRIMARY KEY,
+        investigation_id TEXT NOT NULL,
+        title TEXT NOT NULL,
+        severity TEXT NOT NULL DEFAULT 'MEDIUM',
+        status TEXT NOT NULL DEFAULT 'OPEN',
+        assigned_to TEXT,
+        created_at TEXT NOT NULL,
+        updated_at TEXT,
+        description TEXT,
+        indicators_json TEXT,
+        evidence_json TEXT,
+        recommended_actions_json TEXT,
+        notes_json TEXT,
+        threat_dna_json TEXT
     )
     """)
+
+    # Ensure all columns exist on incidents if table was created previously with older schema
+    for col in [
+        "investigation_id", "title", "severity", "status", "assigned_to",
+        "created_at", "updated_at", "description", "indicators_json",
+        "evidence_json", "recommended_actions_json", "notes_json", "threat_dna_json"
+    ]:
+        try:
+            cursor.execute(f"ALTER TABLE incidents ADD COLUMN {col} TEXT")
+        except Exception:
+            pass
 
     for col, col_type in [
         ("risk_level", "TEXT"),
