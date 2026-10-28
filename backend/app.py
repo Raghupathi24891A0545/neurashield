@@ -1133,6 +1133,35 @@ def init_db():
     cursor.execute("CREATE INDEX IF NOT EXISTS idx_webpage_analyses_url ON webpage_analyses(target_url)")
     cursor.execute("CREATE INDEX IF NOT EXISTS idx_webpage_analyses_timestamp ON webpage_analyses(analysis_timestamp)")
 
+    # Investigations table
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS investigations (
+        investigation_id TEXT PRIMARY KEY,
+        investigation_type TEXT,
+        user_id INTEGER,
+        target_display TEXT,
+        risk_score INTEGER,
+        risk_level TEXT,
+        verdict TEXT,
+        threat_dna TEXT,
+        created_at TIMESTAMP,
+        payload_json TEXT
+    )
+    """)
+
+    # Incidents table
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS incidents (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        incident_id TEXT UNIQUE,
+        title TEXT,
+        severity TEXT DEFAULT 'MEDIUM',
+        status TEXT DEFAULT 'OPEN',
+        created_at TIMESTAMP,
+        details TEXT
+    )
+    """)
+
     for col, col_type in [
         ("risk_level", "TEXT"),
         ("risk_score", "INTEGER"),
@@ -1747,7 +1776,13 @@ def api_webpage_investigate():
         }
     else:
         dynamic_requested = bool(data.get("dynamic_scan", False) or data.get("force_headless", False))
-        fetch_result = safe_fetch_webpage_hybrid(url_input, force_headless=dynamic_requested)
+        try:
+            fetch_result = safe_fetch_webpage_hybrid(url_input, force_headless=dynamic_requested)
+        except Exception as _fetch_err:
+            print(f"Notice: safe_fetch_webpage_hybrid fallback ({_fetch_err})")
+            fetch_result = safe_fetch_webpage(url_input)
+            fetch_result["engine_used"] = "STATIC_CRAWLER"
+            fetch_result["screenshot_url"] = None
 
     # ── Step 2: MODULE 2 — Domain Intelligence ──
     domain_intel = None

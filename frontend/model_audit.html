@@ -99,7 +99,12 @@
     try {
       const res = await fetch('/api/model-audit/metrics');
       const data = await res.json();
-      const models = data.models || [];
+      let models = [];
+      if (Array.isArray(data.models)) {
+        models = data.models;
+      } else if (data.models && typeof data.models === 'object') {
+        models = Object.values(data.models);
+      }
       const container = document.getElementById('modelsContainer');
 
       if (!models.length) {

@@ -1265,8 +1265,16 @@ async function analyzeWebpage() {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ url: input, dynamic_scan: isDynamic })
   }).then(async r => {
-    const json = await r.json();
-    if (!r.ok || json.error) throw new Error(json.error || 'Webpage investigation failed');
+    let json = null;
+    try {
+      json = await r.json();
+    } catch (parseErr) {
+      if (!r.ok) {
+        throw new Error(`Security scanner is waking up or temporarily unavailable (HTTP ${r.status}). Please retry in a few seconds.`);
+      }
+      throw new Error('Received unexpected non-JSON response from server.');
+    }
+    if (!r.ok || json.error) throw new Error(json.error || `Webpage investigation failed (HTTP ${r.status})`);
     return json;
   });
 
