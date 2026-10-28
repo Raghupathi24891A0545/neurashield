@@ -1,213 +1,1018 @@
 /**
- * NeuraShield Gmail Integration — Injected Content Styles
- * Isolation through #neurashield-gmail-banner and .ns-gmail-* classes.
+ * NeuraShield Gmail Integration — Injected Content Styles v3.0
+ * NOTE: No @import (Gmail CSP blocks it). Font injected via JS.
+ * All rules use high-specificity selectors to survive Gmail's styles.
  */
 
-#neurashield-gmail-banner {
-  margin: 14px 0 18px 0 !important;
-  padding: 16px 20px !important;
-  background: linear-gradient(135deg, rgba(11, 15, 25, 0.98), rgba(17, 24, 39, 0.98)) !important;
-  border: 1px solid rgba(6, 182, 212, 0.35) !important;
-  border-left: 4px solid #06b6d4 !important;
-  border-radius: 8px !important;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4), 0 0 15px rgba(6, 182, 212, 0.1) !important;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif !important;
+/* ═══════════════════════════════════════════════════════════
+   GMAIL BANNER — Root Container
+═══════════════════════════════════════════════════════════ */
+
+div#neurashield-gmail-banner {
+  display: block !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
+  margin: 12px 0 18px 0 !important;
+  border-radius: 14px !important;
+  overflow: visible !important;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
   color: #e2e8f0 !important;
+  background: linear-gradient(160deg, #06101f 0%, #0a1628 55%, #0e1c33 100%) !important;
+  border: 1.5px solid rgba(6, 182, 212, 0.35) !important;
+  box-shadow:
+    0 4px 24px rgba(0, 0, 0, 0.55),
+    0 1px 0 rgba(255,255,255,0.04) inset !important;
   position: relative !important;
-  z-index: 100 !important;
+  z-index: 99 !important;
+  animation: ns-slide-in 0.45s cubic-bezier(0.16, 1, 0.3, 1) both !important;
+}
+
+@keyframes ns-slide-in {
+  from { opacity: 0; transform: translateY(-10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Glowing top border line using a top-padding inset div */
+div#neurashield-gmail-banner .ns-top-accent {
+  height: 3px !important;
+  background: linear-gradient(90deg, transparent 0%, #06b6d4 25%, #818cf8 75%, transparent 100%) !important;
+  border-radius: 14px 14px 0 0 !important;
+  animation: ns-glow-sweep 3s ease infinite alternate !important;
+}
+
+@keyframes ns-glow-sweep {
+  from { opacity: 0.7; }
+  to   { opacity: 1; filter: drop-shadow(0 0 4px #06b6d4); }
+}
+
+/* Inner padding wrapper */
+div#neurashield-gmail-banner .ns-inner {
+  padding: 14px 18px 16px 18px !important;
+  display: block !important;
+}
+
+/* ── Reset all ns-* children so Gmail doesn't clobber them ── */
+div#neurashield-gmail-banner *,
+div#ns-link-guardian-overlay * {
   box-sizing: border-box !important;
-  animation: nsSlideDown 0.3s ease-out !important;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+  line-height: normal !important;
 }
 
-@keyframes nsSlideDown {
-  from { opacity: 0; transform: translateY(-8px); }
-  to { opacity: 1; transform: translateY(0); }
-}
+/* ═══════════════════════════════════════════════════════════
+   HEADER ROW
+═══════════════════════════════════════════════════════════ */
 
-#neurashield-gmail-banner * {
-  box-sizing: border-box !important;
-}
-
-.ns-gmail-header {
+div#neurashield-gmail-banner .ns-gmail-header {
   display: flex !important;
   justify-content: space-between !important;
   align-items: center !important;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
-  padding-bottom: 10px !important;
   margin-bottom: 12px !important;
-}
-
-.ns-gmail-brand {
-  display: flex !important;
-  align-items: center !important;
+  padding-bottom: 12px !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07) !important;
+  flex-wrap: wrap !important;
   gap: 8px !important;
 }
 
-.ns-gmail-shield-icon {
-  width: 20px !important;
-  height: 20px !important;
+div#neurashield-gmail-banner .ns-gmail-brand {
+  display: flex !important;
+  align-items: center !important;
+  gap: 10px !important;
 }
 
-.ns-gmail-title {
-  font-size: 13px !important;
+div#neurashield-gmail-banner .ns-gmail-shield-wrap {
+  width: 38px !important;
+  height: 38px !important;
+  border-radius: 9px !important;
+  background: linear-gradient(135deg, rgba(6,182,212,0.18), rgba(129,140,248,0.18)) !important;
+  border: 1px solid rgba(6,182,212,0.4) !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  flex-shrink: 0 !important;
+}
+
+div#neurashield-gmail-banner .ns-gmail-shield-icon {
+  width: 22px !important;
+  height: 22px !important;
+  display: block !important;
+}
+
+div#neurashield-gmail-banner .ns-brand-text {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 2px !important;
+}
+
+div#neurashield-gmail-banner .ns-gmail-title {
+  font-size: 14px !important;
   font-weight: 800 !important;
   letter-spacing: 0.08em !important;
-  color: #06b6d4 !important;
   text-transform: uppercase !important;
+  line-height: 1.1 !important;
+  background: linear-gradient(90deg, #22d3ee, #a78bfa) !important;
+  -webkit-background-clip: text !important;
+  -webkit-text-fill-color: transparent !important;
+  background-clip: text !important;
+  display: block !important;
 }
 
-.ns-gmail-subtitle {
-  font-size: 11px !important;
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace !important;
-  color: #94a3b8 !important;
-  margin-left: 6px !important;
-}
-
-.ns-gmail-status-pill {
+div#neurashield-gmail-banner .ns-gmail-subtitle {
   font-size: 10px !important;
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace !important;
+  color: #475569 !important;
   text-transform: uppercase !important;
-  letter-spacing: 0.06em !important;
-  padding: 3px 8px !important;
-  border-radius: 9999px !important;
-  background: rgba(6, 182, 212, 0.15) !important;
-  color: #22d3ee !important;
-  border: 1px solid rgba(6, 182, 212, 0.3) !important;
-  display: flex !important;
+  letter-spacing: 0.1em !important;
+  font-weight: 500 !important;
+  display: block !important;
+  -webkit-text-fill-color: #475569 !important;
+}
+
+/* Status chip */
+div#neurashield-gmail-banner .ns-status-chip {
+  display: inline-flex !important;
   align-items: center !important;
-  gap: 5px !important;
-}
-
-.ns-gmail-pulse {
-  width: 6px !important;
-  height: 6px !important;
-  border-radius: 50% !important;
-  background: #06b6d4 !important;
-  box-shadow: 0 0 8px #06b6d4 !important;
-  animation: nsPulse 2s infinite !important;
-}
-
-@keyframes nsPulse {
-  0% { opacity: 0.4; }
-  50% { opacity: 1; }
-  100% { opacity: 0.4; }
-}
-
-.ns-gmail-details-grid {
-  display: grid !important;
-  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)) !important;
-  gap: 10px 16px !important;
-  font-size: 12px !important;
-  margin-bottom: 14px !important;
-}
-
-.ns-gmail-label {
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace !important;
+  gap: 6px !important;
+  padding: 5px 13px !important;
+  border-radius: 999px !important;
+  background: rgba(6,182,212,0.1) !important;
+  border: 1px solid rgba(6,182,212,0.35) !important;
   font-size: 10px !important;
-  color: #64748b !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.08em !important;
+  color: #22d3ee !important;
   text-transform: uppercase !important;
-  margin-bottom: 2px !important;
+  white-space: nowrap !important;
+  -webkit-text-fill-color: #22d3ee !important;
 }
 
-.ns-gmail-val {
+div#neurashield-gmail-banner .ns-status-chip.safe {
+  background: rgba(34,197,94,0.12) !important;
+  border-color: rgba(34,197,94,0.4) !important;
+  color: #4ade80 !important;
+  -webkit-text-fill-color: #4ade80 !important;
+}
+
+div#neurashield-gmail-banner .ns-status-chip.danger {
+  background: rgba(239,68,68,0.12) !important;
+  border-color: rgba(239,68,68,0.45) !important;
+  color: #f87171 !important;
+  -webkit-text-fill-color: #f87171 !important;
+}
+
+div#neurashield-gmail-banner .ns-status-chip.warn {
+  background: rgba(245,158,11,0.12) !important;
+  border-color: rgba(245,158,11,0.4) !important;
+  color: #fbbf24 !important;
+  -webkit-text-fill-color: #fbbf24 !important;
+}
+
+/* Pulse dot */
+.ns-pulse-dot {
+  display: inline-block !important;
+  width: 7px !important;
+  height: 7px !important;
+  border-radius: 50% !important;
+  background: currentColor !important;
+  flex-shrink: 0 !important;
+  animation: ns-pulse 2s ease infinite !important;
+}
+
+@keyframes ns-pulse {
+  0%, 100% { opacity: 0.4; transform: scale(0.85); }
+  50%       { opacity: 1;   transform: scale(1.15); box-shadow: 0 0 7px currentColor; }
+}
+
+/* ═══════════════════════════════════════════════════════════
+   METADATA GRID
+═══════════════════════════════════════════════════════════ */
+
+div#neurashield-gmail-banner .ns-gmail-details-grid {
+  display: grid !important;
+  grid-template-columns: repeat(4, 1fr) !important;
+  background: rgba(0, 0, 0, 0.35) !important;
+  border: 1px solid rgba(255, 255, 255, 0.07) !important;
+  border-radius: 9px !important;
+  overflow: hidden !important;
+  margin-bottom: 12px !important;
+}
+
+div#neurashield-gmail-banner .ns-detail-cell {
+  padding: 10px 13px !important;
+  border-right: 1px solid rgba(255, 255, 255, 0.06) !important;
+}
+
+div#neurashield-gmail-banner .ns-detail-cell:last-child {
+  border-right: none !important;
+}
+
+div#neurashield-gmail-banner .ns-gmail-label {
+  font-size: 9px !important;
+  color: #475569 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.1em !important;
+  font-weight: 700 !important;
+  margin-bottom: 4px !important;
+  display: block !important;
+  -webkit-text-fill-color: #475569 !important;
+}
+
+div#neurashield-gmail-banner .ns-gmail-val {
+  font-size: 12px !important;
   font-weight: 600 !important;
   color: #f1f5f9 !important;
-  word-break: break-all !important;
+  -webkit-text-fill-color: #f1f5f9 !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  display: block !important;
+  max-width: 100% !important;
 }
 
-.ns-gmail-val-mono {
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace !important;
-  color: #38bdf8 !important;
+div#neurashield-gmail-banner .ns-gmail-val-mono {
+  font-family: ui-monospace, 'Cascadia Code', 'Fira Code', Menlo, monospace !important;
+  font-size: 11px !important;
+  color: #22d3ee !important;
+  -webkit-text-fill-color: #22d3ee !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  display: block !important;
 }
 
-.ns-gmail-actions {
+div#neurashield-gmail-banner .ns-gmail-val-sub {
+  font-size: 10px !important;
+  color: #64748b !important;
+  -webkit-text-fill-color: #64748b !important;
+  margin-top: 2px !important;
+  display: block !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   ACTION ROW
+═══════════════════════════════════════════════════════════ */
+
+div#neurashield-gmail-banner .ns-gmail-actions {
   display: flex !important;
   align-items: center !important;
-  gap: 12px !important;
+  gap: 8px !important;
   flex-wrap: wrap !important;
 }
 
-.ns-gmail-btn {
-  background: linear-gradient(135deg, #0284c7, #06b6d4) !important;
-  color: #ffffff !important;
-  border: none !important;
+div#neurashield-gmail-banner .ns-btn {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 6px !important;
   padding: 8px 16px !important;
-  border-radius: 6px !important;
+  border-radius: 7px !important;
   font-size: 11px !important;
   font-weight: 700 !important;
   letter-spacing: 0.05em !important;
   text-transform: uppercase !important;
   cursor: pointer !important;
-  transition: all 0.2s ease !important;
-  box-shadow: 0 2px 10px rgba(6, 182, 212, 0.3) !important;
-  display: inline-flex !important;
-  align-items: center !important;
-  gap: 6px !important;
+  border: none !important;
+  outline: none !important;
+  transition: all 0.18s ease !important;
+  line-height: 1 !important;
+  text-decoration: none !important;
 }
 
-.ns-gmail-btn:hover {
-  background: linear-gradient(135deg, #0369a1, #0891b2) !important;
-  box-shadow: 0 4px 14px rgba(6, 182, 212, 0.5) !important;
+div#neurashield-gmail-banner .ns-btn-primary {
+  background: linear-gradient(135deg, #0891b2 0%, #06b6d4 100%) !important;
+  color: #fff !important;
+  -webkit-text-fill-color: #fff !important;
+  box-shadow: 0 2px 12px rgba(6,182,212,0.4) !important;
+}
+
+div#neurashield-gmail-banner .ns-btn-primary:hover {
+  background: linear-gradient(135deg, #0e7490 0%, #0891b2 100%) !important;
+  box-shadow: 0 4px 20px rgba(6,182,212,0.55) !important;
   transform: translateY(-1px) !important;
 }
 
-.ns-gmail-btn:disabled {
-  opacity: 0.6 !important;
+div#neurashield-gmail-banner .ns-btn-primary:disabled {
+  opacity: 0.5 !important;
   cursor: not-allowed !important;
   transform: none !important;
 }
 
-.ns-gmail-btn-secondary {
-  background: rgba(255, 255, 255, 0.06) !important;
-  color: #cbd5e1 !important;
-  border: 1px solid rgba(255, 255, 255, 0.15) !important;
-  box-shadow: none !important;
+div#neurashield-gmail-banner .ns-btn-ghost {
+  background: rgba(255,255,255,0.06) !important;
+  color: #94a3b8 !important;
+  -webkit-text-fill-color: #94a3b8 !important;
+  border: 1px solid rgba(255,255,255,0.13) !important;
 }
 
-.ns-gmail-btn-secondary:hover {
-  background: rgba(255, 255, 255, 0.12) !important;
-  color: #ffffff !important;
+div#neurashield-gmail-banner .ns-btn-ghost:hover {
+  background: rgba(255,255,255,0.11) !important;
+  color: #e2e8f0 !important;
+  -webkit-text-fill-color: #e2e8f0 !important;
+  border-color: rgba(255,255,255,0.25) !important;
 }
 
-/* Results Drawer inside Banner */
-.ns-gmail-result-drawer {
-  margin-top: 14px !important;
-  padding-top: 14px !important;
-  border-top: 1px solid rgba(255, 255, 255, 0.08) !important;
-  animation: nsFadeIn 0.3s ease !important;
-}
-
-@keyframes nsFadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
-}
-
-.ns-badge-verified {
-  background: rgba(34, 197, 94, 0.15) !important;
-  color: #4ade80 !important;
-  border: 1px solid rgba(34, 197, 94, 0.3) !important;
-}
-
-.ns-badge-impersonation {
-  background: rgba(239, 68, 68, 0.15) !important;
-  color: #f87171 !important;
-  border: 1px solid rgba(239, 68, 68, 0.4) !important;
-}
-
-.ns-badge-unverified {
-  background: rgba(245, 158, 11, 0.15) !important;
-  color: #fbbf24 !important;
-  border: 1px solid rgba(245, 158, 11, 0.3) !important;
-}
-
-.ns-dna-chip {
-  display: inline-block !important;
-  padding: 3px 8px !important;
-  margin: 2px !important;
-  border-radius: 4px !important;
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace !important;
+div#neurashield-gmail-banner .ns-footer-label {
+  display: flex !important;
+  align-items: center !important;
+  gap: 5px !important;
   font-size: 10px !important;
-  background: rgba(147, 51, 234, 0.15) !important;
-  color: #c084fc !important;
-  border: 1px solid rgba(147, 51, 234, 0.3) !important;
+  color: #334155 !important;
+  -webkit-text-fill-color: #334155 !important;
+  margin-left: auto !important;
+  font-weight: 500 !important;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   RESULT DRAWER
+═══════════════════════════════════════════════════════════ */
+
+div#neurashield-gmail-banner .ns-gmail-result-drawer {
+  margin-top: 12px !important;
+  animation: ns-fade-up 0.3s ease both !important;
+}
+
+@keyframes ns-fade-up {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Scanning card */
+div#neurashield-gmail-banner .ns-scan-card {
+  padding: 14px 16px !important;
+  background: rgba(6,182,212,0.05) !important;
+  border: 1px solid rgba(6,182,212,0.2) !important;
+  border-radius: 9px !important;
+}
+
+div#neurashield-gmail-banner .ns-scan-steps {
+  font-family: ui-monospace, 'Fira Code', Menlo, monospace !important;
+  font-size: 11px !important;
+  color: #64748b !important;
+  -webkit-text-fill-color: #64748b !important;
+  line-height: 2 !important;
+  margin-top: 8px !important;
+}
+
+div#neurashield-gmail-banner .ns-scan-steps .active-step {
+  color: #38bdf8 !important;
+  -webkit-text-fill-color: #38bdf8 !important;
+  font-weight: 600 !important;
+}
+
+div#neurashield-gmail-banner .ns-progress {
+  height: 3px !important;
+  background: rgba(255,255,255,0.07) !important;
+  border-radius: 2px !important;
+  overflow: hidden !important;
+  margin-top: 10px !important;
+}
+
+div#neurashield-gmail-banner .ns-progress-bar {
+  height: 100% !important;
+  width: 50% !important;
+  background: linear-gradient(90deg, #06b6d4, #818cf8) !important;
+  border-radius: 2px !important;
+  animation: ns-indeterminate 1.4s ease infinite !important;
+}
+
+@keyframes ns-indeterminate {
+  0%   { transform: translateX(-200%); }
+  100% { transform: translateX(400%); }
+}
+
+/* Result card */
+div#neurashield-gmail-banner .ns-result-card {
+  background: rgba(0,0,0,0.4) !important;
+  border: 1px solid rgba(255,255,255,0.08) !important;
+  border-radius: 10px !important;
+  overflow: hidden !important;
+}
+
+div#neurashield-gmail-banner .ns-verdict-header {
+  padding: 14px 16px !important;
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: center !important;
+  flex-wrap: wrap !important;
+  gap: 10px !important;
+  border-bottom: 1px solid rgba(255,255,255,0.06) !important;
+}
+
+div#neurashield-gmail-banner .ns-verdict-header.safe   { background: rgba(34,197,94,0.08)  !important; }
+div#neurashield-gmail-banner .ns-verdict-header.warn   { background: rgba(245,158,11,0.08) !important; }
+div#neurashield-gmail-banner .ns-verdict-header.danger { background: rgba(239,68,68,0.1)   !important; }
+
+div#neurashield-gmail-banner .ns-verdict-badge {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 7px !important;
+  padding: 5px 14px !important;
+  border-radius: 999px !important;
+  font-size: 11px !important;
+  font-weight: 800 !important;
+  letter-spacing: 0.05em !important;
+  text-transform: uppercase !important;
+}
+
+div#neurashield-gmail-banner .ns-verdict-badge.safe {
+  background: rgba(34,197,94,0.15) !important;
+  color: #4ade80 !important;
+  -webkit-text-fill-color: #4ade80 !important;
+  border: 1px solid rgba(34,197,94,0.3) !important;
+}
+
+div#neurashield-gmail-banner .ns-verdict-badge.warn {
+  background: rgba(245,158,11,0.15) !important;
+  color: #fbbf24 !important;
+  -webkit-text-fill-color: #fbbf24 !important;
+  border: 1px solid rgba(245,158,11,0.3) !important;
+}
+
+div#neurashield-gmail-banner .ns-verdict-badge.danger {
+  background: rgba(239,68,68,0.15) !important;
+  color: #f87171 !important;
+  -webkit-text-fill-color: #f87171 !important;
+  border: 1px solid rgba(239,68,68,0.35) !important;
+}
+
+div#neurashield-gmail-banner .ns-score-ring {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  gap: 1px !important;
+}
+
+div#neurashield-gmail-banner .ns-score-num {
+  font-size: 24px !important;
+  font-weight: 900 !important;
+  line-height: 1 !important;
+  display: block !important;
+}
+
+div#neurashield-gmail-banner .ns-score-label {
+  font-size: 8px !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.1em !important;
+  color: #64748b !important;
+  -webkit-text-fill-color: #64748b !important;
+  font-weight: 600 !important;
+  display: block !important;
+}
+
+div#neurashield-gmail-banner .ns-result-body {
+  padding: 14px 16px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 12px !important;
+}
+
+div#neurashield-gmail-banner .ns-reason-box {
+  padding: 10px 12px !important;
+  background: rgba(255,255,255,0.02) !important;
+  border-radius: 6px !important;
+  font-size: 12px !important;
+  color: #cbd5e1 !important;
+  -webkit-text-fill-color: #cbd5e1 !important;
+  line-height: 1.6 !important;
+  border-left: 3px solid !important;
+}
+
+div#neurashield-gmail-banner .ns-section-label {
+  font-size: 9px !important;
+  font-weight: 700 !important;
+  color: #475569 !important;
+  -webkit-text-fill-color: #475569 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.12em !important;
+  margin-bottom: 7px !important;
+  display: block !important;
+}
+
+div#neurashield-gmail-banner .ns-dna-row {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  gap: 5px !important;
+}
+
+div#neurashield-gmail-banner .ns-dna-chip {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 4px !important;
+  padding: 3px 9px !important;
+  border-radius: 5px !important;
+  font-family: ui-monospace, 'Fira Code', Menlo, monospace !important;
+  font-size: 10px !important;
+  font-weight: 600 !important;
+  background: rgba(129,140,248,0.12) !important;
+  color: #a5b4fc !important;
+  -webkit-text-fill-color: #a5b4fc !important;
+  border: 1px solid rgba(129,140,248,0.25) !important;
+}
+
+div#neurashield-gmail-banner .ns-link-item {
+  background: rgba(0,0,0,0.3) !important;
+  border: 1px solid rgba(255,255,255,0.06) !important;
+  border-radius: 7px !important;
+  padding: 9px 12px !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 10px !important;
+  flex-wrap: wrap !important;
+}
+
+div#neurashield-gmail-banner .ns-link-url {
+  font-family: ui-monospace, 'Fira Code', Menlo, monospace !important;
+  font-size: 11px !important;
+  color: #38bdf8 !important;
+  -webkit-text-fill-color: #38bdf8 !important;
+  word-break: break-all !important;
+  flex: 1 !important;
+  min-width: 120px !important;
+}
+
+div#neurashield-gmail-banner .ns-link-risk {
+  font-size: 10px !important;
+  font-weight: 800 !important;
+  padding: 3px 8px !important;
+  border-radius: 4px !important;
+  text-transform: uppercase !important;
+  white-space: nowrap !important;
+}
+
+div#neurashield-gmail-banner .ns-link-risk.LOW    { background: rgba(34,197,94,0.15)  !important; color: #4ade80 !important; -webkit-text-fill-color: #4ade80 !important; }
+div#neurashield-gmail-banner .ns-link-risk.MEDIUM { background: rgba(245,158,11,0.15) !important; color: #fbbf24 !important; -webkit-text-fill-color: #fbbf24 !important; }
+div#neurashield-gmail-banner .ns-link-risk.HIGH   { background: rgba(239,68,68,0.15)  !important; color: #f87171 !important; -webkit-text-fill-color: #f87171 !important; }
+
+div#neurashield-gmail-banner .ns-verify-btn {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 4px !important;
+  padding: 4px 10px !important;
+  background: rgba(255,255,255,0.06) !important;
+  border: 1px solid rgba(255,255,255,0.12) !important;
+  border-radius: 5px !important;
+  font-size: 10px !important;
+  font-weight: 700 !important;
+  color: #94a3b8 !important;
+  -webkit-text-fill-color: #94a3b8 !important;
+  cursor: pointer !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.05em !important;
+  transition: all 0.15s !important;
+  outline: none !important;
+}
+
+div#neurashield-gmail-banner .ns-verify-btn:hover {
+  background: rgba(6,182,212,0.15) !important;
+  border-color: rgba(6,182,212,0.4) !important;
+  color: #22d3ee !important;
+  -webkit-text-fill-color: #22d3ee !important;
+}
+
+div#neurashield-gmail-banner .ns-agent-decision {
+  background: rgba(0,0,0,0.25) !important;
+  border-left: 2px solid #06b6d4 !important;
+  border-radius: 0 5px 5px 0 !important;
+  padding: 7px 10px !important;
+  font-size: 10px !important;
+}
+
+div#neurashield-gmail-banner .ns-agent-num {
+  color: #06b6d4 !important;
+  -webkit-text-fill-color: #06b6d4 !important;
+  font-weight: 800 !important;
+  margin-right: 4px !important;
+}
+
+div#neurashield-gmail-banner .ns-agent-label {
+  color: #e2e8f0 !important;
+  -webkit-text-fill-color: #e2e8f0 !important;
+  font-weight: 600 !important;
+}
+
+div#neurashield-gmail-banner .ns-agent-reason {
+  color: #64748b !important;
+  -webkit-text-fill-color: #64748b !important;
+  margin-top: 2px !important;
+}
+
+div#neurashield-gmail-banner .ns-guidance-item {
+  font-size: 11px !important;
+  color: #cbd5e1 !important;
+  -webkit-text-fill-color: #cbd5e1 !important;
+  line-height: 1.5 !important;
+  padding: 6px 0 !important;
+  border-bottom: 1px solid rgba(255,255,255,0.04) !important;
+  display: flex !important;
+  gap: 8px !important;
+  align-items: flex-start !important;
+}
+
+div#neurashield-gmail-banner .ns-guidance-item:last-child { border-bottom: none !important; }
+
+div#neurashield-gmail-banner .ns-result-footer {
+  padding: 10px 16px !important;
+  border-top: 1px solid rgba(255,255,255,0.05) !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  flex-wrap: wrap !important;
+  gap: 8px !important;
+  background: rgba(0,0,0,0.2) !important;
+}
+
+div#neurashield-gmail-banner .ns-ref-id {
+  font-family: ui-monospace, monospace !important;
+  font-size: 9px !important;
+  color: #334155 !important;
+  -webkit-text-fill-color: #334155 !important;
+}
+
+div#neurashield-gmail-banner .ns-console-link {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 4px !important;
+  padding: 5px 12px !important;
+  background: rgba(99,102,241,0.12) !important;
+  border: 1px solid rgba(99,102,241,0.3) !important;
+  border-radius: 5px !important;
+  font-size: 10px !important;
+  font-weight: 700 !important;
+  color: #a5b4fc !important;
+  -webkit-text-fill-color: #a5b4fc !important;
+  text-decoration: none !important;
+  cursor: pointer !important;
+  transition: all 0.15s !important;
+}
+
+div#neurashield-gmail-banner .ns-console-link:hover {
+  background: rgba(99,102,241,0.22) !important;
+  color: #c7d2fe !important;
+  -webkit-text-fill-color: #c7d2fe !important;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   LINK GUARDIAN OVERLAY MODAL
+═══════════════════════════════════════════════════════════ */
+
+div#ns-link-guardian-overlay {
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  width: 100vw !important;
+  height: 100vh !important;
+  background: rgba(3, 7, 18, 0.88) !important;
+  backdrop-filter: blur(14px) !important;
+  -webkit-backdrop-filter: blur(14px) !important;
+  z-index: 2147483647 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 20px !important;
+  animation: ns-overlay-in 0.22s ease both !important;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+}
+
+@keyframes ns-overlay-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+div#ns-link-guardian-overlay div#ns-link-guardian-card {
+  width: 100% !important;
+  max-width: 480px !important;
+  background: linear-gradient(145deg, #080f1f, #0d1829) !important;
+  border: 1.5px solid rgba(6,182,212,0.4) !important;
+  border-radius: 16px !important;
+  overflow: hidden !important;
+  box-shadow: 0 30px 60px rgba(0,0,0,0.8), 0 0 40px rgba(6,182,212,0.1) !important;
+  animation: ns-card-pop 0.3s cubic-bezier(0.16, 1, 0.3, 1) both !important;
+}
+
+@keyframes ns-card-pop {
+  from { transform: scale(0.92) translateY(14px); opacity: 0; }
+  to   { transform: scale(1)    translateY(0);    opacity: 1; }
+}
+
+div#ns-link-guardian-overlay div#ns-link-guardian-card.ns-card-blocked {
+  border-color: rgba(239,68,68,0.55) !important;
+  box-shadow: 0 30px 60px rgba(0,0,0,0.8), 0 0 50px rgba(239,68,68,0.18) !important;
+}
+
+div#ns-link-guardian-overlay div#ns-link-guardian-card.ns-card-safe {
+  border-color: rgba(34,197,94,0.5) !important;
+  box-shadow: 0 30px 60px rgba(0,0,0,0.8), 0 0 50px rgba(34,197,94,0.14) !important;
+}
+
+/* Top accent line */
+div#ns-link-guardian-overlay .ns-card-accent {
+  height: 3px !important;
+  background: linear-gradient(90deg, transparent, #06b6d4, transparent) !important;
+}
+
+div#ns-link-guardian-overlay .ns-card-accent.blocked {
+  background: linear-gradient(90deg, transparent, #ef4444, transparent) !important;
+}
+
+div#ns-link-guardian-overlay .ns-card-accent.safe {
+  background: linear-gradient(90deg, transparent, #22c55e, transparent) !important;
+}
+
+/* Inner padding */
+div#ns-link-guardian-overlay .ns-guardian-inner {
+  padding: 20px !important;
+}
+
+/* Header */
+div#ns-link-guardian-overlay .ns-guardian-header {
+  display: flex !important;
+  align-items: center !important;
+  gap: 14px !important;
+  margin-bottom: 16px !important;
+  padding-bottom: 14px !important;
+  border-bottom: 1px solid rgba(255,255,255,0.06) !important;
+}
+
+div#ns-link-guardian-overlay .ns-guardian-icon-wrap {
+  width: 48px !important;
+  height: 48px !important;
+  border-radius: 12px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  font-size: 22px !important;
+  flex-shrink: 0 !important;
+  background: rgba(6,182,212,0.15) !important;
+  border: 1px solid rgba(6,182,212,0.35) !important;
+  transition: all 0.3s !important;
+}
+
+div#ns-link-guardian-overlay .ns-guardian-icon-wrap.scanning {
+  animation: ns-icon-pulse 1.5s ease infinite !important;
+}
+
+div#ns-link-guardian-overlay .ns-guardian-icon-wrap.blocked {
+  background: rgba(239,68,68,0.15) !important;
+  border-color: rgba(239,68,68,0.45) !important;
+  animation: ns-icon-shake 0.5s ease !important;
+}
+
+div#ns-link-guardian-overlay .ns-guardian-icon-wrap.safe {
+  background: rgba(34,197,94,0.15) !important;
+  border-color: rgba(34,197,94,0.45) !important;
+}
+
+@keyframes ns-icon-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(6,182,212,0.4); }
+  50%       { box-shadow: 0 0 0 8px rgba(6,182,212,0); }
+}
+
+@keyframes ns-icon-shake {
+  0%,100% { transform: rotate(0deg); }
+  20%     { transform: rotate(-7deg); }
+  40%     { transform: rotate(7deg); }
+  60%     { transform: rotate(-4deg); }
+  80%     { transform: rotate(4deg); }
+}
+
+div#ns-link-guardian-overlay .ns-guardian-title-group { flex: 1 !important; }
+
+div#ns-link-guardian-overlay .ns-guardian-title {
+  font-size: 14px !important;
+  font-weight: 800 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.06em !important;
+  color: #f8fafc !important;
+  -webkit-text-fill-color: #f8fafc !important;
+  line-height: 1.2 !important;
+  display: block !important;
+}
+
+div#ns-link-guardian-overlay .ns-guardian-title.blocked {
+  color: #fca5a5 !important;
+  -webkit-text-fill-color: #fca5a5 !important;
+}
+
+div#ns-link-guardian-overlay .ns-guardian-title.safe {
+  color: #86efac !important;
+  -webkit-text-fill-color: #86efac !important;
+}
+
+div#ns-link-guardian-overlay .ns-guardian-sub {
+  font-size: 10px !important;
+  font-family: ui-monospace, monospace !important;
+  color: #475569 !important;
+  -webkit-text-fill-color: #475569 !important;
+  margin-top: 3px !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.06em !important;
+  display: block !important;
+}
+
+/* URL box */
+div#ns-link-guardian-overlay .ns-url-box {
+  background: rgba(0,0,0,0.35) !important;
+  border: 1px solid rgba(255,255,255,0.07) !important;
+  border-radius: 9px !important;
+  padding: 11px 14px !important;
+  margin-bottom: 14px !important;
+}
+
+div#ns-link-guardian-overlay .ns-url-tag {
+  font-size: 9px !important;
+  font-weight: 700 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.12em !important;
+  color: #475569 !important;
+  -webkit-text-fill-color: #475569 !important;
+  margin-bottom: 5px !important;
+  display: block !important;
+}
+
+div#ns-link-guardian-overlay .ns-url-domain {
+  font-size: 15px !important;
+  font-weight: 700 !important;
+  color: #38bdf8 !important;
+  -webkit-text-fill-color: #38bdf8 !important;
+  font-family: ui-monospace, 'Fira Code', Menlo, monospace !important;
+  display: block !important;
+}
+
+div#ns-link-guardian-overlay .ns-url-full {
+  font-size: 10px !important;
+  color: #475569 !important;
+  -webkit-text-fill-color: #475569 !important;
+  font-family: ui-monospace, monospace !important;
+  margin-top: 3px !important;
+  word-break: break-all !important;
+  display: block !important;
+}
+
+/* Status body */
+div#ns-link-guardian-overlay .ns-status-body {
+  background: rgba(255,255,255,0.025) !important;
+  border: 1px solid rgba(255,255,255,0.06) !important;
+  border-radius: 9px !important;
+  padding: 13px 14px !important;
+  margin-bottom: 16px !important;
+  color: #e2e8f0 !important;
+  -webkit-text-fill-color: #e2e8f0 !important;
+}
+
+/* Progress bar */
+div#ns-link-guardian-overlay .ns-grd-progress {
+  height: 3px !important;
+  background: rgba(255,255,255,0.07) !important;
+  border-radius: 2px !important;
+  overflow: hidden !important;
+  margin-top: 10px !important;
+}
+
+div#ns-link-guardian-overlay .ns-grd-progress-fill {
+  height: 100% !important;
+  width: 40% !important;
+  background: linear-gradient(90deg, #0284c7, #06b6d4, #38bdf8) !important;
+  border-radius: 2px !important;
+  animation: ns-indeterminate 1.4s ease infinite !important;
+}
+
+/* Threat chips */
+div#ns-link-guardian-overlay .ns-threat-traits {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  gap: 5px !important;
+  margin-top: 10px !important;
+}
+
+div#ns-link-guardian-overlay .ns-threat-chip {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 4px !important;
+  padding: 3px 9px !important;
+  border-radius: 4px !important;
+  font-family: ui-monospace, monospace !important;
+  font-size: 10px !important;
+  font-weight: 600 !important;
+  background: rgba(239,68,68,0.12) !important;
+  color: #fca5a5 !important;
+  -webkit-text-fill-color: #fca5a5 !important;
+  border: 1px solid rgba(239,68,68,0.3) !important;
+}
+
+/* Danger box */
+div#ns-link-guardian-overlay .ns-danger-box {
+  background: rgba(239,68,68,0.08) !important;
+  border-left: 3px solid #ef4444 !important;
+  border-radius: 0 6px 6px 0 !important;
+  padding: 8px 12px !important;
+  font-size: 11px !important;
+  color: #fca5a5 !important;
+  -webkit-text-fill-color: #fca5a5 !important;
+  margin-top: 10px !important;
+  line-height: 1.5 !important;
+}
+
+/* Button row */
+div#ns-link-guardian-overlay .ns-guardian-btns {
+  display: flex !important;
+  gap: 10px !important;
+  align-items: center !important;
+  flex-wrap: wrap !important;
+  justify-content: flex-end !important;
+}
+
+div#ns-link-guardian-overlay .ns-grd-btn-safe {
+  background: linear-gradient(135deg, #15803d, #22c55e) !important;
+  color: #fff !important;
+  -webkit-text-fill-color: #fff !important;
+  border: none !important;
+  padding: 11px 22px !important;
+  border-radius: 8px !important;
+  font-size: 12px !important;
+  font-weight: 700 !important;
+  cursor: pointer !important;
+  box-shadow: 0 4px 14px rgba(34,197,94,0.4) !important;
+  letter-spacing: 0.04em !important;
+  transition: all 0.18s !important;
+  outline: none !important;
+}
+
+div#ns-link-guardian-overlay .ns-grd-btn-safe:hover {
+  background: linear-gradient(135deg, #166534, #16a34a) !important;
+  box-shadow: 0 6px 20px rgba(34,197,94,0.5) !important;
+  transform: translateY(-1px) !important;
+}
+
+div#ns-link-guardian-overlay .ns-grd-btn-danger {
+  background: linear-gradient(135deg, #b91c1c, #ef4444) !important;
+  color: #fff !important;
+  -webkit-text-fill-color: #fff !important;
+  border: none !important;
+  padding: 11px 22px !important;
+  border-radius: 8px !important;
+  font-size: 12px !important;
+  font-weight: 700 !important;
+  cursor: pointer !important;
+  box-shadow: 0 4px 14px rgba(239,68,68,0.4) !important;
+  letter-spacing: 0.04em !important;
+  transition: all 0.18s !important;
+  outline: none !important;
+}
+
+div#ns-link-guardian-overlay .ns-grd-btn-danger:hover {
+  box-shadow: 0 6px 20px rgba(239,68,68,0.55) !important;
+  transform: translateY(-1px) !important;
+}
+
+div#ns-link-guardian-overlay .ns-grd-btn-cancel {
+  background: rgba(255,255,255,0.06) !important;
+  color: #94a3b8 !important;
+  -webkit-text-fill-color: #94a3b8 !important;
+  border: 1px solid rgba(255,255,255,0.12) !important;
+  padding: 11px 18px !important;
+  border-radius: 8px !important;
+  font-size: 12px !important;
+  font-weight: 600 !important;
+  cursor: pointer !important;
+  transition: all 0.15s !important;
+  outline: none !important;
+}
+
+div#ns-link-guardian-overlay .ns-grd-btn-cancel:hover {
+  background: rgba(255,255,255,0.12) !important;
+  color: #e2e8f0 !important;
+  -webkit-text-fill-color: #e2e8f0 !important;
+}
+
+div#ns-link-guardian-overlay .ns-grd-override {
+  background: none !important;
+  border: none !important;
+  color: #334155 !important;
+  -webkit-text-fill-color: #334155 !important;
+  font-size: 10px !important;
+  text-decoration: underline !important;
+  cursor: pointer !important;
+  padding: 6px !important;
+  margin-left: auto !important;
+  font-family: 'Inter', -apple-system, sans-serif !important;
+}
+
+div#ns-link-guardian-overlay .ns-grd-override:hover {
+  color: #64748b !important;
+  -webkit-text-fill-color: #64748b !important;
+}
+
+/* Countdown */
+div#ns-link-guardian-overlay .ns-countdown {
+  font-size: 11px !important;
+  color: #22d3ee !important;
+  -webkit-text-fill-color: #22d3ee !important;
+  font-weight: 700 !important;
+  margin-top: 8px !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 6px !important;
 }

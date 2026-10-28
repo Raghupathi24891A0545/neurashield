@@ -24,6 +24,7 @@
   ],
   "host_permissions": [
     "*://mail.google.com/*",
+    "https://neurashield-kp6p.onrender.com/*",
     "http://127.0.0.1:5000/*",
     "http://localhost:5000/*",
     "https://*/*",

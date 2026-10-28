@@ -52,7 +52,8 @@ document.addEventListener('DOMContentLoaded', () => {
       const status = await NeuraShieldAPI.checkStatus();
       if (status.online) {
         backendDot.className = 'ns-pulse-dot online';
-        backendStatusText.textContent = 'ONLINE (5000)';
+        const isRender = (status.url || '').includes('onrender.com');
+        backendStatusText.textContent = isRender ? 'ONLINE (RENDER)' : 'ONLINE';
       } else {
         backendDot.className = 'ns-pulse-dot offline';
         backendStatusText.textContent = 'OFFLINE';
@@ -271,14 +272,6 @@ document.addEventListener('DOMContentLoaded', () => {
       advanceHudStep(3, 'Webpage form analysis completed');
       advanceHudStep(4, 'Threat DNA & composite risk scored');
 
-      // Update background badge and persistence
-      if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.sendMessage) {
-        chrome.runtime.sendMessage({
-          type: 'STORE_INVESTIGATION_RESULT',
-          payload: report
-        }).catch(() => {});
-      }
-
       setTimeout(() => {
         hideScanningHud();
         renderReport(report);
@@ -317,14 +310,6 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!report) return;
     currentReport = report;
     reportContainer.style.display = 'block';
-
-    // Synchronize badge to current report verdict
-    if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.sendMessage) {
-      chrome.runtime.sendMessage({
-        type: 'STORE_INVESTIGATION_RESULT',
-        payload: report
-      }).catch(() => {});
-    }
 
     const sv = report.sender_verification || {};
     const risk = report.risk || report.risk_assessment || {};
@@ -746,9 +731,10 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   // ── 9. Open in SOC Web Console ──
-  btnOpenWebConsole.addEventListener('click', () => {
+  btnOpenWebConsole.addEventListener('click', async () => {
     const invId = currentReport ? currentReport.investigation_id : '';
-    const url = invId ? `http://127.0.0.1:5000/investigation-center?id=${encodeURIComponent(invId)}` : `http://127.0.0.1:5000/investigation-center`;
+    const base = await NeuraShieldAPI.getBackendUrl();
+    const url = invId ? `${base}/investigation-center?id=${encodeURIComponent(invId)}` : `${base}/investigation-center`;
     if (typeof chrome !== 'undefined' && chrome.tabs) {
       chrome.tabs.create({ url });
     } else {
