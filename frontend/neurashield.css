@@ -359,6 +359,31 @@
   border-top-color: var(--ns-border);
 }
 
+/* Keep navigation and inline brand bars legible when the canvas is white. */
+[data-theme="light"] .ns-nav,
+[data-theme="light"] .ns-nav.scrolled {
+  background: rgba(255, 255, 255, 0.94) !important;
+  border-bottom: 1px solid var(--ns-border);
+  box-shadow: 0 4px 18px rgba(15, 23, 42, 0.06);
+}
+[data-theme="light"] .sidebar-nav a:hover,
+[data-theme="light"] .inv-nav a:hover { background: var(--ns-cyan-dim); }
+[data-theme="light"] [style*="color:#fff"],
+[data-theme="light"] [style*="color: #fff"],
+[data-theme="light"] [style*="color:#ffffff"],
+[data-theme="light"] [style*="color: #ffffff"] { color: var(--ns-text) !important; }
+
+@keyframes ns-content-enter {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .ns-main, .inv-main { animation: ns-content-enter 420ms cubic-bezier(.2,.75,.25,1) both; }
+  .ns-card, .ns-stat, .module-card { transition: transform 260ms cubic-bezier(.2,.75,.25,1), box-shadow 260ms ease, border-color 220ms ease; }
+  .sidebar-nav a, .inv-nav a { transition: color 180ms ease, background-color 180ms ease, transform 180ms ease; }
+  .sidebar-nav a:hover, .inv-nav a:hover { transform: translateX(3px); }
+}
+
 /* ════════════════════════════════════════════════
    THEME TOGGLE BUTTON
    ════════════════════════════════════════════════ */

@@ -36,8 +36,7 @@
     };
 
     let html = '';
-    // Dashboard
-    html += item({ key: 'dashboard', name: 'Dashboard', route: '/dashboard', status: 'ACTIVE' });
+    // URL Intelligence is the signed-in home page; avoid a second Dashboard link.
 
     // INVESTIGATION
     html += '<li class="grp">Investigation</li>';
@@ -48,10 +47,11 @@
     html += '<li class="grp">Intelligence</li>';
     const intelKeys = ['url', 'domain', 'webpage', 'email', 'qr'];
     intelKeys.forEach(k => { if (byKey[k]) html += item(byKey[k]); });
+    html += item({ key: 'bulk_analysis', name: 'Bulk Analysis', route: '/upload', status: 'ACTIVE' });
 
     // ANALYSIS
     html += '<li class="grp">Analysis</li>';
-    const analysisKeys = ['dna', 'graph', 'brand', 'reports'];
+    const analysisKeys = ['dna', 'graph', 'brand'];
     analysisKeys.forEach(k => { if (byKey[k]) html += item(byKey[k]); });
 
     // SECURITY OPERATIONS
@@ -69,7 +69,42 @@
     if (byKey['news']) html += item(byKey['news']);
 
     el.innerHTML = html;
+
+    // Multiple capabilities may lead to one page; show each destination once.
+    const seen = new Set();
+    el.querySelectorAll('a[href]').forEach((link) => {
+      const url = new URL(link.href, window.location.origin);
+      const destination = `${url.pathname}${url.search}${url.hash}`;
+      if (seen.has(destination)) link.closest('li')?.remove();
+      else seen.add(destination);
+    });
+    el.querySelectorAll('li.grp').forEach((group) => {
+      let next = group.nextElementSibling;
+      while (next && !next.classList.contains('grp')) {
+        if (next.querySelector('a, .off')) return;
+        next = next.nextElementSibling;
+      }
+      group.remove();
+    });
   };
+
+  /* Subtle pointer-driven depth on designated cards. */
+  document.addEventListener('pointermove', (e) => {
+    const card = e.target.closest('.interactive-tilt');
+    if (!card || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    const r = card.getBoundingClientRect();
+    const x = (e.clientX - r.left) / r.width - 0.5;
+    const y = (e.clientY - r.top) / r.height - 0.5;
+    card.style.setProperty('--tilt-x', `${x * 3}deg`);
+    card.style.setProperty('--tilt-y', `${y * -3}deg`);
+  });
+  document.addEventListener('pointerout', (e) => {
+    const card = e.target.closest('.interactive-tilt');
+    if (card && !card.contains(e.relatedTarget)) {
+      card.style.setProperty('--tilt-x', '0deg');
+      card.style.setProperty('--tilt-y', '0deg');
+    }
+  });
 
   /* ── Cyber Analysis Core (canvas). Visual only; stage text comes from the backend. ── */
   NS.core = function (canvas) {

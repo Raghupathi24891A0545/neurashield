@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Dashboard — NeuraShield</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='neurashield.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='ns_investigation.css') }}">
   <style>
     .ns-layout { display:flex; min-height:100vh; padding-top:68px; }
 
@@ -92,6 +93,14 @@
     .module-card { padding: 20px; opacity: 0.6; cursor: not-allowed; }
     .module-card:hover { opacity: 0.7; transform: none !important; }
 
+    .interactive-tilt {
+      transform: perspective(1100px) rotateX(var(--tilt-y, 0deg)) rotateY(var(--tilt-x, 0deg));
+      transform-style: preserve-3d;
+      transition: transform 220ms ease, box-shadow 250ms ease, border-color 250ms ease;
+      will-change: transform;
+    }
+    .interactive-tilt:hover { box-shadow: 0 18px 40px rgba(0, 0, 0, 0.18); }
+
     /* M1 url breakdown override for full width */
     .m1-url-breakdown { font-size: 10px; }
   </style>
@@ -99,7 +108,7 @@
 <body>
 
 <!-- ── Navbar ── -->
-<nav class="ns-nav scrolled" style="background:rgba(8,12,16,0.95);">
+<nav class="ns-nav scrolled">
   <div class="ns-nav-inner">
     <a href="/" class="ns-logo">
       <img src="{{ url_for('static', filename='static/ns_logo.png') }}"
@@ -128,51 +137,38 @@
       <div style="font-family:var(--ns-mono);font-size:9px;letter-spacing:0.15em;text-transform:uppercase;color:var(--ns-text-muted);">Field Agent</div>
       <div style="font-size:13px;font-weight:600;color:var(--ns-text);margin-top:2px;">{{ username }}</div>
     </div>
-    <ul class="sidebar-nav">
-      <li><a href="/investigation-center" style="color:var(--ns-cyan); font-weight:700;"><span class="icon">⚡</span> Investigation Center</a></li>
-      <li><a href="/investigations"><span class="icon">🗂</span> Investigation History</a></li>
-      <li style="margin-top:10px;padding:0 14px;font-family:var(--ns-mono);font-size:9px;letter-spacing:0.15em;text-transform:uppercase;color:var(--ns-text-muted);">Specialists</li>
-      <li><a href="/dashboard" class="active"><span class="icon">🛡</span> URL Intelligence</a></li>
-      <li><a href="/domain-intelligence"><span class="icon">🌐</span> Domain Intel</a></li>
-      <li><a href="/webpage-intelligence"><span class="icon">📄</span> Webpage Intel</a></li>
-      <li><a href="/email-intelligence"><span class="icon">✉️</span> Email Intel</a></li>
-      <li><a href="/investigation-center?type=qr"><span class="icon">📱</span> QR Intelligence</a></li>
-      <li><a href="/upload"><span class="icon">📂</span> Bulk Analysis</a></li>
-    </ul>
-    <div class="sidebar-bottom">
-      <a href="/logout" class="btn-ghost btn-full" style="font-size:10px;">Logout</a>
-    </div>
+      <ul class="sidebar-nav inv-nav" id="sidebar-nav"></ul>
   </aside>
 
   <!-- Main -->
   <main class="ns-main">
     <div class="ns-page-header">
-      <div class="ns-page-title">Threat Scanner</div>
-      <div class="ns-page-sub">MODULE 1 — URL Intelligence Engine • Field Agent Console</div>
+      <div class="ns-page-title">URL Intelligence</div>
+      <div class="ns-page-sub">Threat scanning • Field Agent Console</div>
     </div>
 
     <!-- Stats row -->
     <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:28px;">
-      <div class="ns-stat">
+      <div class="ns-stat interactive-tilt">
         <div class="ns-stat-value" id="stat-total">—</div>
         <div class="ns-stat-label">Total Scans</div>
       </div>
-      <div class="ns-stat">
+      <div class="ns-stat interactive-tilt">
         <div class="ns-stat-value" style="color:var(--ns-red);" id="stat-phishing">—</div>
         <div class="ns-stat-label">Threats Found</div>
       </div>
-      <div class="ns-stat">
+      <div class="ns-stat interactive-tilt">
         <div class="ns-stat-value" style="color:var(--ns-green);" id="stat-legit">—</div>
         <div class="ns-stat-label">Legitimate</div>
       </div>
     </div>
 
     <!-- Scan Card -->
-    <div class="ns-card scan-card">
+    <div class="ns-card scan-card interactive-tilt">
       <div class="scan-line"></div>
       <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;">
         <span class="ns-badge ns-badge-cyan"><span class="dot"></span> Active</span>
-        <span style="font-family:var(--ns-mono);font-size:10px;letter-spacing:0.1em;text-transform:uppercase;color:var(--ns-text-muted);">URL Intelligence Engine — Module 1</span>
+        <span style="font-family:var(--ns-mono);font-size:10px;letter-spacing:0.1em;text-transform:uppercase;color:var(--ns-text-muted);">URL analysis</span>
       </div>
       <h2 style="font-size:16px;font-weight:700;letter-spacing:-0.01em;margin-bottom:4px;">Analyze a Suspicious URL</h2>
       <p style="font-size:13px;color:var(--ns-text-dim);">Run through 4 analysis layers: Structural Decomposition · Lexical Intelligence · Security Rule Engine · Random Forest ML Classifier.</p>
@@ -681,7 +677,9 @@ Engine: NeuraShield MODULE 1 — URL Intelligence
     document.body.removeChild(ta);
   }
 </script>
-<script src="/ns_capabilities.js"></script>
+  <script src="/ns_investigation.js"></script>
+  <script>NS.renderNav(document.getElementById('sidebar-nav'), 'url');</script>
+  <script src="/ns_capabilities.js"></script>
 <script src="/theme-switcher.js"></script>
 </body>
 </html>
