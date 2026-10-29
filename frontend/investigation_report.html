@@ -95,8 +95,8 @@
     <details class="x" open><summary>Authentication & sender domain</summary><div class="body">${NS.email.auth(em)}</div></details>
     <details class="x"><summary>Content & HTML</summary><div class="body">${NS.email.content(em)}</div></details>
     <details class="x"><summary>Attachments (static)</summary><div class="body">${NS.email.attachments(em)}</div></details>`);
-  if (em && (em.urls || {}).url_count) add('urls', 'Layer · URL Intelligence (links in the message)', `${(L.url || []).length} link(s) analysed by Module 1.`, NS.email.links(em, L.url));
-  if ((L.domain || []).length) add('domains', 'Layer · Domain Intelligence', 'Live collection for the sender and link domains (Module 2).', `<div class="tbl-wrap"><table class="tbl"><thead><tr><th>Domain</th><th>Role</th><th>Status</th><th>Age (days)</th><th>Registrar</th><th>TLS</th><th>Domain rule risk</th></tr></thead><tbody>
+  if (em && (em.urls || {}).url_count) add('urls', 'Layer · URL Intelligence (links in the message)', `${(L.url || []).length} link(s) analysed by URL intelligence.`, NS.email.links(em, L.url));
+  if ((L.domain || []).length) add('domains', 'Layer · Domain Intelligence', 'Live collection for the sender and link domains.', `<div class="tbl-wrap"><table class="tbl"><thead><tr><th>Domain</th><th>Role</th><th>Status</th><th>Age (days)</th><th>Registrar</th><th>TLS</th><th>Domain rule risk</th></tr></thead><tbody>
     ${L.domain.map(d => `<tr><td class="k mono">${esc(d.domain)}</td><td>${esc(d.role)}</td><td>${d.status === 'COLLECTED' ? NS.state('VERIFIED') : NS.state('UNAVAILABLE') + ` <span class="muted small">${esc(d.reason || '')}</span>`}</td>
       <td>${NS.na(d.domain_age_days, '')}</td><td>${NS.na(d.registrar, '')}</td><td>${NS.na(d.tls, '')}</td><td>${d.risk_score == null ? '<span class="muted">—</span>' : esc(d.risk_score) + '/100'}</td></tr>`).join('')}</tbody></table></div>`);
   if ((L.webpage || []).length) add('webpages', 'Layer · Webpage Intelligence (opt-in)', 'Linked pages retrieved with SSRF protection; static inspection only.', `<div class="tbl-wrap"><table class="tbl"><thead><tr><th>URL</th><th>Status</th><th>Details</th></tr></thead><tbody>
@@ -115,7 +115,7 @@
       </div>
       <p class="muted small" style="margin-top:6px;">Brand alignment evaluated strictly against verified institutional registries and trademark profiles without automated extrapolation.</p>
     `;
-    add('brand', 'Layer · Brand Impersonation Intelligence (Module 9)', 'Evidence-backed analysis comparing claimed brand, domain typosquatting, and form prompts.', brandHtml);
+    add('brand', 'Layer · Brand Impersonation Intelligence', 'Evidence-backed analysis comparing claimed brand, domain typosquatting, and form prompts.', brandHtml);
   }
 
   // QR Intelligence
@@ -149,7 +149,7 @@
       </tbody></table></div>
       <p class="muted small" style="margin-top:6px;">External threat intelligence derived strictly from verified indicators. Missing intelligence reflects provider state, never treated as clean.</p>
     `;
-    add('threat_intel', 'Layer · Threat Intelligence (Module 6)', 'Independent external threat reputation evidence for discovered indicators.', tiHtml);
+    add('threat_intel', 'Layer · Threat Intelligence', 'Independent external threat reputation evidence for discovered indicators.', tiHtml);
   }
 
   // Module 6: Campaign Correlation & Shared Infrastructure

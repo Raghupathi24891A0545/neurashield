@@ -312,7 +312,7 @@
           <div class="capture-icon">🖼</div>
           <div class="capture-title">No saved capture is available</div>
           <div class="capture-sub">
-            The verdict remains based on the completed checks below. Live in-browser DOM and visual form inspection are scheduled for Module 3.
+            The verdict remains based on the completed checks below. Live in-browser DOM and visual form inspection are handled by webpage intelligence.
           </div>
         </div>
 
@@ -540,7 +540,7 @@
               <div class="section-eyebrow">05 · INFRASTRUCTURE INTEL</div>
               <h2 class="section-title">Domain & Infrastructure Intelligence</h2>
             </div>
-            <span class="ns-badge ns-badge-cyan" id="domainModuleBadge">Module 2 Active</span>
+            <span class="ns-badge ns-badge-cyan" id="domainModuleBadge">Active</span>
           </div>
 
           <div class="waveform-divider">
@@ -630,7 +630,7 @@
               <div class="section-eyebrow">06 · WEBPAGE & CONTENT</div>
               <h2 class="section-title">Webpage & DOM Intelligence</h2>
             </div>
-            <span class="ns-badge ns-badge-cyan" id="webpageModuleBadge">Module 3 Active</span>
+            <span class="ns-badge ns-badge-cyan" id="webpageModuleBadge">Active</span>
           </div>
 
           <div class="waveform-divider">
@@ -1261,7 +1261,7 @@
     if (domainUnverifiedText) {
       domainUnverifiedText.innerHTML = `
         <strong>Verified Live:</strong> DNS resource records, WHOIS registration lifecycle, IP routing &amp; reverse DNS PTRs, Nameserver diversity, and SSL/TLS cryptographic handshake (guarded by SSRF policy).<br>
-        <strong>Unverified / Out of Scope:</strong> External threat reputation intelligence feeds (unconfigured API keys; rate limited), and live DOM webpage content / password form harvesting (strictly isolated under upcoming Module 3).
+        <strong>Unverified / Out of Scope:</strong> External threat reputation intelligence feeds (unconfigured API keys; rate limited), and live DOM webpage content / password form harvesting (handled by webpage intelligence).
       `;
     }
 
@@ -1347,7 +1347,7 @@
         `;
       } else if (isAvailable) {
         if (wpBadge) {
-          wpBadge.textContent = 'Module 3 Active';
+          wpBadge.textContent = 'Active';
           wpBadge.className = 'ns-badge ns-badge-cyan';
         }
         const forms = wIntel.form_analysis || {};
@@ -1501,7 +1501,7 @@
         `;
       } else {
         if (wpBadge) {
-          wpBadge.textContent = 'Module 3 Available';
+          wpBadge.textContent = 'Available';
           wpBadge.className = 'ns-badge ns-badge-amber';
         }
         const targetUrl = inv.target ? (inv.target.original_url || inv.target.normalized_url || '') : '';

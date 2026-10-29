@@ -1214,7 +1214,7 @@
       const deltaHtml = `
         <div style="background:rgba(0,229,255,0.06); border:1px solid rgba(0,229,255,0.25); border-radius:4px; padding:10px 12px; margin-bottom:10px; font-size:12px;">
           <div style="font-weight:700; color:var(--ic-cyan); margin-bottom:6px; font-size:11px; text-transform:uppercase; letter-spacing:0.5px;">
-            Module 6 Threat Intelligence Impact
+            Threat Intelligence Impact
           </div>
           <div style="display:flex; justify-content:space-between; margin-bottom:3px; color:var(--ic-text-dim);">
             <span>Baseline Risk Assessment:</span>

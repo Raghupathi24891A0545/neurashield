@@ -548,7 +548,7 @@
           ${data.domain_intelligence ? `
             <div style="margin-top:14px;padding:12px 14px;background:rgba(0,200,255,0.04);border:1px solid rgba(0,200,255,0.18);border-radius:6px;font-family:var(--ns-mono);font-size:11px;">
               <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
-                <span style="color:var(--ns-cyan);font-weight:700;">🌐 DOMAIN INTELLIGENCE (MODULE 2)</span>
+                <span style="color:var(--ns-cyan);font-weight:700;">🌐 DOMAIN INTELLIGENCE</span>
                 <span style="color:var(--ns-text-muted);">Coverage: ${data.domain_intelligence.evidence_coverage || 0}%</span>
               </div>
               <div style="display:flex;flex-wrap:wrap;gap:14px;color:var(--ns-text-dim);margin-bottom:8px;">
@@ -642,7 +642,7 @@ Detection Method: ${method}
 Investigation ID: ${invId || 'N/A'}
 Report URL: ${reportLink}
 Timestamp: ${ts}
-Engine: NeuraShield MODULE 1 — URL Intelligence
+Engine: NeuraShield URL Intelligence
 -----------------------------------------------`;
     const markSuccess = () => {
       const orig = btn.innerHTML; btn.innerHTML = '✓ Copied!'; btn.classList.add('copied');
