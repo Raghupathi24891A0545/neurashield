@@ -38,6 +38,438 @@
   --ns-mono:        'JetBrains Mono', monospace;
 
   --ns-transition:  all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+
+  /* Theme transition */
+  --ns-theme-transition: background-color 0.45s cubic-bezier(0.4, 0, 0.2, 1),
+                         color 0.35s cubic-bezier(0.4, 0, 0.2, 1),
+                         border-color 0.35s cubic-bezier(0.4, 0, 0.2, 1),
+                         box-shadow 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ════════════════════════════════════════════════
+   LIGHT THEME
+   Clean, professional white background with blue accents
+   ════════════════════════════════════════════════ */
+[data-theme="light"] {
+  --ns-black:       #f8f9fc;
+  --ns-dark:        #f0f2f7;
+  --ns-surface:     #ffffff;
+  --ns-surface-2:   #f4f6fa;
+  --ns-border:      rgba(15, 23, 42, 0.10);
+  --ns-border-h:    rgba(15, 23, 42, 0.22);
+
+  --ns-cyan:        #0284c7;
+  --ns-cyan-dim:    rgba(2, 132, 199, 0.08);
+  --ns-cyan-glow:   rgba(2, 132, 199, 0.18);
+  --ns-blue:        #1d4ed8;
+  --ns-blue-dim:    rgba(29, 78, 216, 0.08);
+
+  --ns-red:         #dc2626;
+  --ns-red-dim:     rgba(220, 38, 38, 0.08);
+  --ns-green:       #059669;
+  --ns-green-dim:   rgba(5, 150, 105, 0.08);
+  --ns-amber:       #d97706;
+
+  --ns-text:        #0f172a;
+  --ns-text-muted:  #64748b;
+  --ns-text-dim:    #475569;
+}
+
+[data-theme="light"] body {
+  background-color: var(--ns-black);
+  color: var(--ns-text);
+}
+
+[data-theme="light"] h1,
+[data-theme="light"] h2,
+[data-theme="light"] h3,
+[data-theme="light"] h4,
+[data-theme="light"] h5,
+[data-theme="light"] h6 {
+  color: var(--ns-text);
+}
+
+/* ── Light Theme: Navigation ── */
+[data-theme="light"] .ns-nav.scrolled {
+  background: rgba(255, 255, 255, 0.88);
+  border-bottom-color: var(--ns-border);
+}
+
+[data-theme="light"] .ns-logo-name {
+  color: var(--ns-cyan);
+}
+
+/* ── Light Theme: Cards ── */
+[data-theme="light"] .ns-card {
+  background: var(--ns-surface);
+  border-color: var(--ns-border);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04);
+}
+
+[data-theme="light"] .ns-card:hover {
+  border-color: var(--ns-border-h);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08), 0 4px 10px rgba(0, 0, 0, 0.04);
+}
+
+[data-theme="light"] .ns-card::before {
+  background: linear-gradient(90deg, transparent, var(--ns-cyan), transparent);
+}
+
+/* ── Light Theme: Buttons ── */
+[data-theme="light"] .btn-primary {
+  color: #ffffff;
+  background: var(--ns-cyan);
+  box-shadow: 0 4px 14px rgba(2, 132, 199, 0.25), 0 1px 0 rgba(255, 255, 255, 0.15) inset;
+}
+
+[data-theme="light"] .btn-primary:hover {
+  box-shadow: 0 8px 25px rgba(2, 132, 199, 0.35), 0 1px 0 rgba(255, 255, 255, 0.2) inset;
+  color: #ffffff;
+}
+
+[data-theme="light"] .btn-ghost {
+  color: var(--ns-text-dim);
+  border-color: var(--ns-border);
+  background: transparent;
+}
+
+[data-theme="light"] .btn-ghost:hover {
+  color: var(--ns-text);
+  border-color: var(--ns-border-h);
+  background: var(--ns-cyan-dim);
+}
+
+/* ── Light Theme: Inputs ── */
+[data-theme="light"] .ns-input {
+  background: var(--ns-surface);
+  border-color: var(--ns-border);
+  color: var(--ns-text);
+}
+
+[data-theme="light"] .ns-input:focus {
+  border-color: var(--ns-cyan);
+  box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.12);
+  background: var(--ns-surface);
+}
+
+/* ── Light Theme: Stat counters ── */
+[data-theme="light"] .ns-stat {
+  background: var(--ns-surface);
+  border-color: var(--ns-border);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+}
+
+[data-theme="light"] .ns-stat:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+/* ── Light Theme: Tables ── */
+[data-theme="light"] .ns-table tr:hover td {
+  background: rgba(2, 132, 199, 0.04);
+}
+
+[data-theme="light"] .ns-table td {
+  border-bottom-color: var(--ns-border);
+}
+
+/* ── Light Theme: Badges ── */
+[data-theme="light"] .ns-badge-cyan {
+  background: var(--ns-cyan-dim);
+  color: var(--ns-cyan);
+  border-color: rgba(2, 132, 199, 0.25);
+}
+
+/* ── Light Theme: Scan overlay ── */
+[data-theme="light"] #ns-scan-overlay {
+  background: rgba(248, 249, 252, 0.96);
+}
+
+/* ── Light Theme: Result cards ── */
+[data-theme="light"] .ns-result-card {
+  background: var(--ns-surface);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
+}
+
+[data-theme="light"] .ns-result-card.phishing {
+  border-color: rgba(220, 38, 38, 0.25);
+  background: linear-gradient(135deg, #ffffff 0%, rgba(220, 38, 38, 0.04) 100%);
+}
+
+[data-theme="light"] .ns-result-card.legitimate {
+  border-color: rgba(5, 150, 105, 0.25);
+  background: linear-gradient(135deg, #ffffff 0%, rgba(5, 150, 105, 0.04) 100%);
+}
+
+/* ── Light Theme: Footer ── */
+[data-theme="light"] .ns-footer {
+  border-top-color: var(--ns-border);
+  background: var(--ns-surface);
+}
+
+/* ── Light Theme: Scrollbar ── */
+[data-theme="light"] ::-webkit-scrollbar-track {
+  background: var(--ns-dark);
+}
+
+[data-theme="light"] ::-webkit-scrollbar-thumb {
+  background: rgba(15, 23, 42, 0.18);
+}
+
+/* ── Light Theme: Mobile nav ── */
+[data-theme="light"] .ns-mobile-nav {
+  background: rgba(255, 255, 255, 0.98);
+}
+
+[data-theme="light"] .ns-mobile-nav a {
+  color: var(--ns-text-dim);
+  border-bottom-color: var(--ns-border);
+}
+
+[data-theme="light"] .ns-mobile-nav a:hover {
+  color: var(--ns-cyan);
+}
+
+/* ── Light Theme: Grid background ── */
+[data-theme="light"] .ns-grid-bg {
+  background-image:
+    linear-gradient(rgba(2, 132, 199, 0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(2, 132, 199, 0.04) 1px, transparent 1px);
+}
+
+/* ── Light Theme: Sidebar ── */
+[data-theme="light"] .ns-sidebar {
+  background: var(--ns-surface);
+  border-right-color: var(--ns-border);
+  box-shadow: 2px 0 8px rgba(0, 0, 0, 0.04);
+}
+
+[data-theme="light"] .sidebar-nav a.active {
+  color: var(--ns-cyan);
+  background: var(--ns-cyan-dim);
+}
+
+/* ── Light Theme: Report sections ── */
+[data-theme="light"] .report-section {
+  background: var(--ns-surface);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04);
+}
+
+[data-theme="light"] .threat-lens-hero {
+  background: var(--ns-surface);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
+}
+
+[data-theme="light"] .spectrum-card {
+  background: var(--ns-surface);
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+}
+
+[data-theme="light"] .threat-nav-card {
+  background: var(--ns-surface);
+  box-shadow: 0 1px 6px rgba(0, 0, 0, 0.06);
+}
+
+/* ── Light Theme: Evidence and data boxes ── */
+[data-theme="light"] .evidence-anchors-box {
+  background: var(--ns-dark);
+}
+
+[data-theme="light"] .evidence-card {
+  background: var(--ns-dark);
+}
+
+[data-theme="light"] .report-table th {
+  background: var(--ns-dark);
+}
+
+[data-theme="light"] .threat-dna-box {
+  background: var(--ns-dark);
+  border-color: var(--ns-cyan);
+}
+
+/* ── Light Theme: Shiny button ── */
+[data-theme="light"] .ns-shiny {
+  --gleam-base: #ffffff;
+  --gleam-inset: #f0f2f7;
+  --gleam-label: #0f172a;
+  --gleam-accent: #0284c7;
+  --gleam-accent-soft: #38bdf8;
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.06),
+              0 4px 14px rgba(2, 132, 199, 0.15),
+              0 1px 4px rgba(0, 0, 0, 0.08);
+}
+
+[data-theme="light"] .ns-shiny:hover {
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.06),
+              0 10px 25px rgba(2, 132, 199, 0.22),
+              0 2px 6px rgba(0, 0, 0, 0.1);
+}
+
+/* ── Light Theme: Quick scan card ── */
+[data-theme="light"] .qs-card {
+  background: var(--ns-surface);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
+}
+
+[data-theme="light"] .qs-url-box {
+  background: var(--ns-dark);
+}
+
+/* ── Light Theme: Radar loader ── */
+[data-theme="light"] .ns-radar-loader {
+  background: rgba(255, 255, 255, 0.9);
+}
+
+/* ── Light Theme: Signal bars ── */
+[data-theme="light"] .ns-signal-track,
+[data-theme="light"] .m1-mini-bar-track,
+[data-theme="light"] .m1-risk-bar-track,
+[data-theme="light"] .scan-bar-track {
+  background: var(--ns-dark);
+  border-color: var(--ns-border);
+}
+
+/* ── Light Theme: Bulk module cards ── */
+[data-theme="light"] .bulk-module-card {
+  background: var(--ns-surface);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+/* ── Light Theme: URL segments ── */
+[data-theme="light"] .m1-url-seg {
+  border-right-color: var(--ns-border);
+}
+
+/* ── Light Theme: Divider ── */
+[data-theme="light"] .ns-divider {
+  background: linear-gradient(90deg, transparent, var(--ns-border), transparent);
+}
+
+/* ── Light Theme: Glow effects suppressed ── */
+[data-theme="light"] .glow-cyan {
+  text-shadow: none;
+}
+
+[data-theme="light"] .glow-blue {
+  text-shadow: none;
+}
+
+/* ── Light Theme: Spectrum subtext ── */
+[data-theme="light"] .spectrum-subtext {
+  border-top-color: var(--ns-border);
+}
+
+/* ════════════════════════════════════════════════
+   THEME TOGGLE BUTTON
+   ════════════════════════════════════════════════ */
+.ns-theme-toggle {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  background: transparent;
+  border: 1px solid var(--ns-border);
+  border-radius: 50%;
+  cursor: pointer;
+  color: var(--ns-text-dim);
+  font-size: 16px;
+  transition: var(--ns-transition);
+  flex-shrink: 0;
+  padding: 0;
+  outline: none;
+}
+
+.ns-theme-toggle:hover {
+  border-color: var(--ns-border-h);
+  color: var(--ns-cyan);
+  background: var(--ns-cyan-dim);
+  transform: rotate(15deg);
+}
+
+.ns-theme-toggle:active {
+  transform: rotate(15deg) scale(0.92);
+}
+
+.ns-theme-toggle .theme-icon-dark,
+.ns-theme-toggle .theme-icon-light {
+  position: absolute;
+  transition: opacity 0.3s ease, transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  line-height: 1;
+}
+
+/* Dark mode: show moon, hide sun */
+.ns-theme-toggle .theme-icon-dark {
+  opacity: 1;
+  transform: rotate(0deg) scale(1);
+}
+.ns-theme-toggle .theme-icon-light {
+  opacity: 0;
+  transform: rotate(-90deg) scale(0.5);
+}
+
+/* Light mode: show sun, hide moon */
+[data-theme="light"] .ns-theme-toggle .theme-icon-dark {
+  opacity: 0;
+  transform: rotate(90deg) scale(0.5);
+}
+[data-theme="light"] .ns-theme-toggle .theme-icon-light {
+  opacity: 1;
+  transform: rotate(0deg) scale(1);
+}
+
+[data-theme="light"] .ns-theme-toggle {
+  border-color: rgba(15, 23, 42, 0.12);
+  color: #d97706;
+}
+
+[data-theme="light"] .ns-theme-toggle:hover {
+  background: rgba(217, 119, 6, 0.08);
+  border-color: rgba(217, 119, 6, 0.25);
+  color: #b45309;
+}
+
+/* ════════════════════════════════════════════════
+   PROFESSIONAL ENHANCEMENTS
+   ════════════════════════════════════════════════ */
+
+/* Smooth theme transitions on all core elements */
+body,
+.ns-nav,
+.ns-card,
+.ns-sidebar,
+.ns-footer,
+.ns-input,
+.ns-stat,
+.ns-badge,
+.ns-result-card,
+.ns-table td,
+.ns-table th,
+.ns-mobile-nav,
+.report-section,
+.threat-lens-hero,
+.threat-nav-card,
+.spectrum-card,
+.bulk-module-card,
+.qs-card,
+.evidence-card,
+.evidence-anchors-box,
+.btn-ghost,
+.btn-primary,
+.ns-shiny {
+  transition: var(--ns-theme-transition);
+}
+
+/* Focus-visible ring for accessibility */
+*:focus-visible {
+  outline: 2px solid var(--ns-cyan);
+  outline-offset: 2px;
+}
+
+/* Improved link underline animation */
+a {
+  transition: color 0.2s ease;
 }
 
 /* ── Reset & Base ── */

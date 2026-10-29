@@ -885,6 +885,74 @@
     }
     @media (max-width:900px){ .hero-cyber-tex { display:none; } }
 
+    /* ── LANDING PAGE LIGHT THEME OVERRIDES ── */
+    [data-theme="light"] .ns-depth-field {
+      background:
+        radial-gradient(1100px 700px at 78% 8%, rgba(2,132,199,0.04), transparent 60%),
+        radial-gradient(900px 600px at 12% 82%, rgba(29,78,216,0.03), transparent 60%);
+    }
+    [data-theme="light"] .ns-depth-field::after {
+      background-image:
+        linear-gradient(rgba(2,132,199,0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(2,132,199,0.03) 1px, transparent 1px);
+    }
+    [data-theme="light"] .demo-section {
+      background: var(--ns-surface);
+      border-color: var(--ns-border);
+      box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+    }
+    [data-theme="light"] .demo-section::before {
+      background: linear-gradient(90deg, transparent, var(--ns-cyan), transparent);
+      opacity: 0.4;
+    }
+    [data-theme="light"] .arch-stage {
+      background: linear-gradient(180deg, var(--ns-surface), var(--ns-surface-2));
+      box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+    }
+    [data-theme="light"] .arch-node {
+      background: var(--ns-dark);
+    }
+    [data-theme="light"] .domain-viz-card {
+      background: linear-gradient(180deg, var(--ns-surface), var(--ns-surface-2));
+      box-shadow: 0 4px 16px rgba(0,0,0,0.06);
+    }
+    [data-theme="light"] .pillar-item {
+      background: var(--ns-surface);
+      border-color: var(--ns-border);
+    }
+    [data-theme="light"] .pillar-item:hover {
+      background: var(--ns-surface-2);
+      border-color: var(--ns-border-h);
+    }
+    [data-theme="light"] .cyber-band-img::after {
+      background:
+        linear-gradient(180deg, var(--ns-black) 0%, rgba(248,249,252,0.55) 45%, var(--ns-black) 100%),
+        radial-gradient(120% 90% at 50% 50%, rgba(2,132,199,0.15), rgba(248,249,252,0.85) 75%);
+    }
+    [data-theme="light"] .cta-bg {
+      background: radial-gradient(ellipse 60% 50% at 50% 50%, rgba(2,132,199,0.05) 0%, transparent 70%);
+    }
+    [data-theme="light"] .btn-primary.btn-3d {
+      background: linear-gradient(180deg, #38bdf8 0%, var(--ns-cyan) 46%, #0369a1 100%);
+      box-shadow: 0 2px 0 #0369a1, 0 6px 0 #075985, 0 14px 26px rgba(2,132,199,0.3), 0 1px 0 rgba(255,255,255,0.55) inset;
+    }
+    [data-theme="light"] .btn-primary.btn-3d:hover {
+      box-shadow: 0 2px 0 #0369a1, 0 9px 0 #075985, 0 22px 40px rgba(2,132,199,0.4), 0 1px 0 rgba(255,255,255,0.65) inset;
+    }
+    [data-theme="light"] .btn-ghost.btn-3d {
+      background: linear-gradient(180deg, var(--ns-surface), var(--ns-surface-2));
+      box-shadow: 0 2px 0 #e2e8f0, 0 6px 0 #cbd5e1, 0 12px 24px rgba(0,0,0,0.08);
+      color: var(--ns-text-dim);
+    }
+    [data-theme="light"] .btn-ghost.btn-3d:hover {
+      color: var(--ns-text);
+      box-shadow: 0 2px 0 #e2e8f0, 0 8px 0 #cbd5e1, 0 18px 30px rgba(0,0,0,0.1), 0 0 22px rgba(2,132,199,0.08);
+    }
+    /* Hero stat values */
+    [data-theme="light"] .hero-stat-value {
+      color: var(--ns-text);
+    }
+
   </style>
 </head>
 <body class="ns-grid-bg">
@@ -916,6 +984,10 @@
     </ul>
 
     <div class="ns-nav-actions">
+      <button class="ns-theme-toggle" aria-label="Toggle theme">
+        <span class="theme-icon-dark">🌙</span>
+        <span class="theme-icon-light">☀️</span>
+      </button>
       {% if session.get('user_id') %}
         <a href="/dashboard" class="ns-shiny ns-shiny-sm"><span>Dashboard <span class="btn-arrow">→</span></span></a>
         <a href="/logout" class="btn-ghost" style="color:var(--ns-red);border-color:rgba(239,68,68,0.35);">Logout</a>
@@ -2648,5 +2720,6 @@ function delay(ms){ return new Promise(r => setTimeout(r, ms)); }
 
 </script>
 <script src="/ns_capabilities.js"></script>
+<script src="/theme-switcher.js"></script>
 </body>
 </html>

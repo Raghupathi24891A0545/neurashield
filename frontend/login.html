@@ -193,11 +193,39 @@
     .ns-shiny:is(:hover,:focus-visible), .ns-shiny:is(:hover,:focus-visible)::after { animation-play-state:running; }
     @keyframes ns-ga-spin { to { --ns-ga:360deg; } }
     @media (prefers-reduced-motion: reduce){ .ns-shiny, .ns-shiny::after { animation:none !important; } }
+
+    /* ── LOGIN LIGHT THEME OVERRIDES ── */
+    [data-theme="light"] .login-card {
+      background: linear-gradient(180deg, #ffffff, var(--ns-surface-2));
+      box-shadow: 0 2px 0 rgba(2,132,199,0.06) inset, 0 20px 40px -10px rgba(0,0,0,0.12), 0 8px 20px rgba(0,0,0,0.06);
+    }
+    [data-theme="light"] .login-card::after {
+      background: conic-gradient(from var(--a,0deg), transparent 0deg, rgba(2,132,199,0.35) 40deg, transparent 90deg, transparent 360deg);
+    }
+    [data-theme="light"] .ns-depth-field {
+      background: radial-gradient(1100px 700px at 78% 8%, rgba(2,132,199,0.04), transparent 60%), radial-gradient(900px 600px at 12% 82%, rgba(29,78,216,0.03), transparent 60%);
+    }
+    [data-theme="light"] .login-visual-img::after {
+      background: linear-gradient(180deg, rgba(248,249,252,0.55), rgba(248,249,252,0.85)), linear-gradient(120deg, rgba(2,132,199,0.12), transparent 45%, rgba(29,78,216,0.15));
+    }
+    [data-theme="light"] .btn-primary.btn-3d {
+      color: #fff;
+      background: linear-gradient(180deg, #38bdf8, var(--ns-cyan) 46%, #0369a1);
+      box-shadow: 0 2px 0 #0369a1, 0 6px 0 #075985, 0 14px 26px rgba(2,132,199,0.3), 0 1px 0 rgba(255,255,255,0.55) inset;
+    }
+    .login-page-theme-toggle {
+      position: fixed; top: 20px; right: 20px; z-index: 100;
+    }
   </style>
 </head>
 <body class="ns-grid-bg">
   <div class="ns-depth-field" aria-hidden="true"></div>
   <canvas id="login-bg"></canvas>
+
+  <button class="ns-theme-toggle login-page-theme-toggle" aria-label="Toggle theme">
+    <span class="theme-icon-dark">🌙</span>
+    <span class="theme-icon-light">☀️</span>
+  </button>
 
   <div class="login-shell">
    <aside class="login-visual">
@@ -285,5 +313,6 @@
       frame();
     })();
   </script>
+<script src="/theme-switcher.js"></script>
 </body>
 </html>

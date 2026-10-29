@@ -164,9 +164,39 @@
       padding: 4px 8px;
       border-radius: 3px;
     }
+
+    /* ── MODULE 6 LIGHT THEME OVERRIDES ── */
+    [data-theme="light"] .m6-top-banner {
+      background: #ffffff;
+      border-color: rgba(15, 23, 42, 0.12);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+    }
+    [data-theme="light"] .m6-top-title h1 { color: #0f172a; }
+    [data-theme="light"] .m6-stat-box {
+      background: #ffffff;
+      border-color: rgba(15, 23, 42, 0.10);
+      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    }
+    [data-theme="light"] .m6-table-wrap {
+      background: #ffffff;
+      border-color: rgba(15, 23, 42, 0.10);
+    }
+    [data-theme="light"] .m6-table th {
+      background: #f1f5f9;
+      color: #475569;
+      border-bottom-color: rgba(15, 23, 42, 0.10);
+    }
+    [data-theme="light"] .m6-table td {
+      border-bottom-color: rgba(15, 23, 42, 0.06);
+    }
+    [data-theme="light"] .m6-select-sm {
+      background: #ffffff;
+      border-color: rgba(15, 23, 42, 0.18);
+      color: #0f172a;
+    }
   </style>
 </head>
-<body class="ns-theme-dark">
+<body>
 <div class="ns-app-shell">
   <!-- Shared Sidebar Navigation -->
   <aside class="ns-sidebar" id="sidebar-nav"></aside>
@@ -184,7 +214,11 @@
           </h1>
           <p>Advanced security operations console for indicator enrichment, campaign correlation, and formal case management.</p>
         </div>
-        <div>
+        <div style="display:flex;align-items:center;gap:12px;">
+          <button class="ns-theme-toggle" aria-label="Toggle theme">
+            <span class="theme-icon-dark">🌙</span>
+            <span class="theme-icon-light">☀️</span>
+          </button>
           <a href="/investigation-center" class="ic-btn-action-primary" style="text-decoration:none; padding:8px 16px; font-size:12px; border-radius:4px; display:inline-flex; align-items:center; gap:8px;">
             <span>🔬 Open Unified Investigation Center</span>
           </a>
@@ -678,5 +712,6 @@ function esc(s) {
   return String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 }
 </script>
+<script src="/theme-switcher.js"></script>
 </body>
 </html>

@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -563,6 +563,10 @@
       </div>
     </a>
     <div class="ns-nav-actions">
+      <button class="ns-theme-toggle" aria-label="Toggle theme">
+        <span class="theme-icon-dark">ðŸŒ™</span>
+        <span class="theme-icon-light">â˜€ï¸</span>
+      </button>
       <span style="font-family:var(--ns-mono);font-size:11px;color:var(--ns-text-dim);">{{ session.get('username', 'Analyst') }}</span>
       {% if session.get('username') %}
       <a href="/logout" class="btn-ghost">Logout</a>
@@ -2361,5 +2365,6 @@ window.addEventListener('DOMContentLoaded', () => {
   };
 })();
 </script>
+<script src="/theme-switcher.js"></script>
 </body>
 </html>

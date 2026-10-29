@@ -68,6 +68,21 @@
       border: none;
     }
 
+    /* ── REPORT LIGHT THEME OVERRIDES ── */
+    [data-theme="light"] .report-top-nav {
+      background: rgba(255, 255, 255, 0.95);
+      border-bottom-color: var(--ns-border);
+    }
+    [data-theme="light"] .btn-report-tool {
+      background: rgba(15, 23, 42, 0.04);
+      color: var(--ns-text-dim);
+      border-color: var(--ns-border);
+    }
+    [data-theme="light"] .btn-report-tool:hover {
+      background: var(--ns-cyan-dim);
+      color: var(--ns-cyan);
+    }
+
     /* FAQ & Scenarios */
     .faq-item, .scenario-card {
       background: rgba(255, 255, 255, 0.02);
@@ -154,6 +169,10 @@
   </a>
 
   <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+    <button class="ns-theme-toggle" aria-label="Toggle theme">
+      <span class="theme-icon-dark">🌙</span>
+      <span class="theme-icon-light">☀️</span>
+    </button>
     <a href="/investigation-center" class="btn-report-tool" style="color:var(--ns-cyan);border-color:rgba(0,200,255,0.3);background:rgba(0,200,255,0.06);">⚡ Investigation Center</a>
     <a href="/dashboard" class="btn-report-tool">← Scanner Dashboard</a>
     <button type="button" class="btn-report-tool" onclick="window.print()">🖨 Print / PDF</button>
@@ -1689,5 +1708,6 @@ NeuraShield preserves technical telemetry without modification.
     window.open(`https://www.facebook.com/sharer/sharer.php?u=${url}`, '_blank');
   }
 </script>
+<script src="/theme-switcher.js"></script>
 </body>
 </html>

@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -46,6 +46,10 @@
       </div>
     </a>
     <div class="ns-nav-actions">
+      <button class="ns-theme-toggle" aria-label="Toggle theme">
+        <span class="theme-icon-dark">ðŸŒ™</span>
+        <span class="theme-icon-light">â˜€ï¸</span>
+      </button>
       <span style="font-family:var(--ns-mono);font-size:11px;color:#94a3b8;margin-left:14px;">{{ username }}</span>
       <a href="/logout" class="btn-ghost" style="margin-left:8px;">Logout</a>
     </div>
@@ -295,5 +299,6 @@
     }
   }
 </script>
+<script src="/theme-switcher.js"></script>
 </body>
 </html>

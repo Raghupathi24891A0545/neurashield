@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -15,6 +15,10 @@
       <div class="ns-logo-text"><span class="ns-logo-name">NeuraShield</span><span class="ns-logo-sub">Threat Intelligence</span></div>
     </a>
     <div class="ns-nav-actions">
+      <button class="ns-theme-toggle" aria-label="Toggle theme">
+        <span class="theme-icon-dark">ðŸŒ™</span>
+        <span class="theme-icon-light">â˜€ï¸</span>
+      </button>
       {% if username %}<span style="font-family:var(--ns-mono);font-size:11px;color:var(--ns-text-dim);">{{ username }}</span><a href="/logout" class="btn-ghost">Logout</a>
       {% else %}<a href="/login" class="btn-ghost">Login</a>{% endif %}
     </div>
@@ -248,5 +252,6 @@
   document.querySelectorAll('.rpt-sec').forEach(sec => obs.observe(sec));
 })();
 </script>
+<script src="/theme-switcher.js"></script>
 </body>
 </html>

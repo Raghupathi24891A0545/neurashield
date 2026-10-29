@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -47,6 +47,10 @@
       </div>
     </a>
     <div class="ns-nav-actions">
+      <button class="ns-theme-toggle" aria-label="Toggle theme">
+        <span class="theme-icon-dark">ðŸŒ™</span>
+        <span class="theme-icon-light">â˜€ï¸</span>
+      </button>
       <span class="ns-badge ns-badge-cyan" style="margin-right:8px;"><span class="dot"></span> Commander</span>
       <span style="font-family:var(--ns-mono);font-size:11px;color:var(--ns-text-dim);">{{ username }}</span>
       <a href="/logout" class="btn-ghost">Logout</a>
@@ -640,5 +644,6 @@
     container.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }}
 </script>
+<script src="/theme-switcher.js"></script>
 </body>
 </html>

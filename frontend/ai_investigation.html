@@ -9,6 +9,26 @@
   <link rel="stylesheet" href="{{ url_for('static', filename='ns_investigation.css') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='ai_investigation.css') }}">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    /* ── AI INVESTIGATION LIGHT THEME OVERRIDES ── */
+    [data-theme="light"] .m5-page {
+      background: #f8f9fc;
+      color: #0f172a;
+    }
+    [data-theme="light"] .m5-input-section {
+      background: #ffffff;
+      border-color: rgba(15, 23, 42, 0.10);
+      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    }
+    [data-theme="light"] .m5-url-input {
+      background: #f8f9fc;
+      color: #0f172a;
+      border-color: rgba(15, 23, 42, 0.15);
+    }
+    [data-theme="light"] .m5-header h1 {
+      color: #0f172a;
+    }
+  </style>
 </head>
 <body>
 
@@ -32,9 +52,17 @@
   <main class="m5-main">
     <!-- Header -->
     <div class="m5-header">
-      <h1>AI <span class="accent">Investigation Agent</span></h1>
-      <div style="font:10px var(--ns-mono);letter-spacing:0.12em;text-transform:uppercase;color:var(--ns-text-muted)">
-        Module 5 — Threat Orchestration
+      <div>
+        <h1>AI <span class="accent">Investigation Agent</span></h1>
+        <div style="font:10px var(--ns-mono);letter-spacing:0.12em;text-transform:uppercase;color:var(--ns-text-muted)">
+          Module 5 — Threat Orchestration
+        </div>
+      </div>
+      <div>
+        <button class="ns-theme-toggle" aria-label="Toggle theme">
+          <span class="theme-icon-dark">🌙</span>
+          <span class="theme-icon-light">☀️</span>
+        </button>
       </div>
     </div>
 
@@ -214,5 +242,6 @@
   if (nav && window.NS && NS.renderNav) NS.renderNav(nav, 'ai_investigation');
 </script>
 
+<script src="/theme-switcher.js"></script>
 </body>
 </html>

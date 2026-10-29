@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -10,7 +10,11 @@
 <nav class="ns-nav scrolled" style="background:rgba(8,12,16,0.95);"><div class="ns-nav-inner">
   <a href="/" class="ns-logo"><img src="{{ url_for('static', filename='static/ns_logo.png') }}" class="ns-logo-icon" alt="NS" onerror="this.style.display='none';">
     <div class="ns-logo-text"><span class="ns-logo-name">NeuraShield</span><span class="ns-logo-sub">Threat Intelligence</span></div></a>
-  <div class="ns-nav-actions"><span style="font-family:var(--ns-mono);font-size:11px;color:var(--ns-text-dim);">{{ username }}</span><a href="/logout" class="btn-ghost">Logout</a></div>
+  <div class="ns-nav-actions">
+      <button class="ns-theme-toggle" aria-label="Toggle theme">
+        <span class="theme-icon-dark">ðŸŒ™</span>
+        <span class="theme-icon-light">â˜€ï¸</span>
+      </button><span style="font-family:var(--ns-mono);font-size:11px;color:var(--ns-text-dim);">{{ username }}</span><a href="/logout" class="btn-ghost">Logout</a></div>
 </div></nav>
 <div class="inv-layout">
   <aside class="inv-sidebar"><div class="who"><small>Analyst</small><b>{{ username }}</b></div><ul class="inv-nav" id="nav"></ul></aside>
@@ -41,5 +45,6 @@
   load();
 })();
 </script>
+<script src="/theme-switcher.js"></script>
 </body>
 </html>

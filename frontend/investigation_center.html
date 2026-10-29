@@ -21,6 +21,10 @@
       </div>
     </a>
     <div class="ns-nav-actions">
+      <button class="ns-theme-toggle" aria-label="Toggle theme">
+        <span class="theme-icon-dark">🌙</span>
+        <span class="theme-icon-light">☀️</span>
+      </button>
       <div class="ic-agent-badge">
         <div class="ic-agent-pulse-dot"></div>
         <span>AI Agent Active</span>
@@ -583,5 +587,6 @@
 <!-- Shared UI Scripts -->
 <script src="{{ url_for('static', filename='ns_investigation.js') }}"></script>
 <script src="{{ url_for('static', filename='investigation_center.js') }}"></script>
+<script src="/theme-switcher.js"></script>
 </body>
 </html>
